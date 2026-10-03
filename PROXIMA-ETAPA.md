@@ -1,3 +1,7 @@
+# Legibilidade 1.24.1
+
+Indicador com texto escuro sobre fundo dourado; contraste visual verificado (9,30:1). Regras da 1.24.0 preservadas.
+
 # Automações 1.24.0
 
 Nova aba abaixo de Personalização, sete efeitos prontos dos livros, habilitação e ativação por ficha. Sem criação do zero. Consulte modules/oprpg-system-fixes/AUTOMACOES-1.24.0.md para cobertura exata e partes manuais. Testes simulados: 632. Teste funcional no mundo real pendente.

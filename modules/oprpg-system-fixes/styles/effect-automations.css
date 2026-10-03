@@ -122,7 +122,16 @@
 
 .oprpg-catalogue {font-family:var(--dnd5e-font-roboto,sans-serif);color:var(--jj-text-main,#e2cebb);}
 .oprpg-catalogue .op-train-card > p {margin:10px 12px;}
-.oprpg-catalogue .op-train-counter {color:var(--oprpg-gold-bright,#e3b53c);}
+/* The native counter has a gold background: use dark text, never gold on gold. */
+.oprpg-catalogue .op-train-head .op-train-counter {
+  background:#e3b53c;
+  color:#211509;
+  text-shadow:none;
+  opacity:1;
+  font-size:14px;
+  font-weight:800;
+  line-height:1.2;
+}
 .oprpg-catalogue .oprpg-catalogue-controls {padding:0 12px 12px;}
 .oprpg-catalogue button {color:var(--jj-text-main,#e2cebb);background:var(--jj-bg-soft,#171010);border:1px solid var(--jj-border,#65513c);border-radius:4px;padding:5px 10px;min-height:30px;}
 .oprpg-catalogue button:hover:not(:disabled) {border-color:var(--oprpg-gold-bright,#e3b53c);}
