@@ -2,7 +2,7 @@
   "id": "oprpg-system-fixes",
   "title": "OPRPG System Fixes & Compatibility",
   "description": "Correções OPRPG para Foundry v14: Livro 2.1, alvos, Haki e concentração, múltiplas atividades, frutas, cura, Escudo e descanso.",
-  "version": "1.21.0",
+  "version": "1.22.0",
   "authors": [
     {
       "name": "Adaptação OPRPG — módulo de compatibilidade local"
@@ -43,4 +43,5 @@
     "styles/workspace.css"
   ]
 }
+
 

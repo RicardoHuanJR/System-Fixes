@@ -1,3 +1,7 @@
+# Atualização 1.22.0
+
+Características configuráveis com Diable Jambe, condições por resultado, áreas persistentes, reembolso de PP registrado e efeitos periódicos. 587 verificações simuladas aprovadas; teste funcional em Foundry real pendente. Veja [REVISAO-1.22.0.md](REVISAO-1.22.0.md) para configuração e limites.
+
 # Atualização 1.21.0
 
 Após confirmar as áreas de uma técnica, marca automaticamente os tokens que intersectam a geometria e envia um pedido de salvaguarda por ficha aos responsáveis e mestres. Controle Cirúrgico permite escolher aliados protegidos até o modificador de Destreza, mínimo de um. O dano utiliza os alvos registrados no cartão e cada resultado individual. Mantém os controles nativos de metade/quarto, a privacidade dos resultados e o dano após salvaguarda.

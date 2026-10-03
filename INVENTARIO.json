@@ -1,5 +1,10 @@
 [
   {
+    "id": "enhancedcombathud-oprpg-system",
+    "version": "6.4.0",
+    "manifestSHA256": "9f502465ea8222c5ad04a6b4ed01879ee1dbd1adef5a4751dfd8ef3471581a04"
+  },
+  {
     "id": "oprpg-antifraude",
     "version": "1.4.0",
     "manifestSHA256": "e1a4a11b78bde4ab63542aebd12157c634facf5c05a2a27bd8a13c6eab934c27"
@@ -21,7 +26,7 @@
   },
   {
     "id": "oprpg-system-fixes",
-    "version": "1.20.1",
-    "manifestSHA256": "f9585e294353c56dca98b6ab3111456b5f1cadbbdbc35424b4b40aa6e0d93003"
+    "version": "1.22.0",
+    "manifestSHA256": "19e4c37ccb93c2caf2a9897f3ac5bfff3709ae7de3b0f68c46c2bf9925c58f95"
   }
 ]

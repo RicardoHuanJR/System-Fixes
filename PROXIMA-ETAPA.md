@@ -1,3 +1,7 @@
+# Implementações 1.22.0
+
+Diable Jambe configurável, condições por resultado, áreas persistentes, reembolso de PP e efeitos periódicos implementados. Consulte modules/oprpg-system-fixes/REVISAO-1.22.0.md. A validação funcional com dois clientes reais continua pendente.
+
 # Áreas, salvaguardas e consolidação
 
 ## Fluxo incorporado no Fixes 1.21.0

@@ -1,10 +1,16 @@
 import { MODULE_ID, STATE, getCardActivity } from './shared.js';
 import { rollTargetSaves } from './save-workflow.js';
 import { areaExecution } from './area-state.js';
+import { refundCancelledArea } from './area-refund.js';
+import { applyTechniqueEffects } from './technique-effects.js';
+import { heightMatches, wallAllows } from './area-obstacles.js';
 
 const wrapped=Symbol('oprpgAreaPreview');
 const batches=new WeakMap(),running=new Set();
 let installed=false;
+async function cleanupConfirmedTemplates(templates){
+  for(const uuid of new Set(templates.map(t=>(t.document??t).uuid).filter(Boolean))){try{const doc=await fromUuid(uuid);if(doc?.delete&&doc.isOwner!==false&&['MeasuredTemplate','Region'].includes(doc.documentName))await doc.delete();}catch(error){STATE.warnings.push(`Limpeza de área: ${error.message}`);ui.notifications.warn('Um modelo cancelado não pôde ser removido. Confira a cena.');}}
+}
 const esc=value=>foundry.utils.escapeHTML(String(value??''));
 const normalized=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -68,6 +74,7 @@ async function chooseProtected(activity,tokens,config) {
 }
 export function findAreaSource(activity) {
   return Array.from(game.messages??[]).reverse().find(message=>{
+    if(message.getFlag?.(MODULE_ID,'areaCycle'))return false;
     if(message.author?.id!==game.user.id&&message.user?.id!==game.user.id)return false;
     const root=document.createElement('div');root.innerHTML=message.content??'';
     const card=root.querySelector('.jujutsu-card[data-item-id]');
@@ -79,16 +86,19 @@ export async function finalizeAreaExecution(activity,templates,message=findAreaS
   if(running.has(message.id)||areaExecution(message)?.status==='ready')return null;
   running.add(message.id);
   try {
-    const tokens=tokensInAreas(templates),config=surgicalConfiguration(activity);
+    const automation=activity.item?.getFlag?.(MODULE_ID,'techniqueAutomation')??{};
+    const tokens=tokensInAreas(templates).filter(t=>heightMatches(t,automation)&&templates.some(a=>tokenIntersectsArea(a,t)&&wallAllows(a,t,automation))),config=surgicalConfiguration(activity);
     if(config&&!config.costIncluded)throw Error('Inclua o custo de Controle Cirúrgico no consumo da atividade antes de executar.');
     const targets=[...new Set(tokens.map(t=>t.actor.uuid))];
     const state={status:'choosing',sourceId:message.id,activityId:activity.id,activityUuid:activity.uuid,scene:canvas.scene?.id,
       templates:templates.map(t=>(t.document??t).uuid).filter(Boolean),targets,protected:[],prolonged:!!config?.prolonged};
     await message.setFlag(MODULE_ID,'areaExecution',state);
     const selected=config?(protectedSelection??await chooseProtected(activity,tokens,config)):[];
-    if(selected===null){await message.setFlag(MODULE_ID,'areaExecution',{...state,status:'cancelled'});return null;}
+    if(selected===null){await message.setFlag(MODULE_ID,'areaExecution',{...state,status:'cancelled'});await cleanupConfirmedTemplates(templates);await refundCancelledArea(activity,message);return null;}
     state.protected=validateProtectedSelection(tokens,selected,config?.limit??0);state.status='ready';
     await message.setFlag(MODULE_ID,'areaExecution',state);
+    Hooks.callAll('oprpgFixes.areaConfirmed',{activity,templates,message,state});
+    for(const token of [...new Map(tokens.map(t=>[t.actor.uuid,t])).values()])if(activity.type==='utility'||state.protected.includes(token.actor.uuid))await applyTechniqueEffects(activity,token.actor,message);
     // Replace unrelated targets once, then broadcast one batch. Never retarget on refresh.
     for(const old of Array.from(game.user.targets??[]))old.setTarget(false,{user:game.user,releaseOthers:false,groupSelection:true});
     for(const token of tokens)token.setTarget(true,{user:game.user,releaseOthers:false,groupSelection:true});
@@ -119,14 +129,21 @@ export function wrapAreaPreview(proto) {
     try{result=await original.apply(this,args);}
     catch(error){
       batch.cancelled=true;
+      await cleanupConfirmedTemplates(batch.templates);
       if(batch.message)await batch.message.setFlag(MODULE_ID,'areaExecution',{status:'cancelled',activityId:activity.id,activityUuid:activity.uuid,targets:[],protected:[]});
+      if(batch.message)await refundCancelledArea(activity,batch.message);
       throw error;
     }
     batch.done++;
-    if(!result||Array.isArray(result)&&!result.length){batch.cancelled=true;if(batch.message)await batch.message.setFlag(MODULE_ID,'areaExecution',{status:'cancelled',activityId:activity.id,activityUuid:activity.uuid,targets:[],protected:[]});return result;}
+    if(!result||Array.isArray(result)&&!result.length){batch.cancelled=true;await cleanupConfirmedTemplates(batch.templates);if(batch.message){await batch.message.setFlag(MODULE_ID,'areaExecution',{status:'cancelled',activityId:activity.id,activityUuid:activity.uuid,targets:[],protected:[]});await refundCancelledArea(activity,batch.message);}return result;}
     // The preview already owns the exact PIXI geometry, including rotation.
     const shape=this._oprpgAreaGeometry??this.shape;
-    if(!shape?.contains)throw Error('Não foi possível ler a geometria da área confirmada.');
+    if(!shape?.contains){
+      batch.cancelled=true;
+      await cleanupConfirmedTemplates([...batch.templates,{document:(Array.isArray(result)?result[0]:result)??this.document}]);
+      if(batch.message){await batch.message.setFlag(MODULE_ID,'areaExecution',{status:'cancelled',activityId:activity.id,activityUuid:activity.uuid,targets:[],protected:[]});await refundCancelledArea(activity,batch.message);}
+      throw Error('Não foi possível ler a geometria da área confirmada.');
+    }
     batch.templates.push({shape,document:(Array.isArray(result)?result[0]:result)??this.document});
     if(batch.done===batch.expected&&!batch.cancelled) {
       try{await finalizeAreaExecution(activity,batch.templates,batch.message??findAreaSource(activity));}

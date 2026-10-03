@@ -29,6 +29,12 @@ import { installPublicAPI } from "./scripts/api.js";
 import { installDiagnostics, selfTest } from "./scripts/diagnostic.js";
 import { installExternalCompatibility } from './scripts/external-compatibility.js';
 import { installAreaWorkflow } from './scripts/area-workflow.js';
+import { installCharacteristics } from './scripts/characteristic-automations.js';
+import { installTechniqueEffects } from './scripts/technique-effects.js';
+import { installPersistentAreas } from './scripts/persistent-areas.js';
+import { installPeriodicEffects } from './scripts/periodic-effects.js';
+import { installAreaRefund } from './scripts/area-refund.js';
+import { installCompatibilityMacros } from './scripts/compatibility-macros.js';
 
 // Register diagnostics as soon as the ES module is evaluated. This intentionally
 // happens before Foundry's init hook so an unrelated patch failure cannot hide
@@ -56,12 +62,14 @@ Hooks.once("init", () => {
   }
 
   registerFeatureSettings();
+  game.settings.register(MODULE_ID,'refundCancelledAreas',{name:'Devolver PP de áreas canceladas',hint:'Devolve apenas PP com consumo registrado pelo sistema, uma única vez por cartão.',scope:'world',config:true,type:Boolean,default:true});
+  safeInstall('Registro de consumo das áreas',installAreaRefund);
   // game.system is available at init; DAE builds specs during document
   // preparation after init. Never access the system at module evaluation time.
   if(featureEnabled('externalCompatibility'))safeInstall('Compatibilidade DAE/Midi',installExternalCompatibility);
   game.settings.register(MODULE_ID,'compatibilityMacros',{
     name:'Compatibilidade: executar macros de itens',
-    hint:'Executa Macros do mundo referidas no campo On Use do Midi após etapas nativas suportadas. ItemMacro e etapas anteriores à rolagem ainda não são adaptadas.',
+    hint:'Executa macros do mundo e ItemMacro (com o módulo próprio instalado) nas etapas OPRPG suportadas. Macros que dependam de MidiQOL.Workflow precisam de adaptação.',
     scope:'world',config:true,type:Boolean,default:false
   });
   safeInstall('Apresentação nativa',installPresentation);
@@ -100,6 +108,11 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", async () => {
   if (game.system.id !== SYSTEM_ID) return;
+  if(featureEnabled('characteristics'))safeInstall('Características configuráveis',installCharacteristics);
+  if(featureEnabled('techniqueEffects'))safeInstall('Efeitos de técnicas',installTechniqueEffects);
+  if(featureEnabled('persistentAreas'))safeInstall('Áreas persistentes',installPersistentAreas);
+  if(featureEnabled('periodicEffects'))safeInstall('Efeitos periódicos',installPeriodicEffects);
+  if(featureEnabled('externalCompatibility'))safeInstall('Etapas de macros',installCompatibilityMacros);
   if(featureEnabled('bookRules'))try{await installBookRules()}catch(error){STATE.warnings.push(`Regras do livro: ${error.message}`);console.error(error)}
   if(featureEnabled("targets")) {
     safeInstall('Salvaguardas de todos os alvos',installSaveWorkflow);
@@ -183,3 +196,4 @@ Hooks.once("ready", async () => {
   try { selfTest({ log: false, deep: false }); }
   catch (error) { console.error(`${MODULE_ID} | Self test automático falhou`, error); }
 });
+

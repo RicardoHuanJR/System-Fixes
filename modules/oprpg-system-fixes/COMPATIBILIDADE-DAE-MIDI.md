@@ -1,3 +1,7 @@
+# Ampliação 1.22.0
+
+A ponte continua parcial. Consulte [REVISAO-1.22.0.md](REVISAO-1.22.0.md) para macros, efeitos periódicos, fases e limites atuais. O motor completo Midi-QOL não é implementado. As seções antigas abaixo registram a implantação anterior.
+
 # Compatibilidade externa — System Fixes 1.20.0
 
 Esta versão adiciona uma ponte parcial para DAE e para alguns dados/macros do Midi-QOL. **Não ativa o Midi-QOL no OPRPG nem oferece todas as funções desses módulos.** A solicitação de compatibilidade total ainda não está concluída.

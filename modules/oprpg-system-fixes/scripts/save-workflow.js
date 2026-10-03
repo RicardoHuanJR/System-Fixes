@@ -4,6 +4,7 @@ import { rollSelectedActivityDamage, applyDamageState, prepareSaveDamageCard } f
 import { targetActors } from './target-damage.js';
 import { styleSaveDamageButton } from './presentation.js';
 import { areaExecution, areaProtected, executionActors } from './area-state.js';
+import { runItemMacros } from './external-compatibility.js';
 
 const busy=new Set();
 let installed=false;
@@ -59,6 +60,9 @@ export async function rollSaveForActor(actor,source) {
   if(previous){ui.notifications.info(`${actor.name}: salvaguarda já registrada para este cartão.`);return previous;}
   busy.add(key);
   try {
+    const {item,activity}=getCardActivity(card);
+    const macros=game.settings.get(MODULE_ID,'compatibilityMacros')===true&&item?.isOwner&&item.flags?.['midi-qol']?.onUseMacroName;
+    if(macros){const results=await runItemMacros(item,'preSave',{activity,target:actor,source});if(results.some(r=>r===false))return null;}
     // Native saves include proficiency, effects, advantage and Haki modifiers.
     const rolls=await actor.rollSavingThrow({ability,target:dc}, {}, {create:false});
     if(!rolls?.length)return null;
@@ -69,6 +73,7 @@ export async function rollSaveForActor(actor,source) {
       flavor:`${esc(actor.name)} — Salvaguarda ${esc(CONFIG.DND5E.abilities[ability].label??ability)} · CD ${dc} · ${total>=dc?'Sucesso':'Falha'}`,
       flags:{[MODULE_ID]:{saveResult:{key,source:source.id,actor:actor.uuid,ability,dc,total,success:total>=dc}},dnd5e:{messageType:'roll',roll:{type:'save',ability}},OPRPG:{roll:{type:'save',ability}}}});
     refreshSourceForResult(result);
+    if(macros)await runItemMacros(item,'postSave',{activity,target:actor,source,rolls,success:total>=dc});
     for(const roll of rolls)await showPrivateDice(roll,{actor,message:source});
     return result;
   } finally {busy.delete(key);}

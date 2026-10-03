@@ -15,7 +15,7 @@ const labels = {
   'system.energy.max':'Pontos de Poder — máximo',
   'system.energy.bonuses.overall':'Pontos de Poder — bônus'
 };
-const phases = new Set(['postAttackRoll','postDamageRoll','postSave','postItemRoll']);
+const phases = new Set(['preItemRoll','preAttackRoll','preDamageRoll','preSave','postAttackRoll','postDamageRoll','postSave','postItemRoll','postActiveEffects','DamageBonus']);
 let installed=false;
 const get=(object,path)=>foundry.utils.getProperty(object,path);
 const enabled=()=>game.system?.id===SYSTEM_ID && featureEnabled('externalCompatibility');
@@ -28,7 +28,7 @@ export function externalCompatibilityStatus() {
   return {installed,enabled:enabled(),dae:{active:!!dae?.active,version:dae?.version??null,
     apiReady:!!daeAPI(),adapter:'generic-oprpg',requiresUntestedSystems:true},
     midi:{active:!!midi?.active,version:midi?.version??null,fullWorkflowSupported:false,
-      supported:['advantage','disadvantage','typed-damage-api','world-on-use-macros']},
+      supported:['advantage','disadvantage','typed-damage-api','world-on-use-macros','item-macro-api','damage-bonus','simple-over-time','pre-roll-phases','post-active-effects']},
     automaticMacros:game.settings.get(MODULE_ID,'compatibilityMacros')===true};
 }
 
@@ -96,9 +96,12 @@ export async function runItemMacros(item,phase,context={}) {
   const results=[];
   for(const entry of entries) {
     // Never evaluate imported source strings or pretend to implement ItemMacro.
-    if(entry.name==='ItemMacro'||entry.name.startsWith('ItemMacro.'))throw Error('ItemMacro precisa de adaptação própria; use uma Macro do mundo.');
-    const macro=entry.name.startsWith('Macro.')?await fromUuid(entry.name)
-      : game.macros?.getName?.(entry.name);
+    let macro;
+    if(entry.name==='ItemMacro'||entry.name.startsWith('ItemMacro.')){
+      const target=entry.name==='ItemMacro'?item:await fromUuid(entry.name.slice('ItemMacro.'.length));
+      if(!target?.isOwner||typeof target.executeMacro!=='function')throw Error('ItemMacro precisa do módulo Item Macro e de um item que você controla.');
+      macro={documentName:'Macro',canExecute:true,execute:data=>target.executeMacro(data)};
+    }else macro=entry.name.startsWith('Macro.')?await fromUuid(entry.name):game.macros?.getName?.(entry.name);
     if(!macro || macro.documentName!=='Macro' || !macro.canExecute)
       throw Error(`Macro indisponível ou sem permissão: ${entry.name}`);
     const actor=item.actor;
@@ -182,6 +185,7 @@ export function installExternalCompatibility() {
   };
   for(const [hook,phase] of [['Attack','postAttackRoll'],['Damage','postDamageRoll'],['SavingThrow','postSave']])
     Hooks.on(`dnd5e.roll${hook}V2`,(rolls,{subject}={})=>macros(subject?.item,phase,{rolls}));
+  Hooks.on('oprpgFixes.postActiveEffects',context=>macros(context.activity?.item,'postActiveEffects',context));
   Hooks.on('dnd5e.postUseActivity',(activity,_config,results)=>macros(activity?.item,'postItemRoll',{results}));
   STATE.externalCompatibilityPatch=true;return true;
 }

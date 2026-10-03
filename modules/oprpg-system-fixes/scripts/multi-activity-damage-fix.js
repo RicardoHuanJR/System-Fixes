@@ -2,6 +2,8 @@ import { showPrivateDice, rollAudience } from './roll-privacy.js';
 import { MODULE_ID, STATE, activitiesOf, getCardActivity } from "./shared.js";
 import { powerUpDamageBonusSpec, recordPowerUpDamageRoll } from "./akuma-combat-fix.js";
 import { activityDamageSpecs, freshActivityDamageLabels, normalizeDamageTypes, damageTypeLabel } from "./activity-damage.js";
+import { damageMacroBonuses } from './compatibility-macros.js';
+import { runItemMacros } from './external-compatibility.js';
 
 const DAMAGE_FLAG = "multiActivityDamage";
 
@@ -323,7 +325,13 @@ function rehydrateLiveMessage(messageId) {
 }
 
 export async function rollSelectedActivityDamage(card, actor, item, activity) {
+  let bonuses=[];
+  if(game.settings.get(MODULE_ID,'compatibilityMacros')===true){
+    if(item.flags?.['midi-qol']?.onUseMacroName){const results=await runItemMacros(item,'preDamageRoll',{activity,card});if(results.some(r=>r===false))return null;}
+    bonuses=await damageMacroBonuses(activity);
+  }
   const specs = activityDamageSpecs(activity, actor);
+  for(const bonus of bonuses)specs.push({formula:bonus.parts.join(' + '),data:activity.getRollData?.()??actor.getRollData(),types:bonus.options.types,nativeConfig:true});
   if (!specs.length) throw new Error(`Nenhuma configuração de dano válida em ${activity.name}.`);
   const rolls = [];
   const isSpell = card.dataset.isSpell === "true";
@@ -420,6 +428,7 @@ export async function rollSelectedActivityDamage(card, actor, item, activity) {
   // Persist only compact state in flags. Do NOT rewrite ChatMessage.content:
   // that caused Foundry to rerender the card from a pre-roll presentation state.
   const persistedToFlag = await persistDamageState(message, state);
+  if(game.settings.get(MODULE_ID,'compatibilityMacros')===true&&item.flags?.['midi-qol']?.onUseMacroName)await runItemMacros(item,'postDamageRoll',{activity,source:message,rolls:rolls.map(r=>r.roll),total});
 
   // setFlag rerenders the message and renderChatMessageHTML hydrates the new DOM.
   // Keep only one animation-frame fallback for clients where the replacement is

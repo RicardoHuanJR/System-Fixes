@@ -5,6 +5,7 @@ import { withActorOperation } from './operation-history.js';
 import { requestTargetDamage, installDamageRequests } from './damage-requests.js';
 import { recordActivityApplication } from './activity-guide.js';
 import { executionActors, areaSaveMultiplier } from './area-state.js';
+import { applyTechniqueEffects } from './technique-effects.js';
 
 const inflight = new Set();
 let installed = false;
@@ -24,6 +25,7 @@ export function vitalityUpdate(actor, choice) {
   if (choice.nat20 && choice.aura) return {'system.attributes.hp.value':0, 'system.attributes.pve.value':0};
   let loss = choice.grade > 0 ? choice.grade : choice.firearm ? 2 : 1;
   loss *= (choice.crit ? 2 : 1) * (choice.aura ? 2 : 1);
+  if(choice.loss!==undefined){if(!Number.isFinite(choice.loss)||choice.loss<0||!Number.isInteger(choice.loss))throw Error('Informe uma perda de Vitalidade inteira e não negativa.');loss=choice.loss;}
   const current = Math.max(0, Number(attributes.pve.value ?? attributes.pve.max ?? 0));
   const lost = Math.min(current, loss);
   const updates = {'system.attributes.pve.value': current - lost};
@@ -33,21 +35,24 @@ export function vitalityUpdate(actor, choice) {
   }
   return updates;
 }
-async function promptVitality(actor, card) {
+export async function promptVitality(actor, card, factor=1) {
   const { item } = getCardActivity(card);
   const grade = Number(item?.system?.level ?? 0);
-  const crit = !!card.querySelector('[data-mod="crit"]:checked, [data-save-mod="crit"]:checked');
+  const crit = !!card?.querySelector('[data-mod="crit"]:checked, [data-save-mod="crit"]:checked');
   return foundry.applications.api.DialogV2.wait({classes:['oprpg-fixes-dialog'],
     window:{title:`Vitalidade — ${actor.name}`}, rejectClose:false,
     content:`<p>A aura de <strong>${esc(actor.name)}</strong> está inativa. Resolva o dano em Vitalidade.</p>
+      <p>Multiplicador individual por salvaguarda: ${factor}. A redução numérica não determina sozinha a perda por grau. Confirme a perda final com o mestre.</p>
       <label>Origem <select name="source"><option value="normal">Normal (1 PVE)</option><option value="firearm">Arma de fogo (2 PVE)</option><option value="technique" ${grade > 0 ? 'selected' : ''}>Técnica (grau em PVE)</option></select></label>
       <label>Grau <input name="grade" type="number" min="1" step="1" value="${Math.max(1,grade)}"></label>
       <label><input name="crit" type="checkbox" ${crit?'checked':''}> Crítico (×2)</label>
       <label><input name="aura" type="checkbox"> Ataque com aura (×2)</label>
-      <label><input name="nat20" type="checkbox"> 20 natural com aura: morte instantânea</label>`,
+      <label><input name="nat20" type="checkbox"> 20 natural com aura: morte instantânea</label>
+      <label>Perda final de PVE (opcional; em branco usa a regra por grau) <input name="loss" type="number" min="0" step="1" placeholder="Confirmar com o mestre"></label>`,
     buttons:[{action:'apply',label:'Aplicar',callback:(_e,_b,d)=>{
       const root=d.element, source=root.querySelector('[name="source"]').value;
-      return {grade:source==='technique'?Math.max(1,Math.floor(Number(root.querySelector('[name="grade"]').value)||1)):0,
+      const loss=root.querySelector('[name="loss"]')?.value;
+      return {...(loss!==undefined&&loss!==''?{loss:Number(loss)}:{}),grade:source==='technique'?Math.max(1,Math.floor(Number(root.querySelector('[name="grade"]').value)||1)):0,
         firearm:source==='firearm',...Object.fromEntries(['crit','aura','nat20'].map(k=>[k,root.querySelector(`[name="${k}"]`).checked]))};
     }},{action:'cancel',label:'Cancelar',callback:()=>null}],close:()=>null
   });
@@ -90,7 +95,7 @@ export async function applyDamageTargets(button, card, actors=targetActors()) {
       const receiptChanges={[`flags.${MODULE_ID}.damageReceipts`]:[...receipts,receipt].slice(-100)};
       if(factor===0)return;
       if (actor.type==='character' && actor.system.attributes?.auraOn===false) {
-        const choice=await promptVitality(actor,card);
+        const choice=await promptVitality(actor,card,factor);
         if (!choice) return;
         await actor.update({...vitalityUpdate(actor,choice),...receiptChanges});
       } else adjustment=await applyTargetCardDamage(actor,{...actorMeta,receiptChanges});
@@ -103,6 +108,7 @@ export async function applyDamageTargets(button, card, actors=targetActors()) {
       catch(error){ui.notifications.warn('Dano aplicado, mas não foi possível publicar o resumo.');console.error(error);}
     });
     if(applied.length){
+      if(activity?.type!=='save')for(const actor of actors.filter(a=>applied.includes(a.name)))await applyTechniqueEffects(activity,actor,message,{receipt:receipt});
       try{await recordActivityApplication(message,meta.activityId,applied)}catch(error){console.warn('Registro das etapas do cartão indisponível',error)}
       ui.notifications.info(`Dano aplicado em: ${applied.join(', ')}.`);
     }

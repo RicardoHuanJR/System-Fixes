@@ -1,0 +1,74 @@
+{
+  "version": "1.19.0",
+  "simulations": {
+    "targets": {
+      "passed": 234,
+      "total": 234
+    },
+    "audit": {
+      "passed": 104,
+      "total": 104
+    },
+    "regression": {
+      "passed": 18,
+      "total": 18
+    },
+    "sustained": {
+      "passed": 26,
+      "total": 26
+    },
+    "book-rules": {
+      "passed": 53,
+      "total": 53
+    }
+  },
+  "simulationTotal": 435,
+  "installedFilesMatch": true,
+  "sha256": {
+    "module.json": "c2349baec3683bc171bdcf695d3bda34a1edd999805dafc4d52fdc602e015a0a",
+    "main.js": "c2d447e7a0631a2a45e88fd9013ee3bc71f689cdbce60ea13be112db598120ed",
+    "styles/workspace.css": "e7057fd1ee423a5b9624ef58c6efe9a9a4ff5de3e15a77896d307ee2655c7c57",
+    "styles/haki-unified.css": "0c464b749e749d1018a13f983ce49244f23e2fcc781b46e491f99462896f1f9f",
+    "scripts/activity-damage.js": "75dfd9bd64c4cb7f22b07c0cc105d1fe73f099d63da11539d501ad228abbf504",
+    "scripts/activity-guide.js": "9a7eb90551d3e6952bb50ce4018750e68f3338198877ced653794ab872816d0f",
+    "scripts/akuma-combat-fix.js": "0530950c9e3289ad0505c8c12db98ad9d02dcae2d62b315601ba404992964fe6",
+    "scripts/akuma-fix.js": "040c1fe4f69fd10e5457502a79cb12165b27909ec2a72d018dd6e8eb5653670b",
+    "scripts/api.js": "e90bac6686ba91d9f5220253d587001c24c90cf7cca34a3ebb9ad3dbeaf4bfd4",
+    "scripts/automation-runtime.js": "4d4c04bf8ca627357c9e1f31e2b4e88e36eea2c46a9f42c93b57ccfa378f522f",
+    "scripts/book-rules.js": "97b1521184eb885d403e83f7b82a859930868dc146557f275b56ec742fc8dd41",
+    "scripts/card-sync.js": "be5ee3fb592a9b991a75e016baffa257d3fabe84176debb43f919979134b5f35",
+    "scripts/damage-requests.js": "6ebb07cec7c8f672a460625100f8f17d07591381603520c0cfb3b82ec4f46923",
+    "scripts/diagnostic.js": "861f226b662665d042fd77bd02f26db1002de6676f14b6c393a7493e9baee522",
+    "scripts/feature-settings.js": "1165fbe65f04e8fb1782cb0b0e30cbb5e7a0d26a43f435e8b3889b1ecedf8bb4",
+    "scripts/formula-fix.js": "2b7af84f74eb8dbf9e4aa556f31a37fb907a46c3d27f1da78107c6ed6b41cb82",
+    "scripts/free-training-fix.js": "54ea723b13cd50c9655661ec121c537311830b3902f380f74375c2cce43bd0cd",
+    "scripts/fruit-sheet-fix.js": "38ef9a5203ee7a5d676b392280d1fed683e4fe0727099b71cebacb7b78e06b03",
+    "scripts/haki-awakening-fix.js": "6be20882f681bbeef73f3b5ab60c3c86a487d652374104e9d17ba61caa8775a9",
+    "scripts/haki-card-damage-fix.js": "81c896188fb04a9b7337ef26cc239f90166e3ec9ebe0d8bfa7d0985f815fd97a",
+    "scripts/haki-content-fix.js": "0e8fdb3fc8250890d80cc7e29889189d4fadd815167e1b25a2966fab8d9743d6",
+    "scripts/haki-mechanics-fix.js": "078a26b7b4a08482012af8935cd2d580ea21025cf436a5b569f8a416a2700514",
+    "scripts/haki-perito-fix.js": "a52a3e34c9be8902d8b7479df20b6e62f60d92e84a7c76f69842efc385964d9c",
+    "scripts/haki-stages-fix.js": "230d5d13031cc68cad218cdd8affc64cf26e4f6a97c81c1c120199dad99abafb",
+    "scripts/haki-unified-fix.js": "e4885a375ba3fe3d4cd50d34168a7c8f0418bbf323f28f711b3f9319e04aa670",
+    "scripts/haki-unified-rules.js": "50bc83bc38abbe8fc7c04af5d3d6f968510edd2d22deffda380f430dd4524d97",
+    "scripts/healing-fix.js": "687eebe827ea6633d727d0407b71c1dd2fc76bd7117d67d3b7468c3805eb99c9",
+    "scripts/live-sheet-bridge.js": "32cf0392658ca665e8c6ef08741fa115bcfd7e47b4b41144614a3493d306062c",
+    "scripts/multi-activity-attack-fix.js": "aacaa3724b9fc9652b0acc47bb9fe4272ed301b4c4eddf94939feabdf4826564",
+    "scripts/multi-activity-damage-fix.js": "d201501ca6283f84ba310447f18af55a939dd2dfdb29b8d7184ea3540b6a753e",
+    "scripts/multi-activity-label-fix.js": "285bbd7c85ffa1f70f29471fb3e45330b441eda50a6c8664cfdc37e8f64f9ccc",
+    "scripts/native-audit.js": "93525d6f4968ab5ee49cbac090f63e1dc1939d0ccbe311e241e907c47a9d716a",
+    "scripts/native-targets.js": "63d3e6762f55aadbac59569b99072f33d871c36da753f5e39091ae5b9c9a0659",
+    "scripts/npc-sheet-fix.js": "c1ff1e0e70f816e10edeb3e3505eb0d159f676cb7ba771ac2dd943fea78157fb",
+    "scripts/operation-history.js": "582e50de1fb9b550acd01c9bc1bd3d88131f9c4def9def70baf2a0ac0af04569",
+    "scripts/presentation.js": "aacd850c7157a1d22645286462abb9def2db285b89538d0f0b628a4de773af3e",
+    "scripts/roll-privacy.js": "7288ba2e2b35a144a98857dd4504d655fc976edd8cfb3520528fb5f804aa1e1c",
+    "scripts/save-workflow.js": "65ae0c82572ea92bbbda06b705042edefd2b52c99618a5c20c298e8a5ccd862b",
+    "scripts/shared.js": "fe24ba7f4320f76674220625b49e53ec1436ce7921c7bf6ec1a84df3a827925a",
+    "scripts/shield-points-fix.js": "2c136d71a1406ed900ece140b9bc20ec1f4dbcd1840b40ce2f8f70e0616e9227",
+    "scripts/sustained-duration-fix.js": "735f265f4feb9f633a42f9647b3484030507fe8cb1ceebd4b044fe0849990f64",
+    "scripts/target-damage.js": "f02ff933486dc5cff79a800812dc959f9cb182237ef7257da8c6a2760a9c5c8a",
+    "scripts/technique-targets.js": "8345ebf5bafb8eef6a85be4e9adf3e5c9f0c9a694d7c5e9561b8d627f6a2bbef",
+    "scripts/workspace.js": "6ddf4020fe22812a45ac69d43561163b4f05d5c0237eb2ead8544504a20ac2bc"
+  },
+  "realTests": "Não houve teste da mudança 1.19.0 em Foundry real. Os testes nesta revisão foram simulados."
+}

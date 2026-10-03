@@ -9,6 +9,9 @@ import { rollPrivacyStatus } from './roll-privacy.js';
 import { previewShieldDamage } from './shield-points-fix.js';
 import { checkFruitCreation } from './fruit-sheet-fix.js';
 import { externalCompatibilityStatus, openDAEEffects } from './external-compatibility.js';
+import { openCharacteristics } from './characteristic-automations.js';
+import { endPersistentArea } from './persistent-areas.js';
+import { configurePeriodic } from './periodic-effects.js';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const S='oprpg-system';
@@ -101,6 +104,8 @@ export async function openWorkspace(actor=null) {
   }).join(''):'<p>Sem manutenções ativas.</p>'}<label>Manutenção <select name="upkeep">${entries.map(([id,info])=>`<option value="${esc(id)}">${esc(actor.items.get(info.itemId)?.name??id)}</option>`).join('')}</select></label>
   <p>Efeitos da ficha: ${actor.effects.map(e=>`${esc(e.name)} (${esc(e.duration?.label||'sem duração cronometrada')})`).join('; ')||'nenhum'}.</p>
   <p>Recarga do escudo: ${recharge?`${Math.max(0,Math.ceil(600-(Number(game.time.worldTime)-Number(recharge.start))))} segundos no relógio do mundo; requer estar fora de combate e Endurecimento ativo.`:'sem contagem ativa'}.</p>
+  <h3>Áreas persistentes</h3><label>Área <select name="area">${Object.values(actor.getFlag(MODULE_ID,'persistentAreas')??{}).map(a=>`<option value="${esc(a.id)}">${esc(game.messages.get(a.id)?.speaker?.alias??a.id)} — ${a.members?.length??0} alvo(s)</option>`).join('')}</select></label>
+  <label>Efeito periódico <select name="periodic">${Array.from(actor.effects??[]).map(e=>`<option value="${esc(e.id)}">${esc(e.name)}</option>`).join('')}</select></label>
   <h3>Técnicas da fruta</h3><label>Duplicar <select name="technique">${techniques.map(i=>`<option value="${esc(i.id)}">${esc(i.name)}</option>`).join('')}</select></label>
   <h3>Concentração pendente</h3><label>Teste <select name="concentration">${pending.map(m=>`<option value="${esc(m.id)}">CD ${esc(readHakiFlag(m,'check')?.dc)}</option>`).join('')}</select></label><p>${pending.length} teste(s) pendente(s). Cada dano mantém sua própria CD.</p>
   <h3>Perito — Haki</h3><label>Teste que falhou <select name="hakiCheck">${checks.map(m=>`<option value="${esc(m.id)}">${esc(m.rolls?.[0]?.total??'?')} — ${esc(m.flavor??m.id)}</option>`).join('')}</select></label><p>Uma repetição por dia do mundo; o segundo resultado é obrigatório. A falha será confirmada antes de rolar.</p>
@@ -108,6 +113,9 @@ export async function openWorkspace(actor=null) {
   <details><summary>Diagnóstico e correções</summary><p>Privacidade: ${privacy.installed?'instalada':'inativa'}; dados 3D: ${privacy.dice?'protegidos':'não detectados'}; exibições protegidas nesta sessão: ${privacy.protected}.</p><p>${Object.entries(FEATURES).map(([key,label])=>`${esc(label)}: ${featureEnabled(key)?'habilitado':'desabilitado'}`).join('<br>')}</p><p>${(STATE.warnings??[]).map(esc).join('<br>')||'Sem avisos registrados.'}</p><p>Os grupos podem ser ligados ou desligados em Configurações de Jogo → OPRPG System Fixes.</p></details>`;
   const field=(b,n)=>b.form.elements.namedItem(n)?.value;
   const choice=await foundry.applications.api.DialogV2.wait({classes:['oprpg-fixes-dialog','oprpg-fixes-workspace'],window:{title:`Painel Fixes — ${actor.name}`},position:{width:650},content,buttons:[
+    ...(featureEnabled('characteristics')?[{action:'characteristics',label:'Características',callback:()=>({action:'characteristics'})}]:[]),
+    ...(featureEnabled('persistentAreas')?[{action:'areaEnd',label:'Encerrar área',callback:(_,b)=>({action:'areaEnd',id:field(b,'area')})}]:[]),
+    ...(featureEnabled('periodicEffects')?[{action:'periodic',label:'Configurar periódico',callback:(_,b)=>({action:'periodic',id:field(b,'periodic')})}]:[]),
     ...(externalCompatibilityStatus().enabled&&externalCompatibilityStatus().dae.apiReady
       ?[{action:'dae',label:'Editar efeitos (DAE)',callback:()=>({action:'dae'})}]:[]),
     {action:'preview',label:'Prévia de dano/cura',callback:()=>({action:'preview'})},
@@ -121,6 +129,9 @@ export async function openWorkspace(actor=null) {
     ...(game.user.isGM?[{action:'backup',label:'Backup desta ficha',callback:()=>({action:'backup'})}]:[]),
     {action:'close',label:'Fechar',callback:()=>null}],rejectClose:false});
   if(!choice||!actor.isOwner)return;
+  if(choice.action==='characteristics')return openCharacteristics(actor);
+  if(choice.action==='areaEnd')return endPersistentArea(actor,choice.id);
+  if(choice.action==='periodic')return configurePeriodic(actor.effects.get(choice.id));
   if(choice.action==='preview')return openPreview(actor);
   if(choice.action==='backup')return downloadBackup([actor],'ficha');
   if(choice.action==='duplicate')return duplicateTechnique(actor,choice.id);

@@ -1,3 +1,11 @@
+# 1.22.0
+
+- Características configuráveis, com proteção contra bônus manual/automático duplicado.
+- Condições vinculadas às técnicas por resultado e áreas persistentes com entrada/turnos/altura/paredes.
+- Limpeza de ciclos antigos, encerramento e reembolso único de PP registrado ao cancelar.
+- Efeitos periódicos, confirmação de Vitalidade e expansão parcial de macros/OverTime.
+- 587 verificações simuladas; sem teste funcional em mundo real.
+
 # Atualização 1.21.0
 
 Após confirmar as áreas de uma técnica, marca automaticamente os tokens que intersectam a geometria e envia um pedido de salvaguarda por ficha aos responsáveis e mestres. Controle Cirúrgico permite escolher aliados protegidos até o modificador de Destreza, mínimo de um. O dano utiliza os alvos registrados no cartão e cada resultado individual. Mantém os controles nativos de metade/quarto, a privacidade dos resultados e o dano após salvaguarda.

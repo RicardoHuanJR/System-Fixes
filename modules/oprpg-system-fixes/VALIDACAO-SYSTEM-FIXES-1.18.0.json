@@ -1,0 +1,36 @@
+{
+  "version": "1.18.0",
+  "simulations": {
+    "targets": {
+      "passed": 220,
+      "total": 220
+    },
+    "audit": {
+      "passed": 104,
+      "total": 104
+    },
+    "regression": {
+      "passed": 18,
+      "total": 18
+    },
+    "sustained": {
+      "passed": 26,
+      "total": 26
+    },
+    "book-rules": {
+      "passed": 53,
+      "total": 53
+    }
+  },
+  "simulationTotal": 421,
+  "installedFilesMatch": true,
+  "sha256": {
+    "module.json": "ee6cf80658ce06a70b485e60e41d7130314c33be7df51273be38f9ad6f37816a",
+    "scripts/roll-privacy.js": "2a1a2602518eb82c229461e157eb5cd43669ee9418b2607bfba91dfc95fa948e",
+    "scripts/technique-targets.js": "63a5c3c2cb39f5a10f6195a106806cfcecbc21defad97583a2d245a2a62bd87f",
+    "scripts/activity-guide.js": "7ce764036f4cf6cf0b3ca82022d29a4ba890366d7f4d64ae96c66ddfc54b419c",
+    "scripts/multi-activity-damage-fix.js": "9fbf0037e4461620031b15d74b8db00a023a4f793f3923a96f511ac146cc196b",
+    "scripts/haki-unified-fix.js": "2ec68adc8e5304e5682bc88c5856ca6abe1d2f980c0ac045ebe918f04a9d446f"
+  },
+  "realTests": "Sessão de jogador: modo público/para si, dano, frações de arma e salvaguarda após renderização, ausência de UI extra e diálogo indevido. Sem teste simultâneo de animação em outro cliente; sem aplicação de dano ou consumo de recursos."
+}

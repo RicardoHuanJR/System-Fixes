@@ -15,6 +15,11 @@ import { undoResources } from './operation-history.js';
 import { externalCompatibilityStatus, applyCompatibilityDamage, applyCompatibilityEffects, runItemMacros, openDAEEffects } from './external-compatibility.js';
 import { configureSurgicalControl, finalizeAreaExecution } from './area-workflow.js';
 import { areaProtected } from './area-state.js';
+import { openCharacteristics, toggleCharacteristic, saveProfiles } from './characteristic-automations.js';
+import { endPersistentArea } from './persistent-areas.js';
+import { configureTechniqueAutomation, applyTechniqueEffects } from './technique-effects.js';
+import { configurePeriodic, resolvePeriodic } from './periodic-effects.js';
+import { refundCancelledArea } from './area-refund.js';
 
 export function installPublicAPI() {
   game.oprpg ??= {};
@@ -43,10 +48,13 @@ export function installPublicAPI() {
   globalThis.OPRPG_FIXES_NPC_SHEET_STATUS = npcSheetRepairStatus;
 
   game.oprpgFixes = {
-    areas:{configureSurgicalControl,finalize:finalizeAreaExecution,isProtected:areaProtected},
+    characteristics:{open:openCharacteristics,toggle:toggleCharacteristic,configure:saveProfiles},
+    techniqueAutomation:{configure:configureTechniqueAutomation,applyEffects:applyTechniqueEffects},
+    periodic:{configure:configurePeriodic,resolve:resolvePeriodic},
+    areas:{configureSurgicalControl,finalize:finalizeAreaExecution,isProtected:areaProtected,end:endPersistentArea,refund:refundCancelledArea},
     compatibility:{status:externalCompatibilityStatus,applyDamage:applyCompatibilityDamage,
       applyEffects:applyCompatibilityEffects,runItemMacros,openEffects:openDAEEffects},
-    version: game.modules.get("oprpg-system-fixes")?.version ?? "1.21.0",
+    version: game.modules.get("oprpg-system-fixes")?.version ?? "1.22.0",
     automationStatus,
     undoResources,
     get status() { return foundry.utils.deepClone(STATE); },
@@ -78,4 +86,5 @@ export function installPublicAPI() {
   };
   STATE.api = true;
 }
+
 

@@ -1,6 +1,10 @@
 import { MODULE_ID } from './shared.js';
 
 export const FEATURES = {
+  characteristics:'Características configuráveis: Diable Jambe e bônus de dano',
+  techniqueEffects:'Condições automáticas por resultado de técnicas',
+  persistentAreas:'Áreas persistentes: movimento e turnos',
+  periodicEffects:'Efeitos periódicos e adaptação de OverTime',
   externalCompatibility:'Compatibilidade parcial: efeitos DAE e flags/macros Midi-QOL',
   bookRules:'Livro 2.1: lendárias, descanso e registro de PV negativos',
   targets:'Aplicar dano nos alvos e solicitar alvos/áreas das técnicas',
