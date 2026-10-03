@@ -1,8 +1,8 @@
 {
   "id": "oprpg-system-fixes",
   "title": "OPRPG System Fixes & Compatibility",
-  "description": "Correções OPRPG para Foundry v14: dano em PV, salvaguardas individuais, Controle Cirúrgico por atividade, janela de efeitos, Haki, múltiplas atividades e Fruta.",
-  "version": "1.23.0",
+  "description": "Correções OPRPG para Foundry v14: dano em PV, salvaguardas individuais, Controle Cirúrgico por atividade, aba de automações dos livros, Haki, múltiplas atividades e Fruta.",
+  "version": "1.24.0",
   "authors": [
     {
       "name": "Adaptação OPRPG — módulo de compatibilidade local"

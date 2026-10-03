@@ -107,3 +107,23 @@
 .oprpg-auto-effects button{background:var(--jj-bg-soft,#171010);color:var(--jj-accent-soft,#f6d97a);border:1px solid var(--jj-border,#3c2622);border-radius:4px;padding:5px 9px;min-height:30px}
 .oprpg-auto-effects input[type=checkbox]{accent-color:var(--jj-accent,#e3b53c)}
 .oprpg-auto-effects .auto-help,.oprpg-auto-effects .auto-bulk-help{color:var(--jj-text-soft,#c4ad95)}
+
+/* Inherit the sheet's own training cards, typography and navigation. */
+.oprpg-automations-tab {overflow-y:auto; padding:12px;}
+.oprpg-automations-tab:not(.active) {display:none;}
+.oprpg-catalogue .op-train-card {margin-bottom:10px;}
+.oprpg-catalogue .op-train-head {display:flex;align-items:center;gap:8px;}
+.oprpg-catalogue .op-train-name {flex:1;}
+.oprpg-catalogue .oprpg-catalogue-controls {display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.oprpg-catalogue .oprpg-catalogue-controls button {width:auto;}
+.oprpg-catalogue .oprpg-catalogue-note,.oprpg-catalogue .op-train-meta {font-size:.85em;opacity:.85;}
+.oprpg-catalogue p {line-height:1.4;}
+.oprpg-catalogue button:disabled {opacity:.5;}
+
+.oprpg-catalogue {font-family:var(--dnd5e-font-roboto,sans-serif);color:var(--jj-text-main,#e2cebb);}
+.oprpg-catalogue .op-train-card > p {margin:10px 12px;}
+.oprpg-catalogue .op-train-counter {color:var(--oprpg-gold-bright,#e3b53c);}
+.oprpg-catalogue .oprpg-catalogue-controls {padding:0 12px 12px;}
+.oprpg-catalogue button {color:var(--jj-text-main,#e2cebb);background:var(--jj-bg-soft,#171010);border:1px solid var(--jj-border,#65513c);border-radius:4px;padding:5px 10px;min-height:30px;}
+.oprpg-catalogue button:hover:not(:disabled) {border-color:var(--oprpg-gold-bright,#e3b53c);}
+.oprpg-catalogue button:focus-visible {outline:2px solid var(--oprpg-gold-bright,#e3b53c);outline-offset:2px;}

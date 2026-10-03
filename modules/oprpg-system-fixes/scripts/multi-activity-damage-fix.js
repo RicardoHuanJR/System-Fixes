@@ -1,3 +1,5 @@
+import { featureEnabled } from './feature-settings.js';
+import { catalogueDamage } from './automation-catalogue.js';
 import { automationDamageSpecs } from './effect-automations.js';
 import { showPrivateDice, rollAudience } from './roll-privacy.js';
 import { MODULE_ID, STATE, activitiesOf, getCardActivity } from "./shared.js";
@@ -333,6 +335,8 @@ export async function rollSelectedActivityDamage(card, actor, item, activity) {
   }
   const specs = activityDamageSpecs(activity, actor);
   if(!specs.some(s=>s.options?.oprpgEffectAutomation))for(const bonus of automationDamageSpecs(actor,activity))specs.push({formula:bonus.parts.join(' + '),data:bonus.data,types:bonus.options.types,nativeConfig:true,options:bonus.options});
+  const catalogueConfig={rolls:specs.map(s=>({options:s.options??{}}))};
+  if(featureEnabled('characteristics'))for(const bonus of catalogueDamage(activity,catalogueConfig))specs.push({formula:bonus.parts.join(' + '),data:bonus.data,types:bonus.options.types,nativeConfig:true,options:bonus.options});
   for(const bonus of bonuses)specs.push({formula:bonus.parts.join(' + '),data:activity.getRollData?.()??actor.getRollData(),types:bonus.options.types,nativeConfig:true});
   if (!specs.length) throw new Error(`Nenhuma configuração de dano válida em ${activity.name}.`);
   const rolls = [];

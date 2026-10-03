@@ -1,7 +1,7 @@
 import { MODULE_ID } from './shared.js';
 
 export const FEATURES = {
-  characteristics:'Características configuráveis: Diable Jambe e bônus de dano',
+  characteristics:'Aba Automações: efeitos prontos dos livros e bônus de dano',
   techniqueEffects:'Condições automáticas por resultado de técnicas',
   persistentAreas:'Áreas persistentes: movimento e turnos',
   periodicEffects:'Efeitos periódicos e adaptação de OverTime',

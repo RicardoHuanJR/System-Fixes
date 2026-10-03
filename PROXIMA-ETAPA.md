@@ -1,3 +1,7 @@
+# Automações 1.24.0
+
+Nova aba abaixo de Personalização, sete efeitos prontos dos livros, habilitação e ativação por ficha. Sem criação do zero. Consulte modules/oprpg-system-fixes/AUTOMACOES-1.24.0.md para cobertura exata e partes manuais. Testes simulados: 632. Teste funcional no mundo real pendente.
+
 # Correções 1.23.0
 
 Aura/Vitalidade removidas do dano; pedidos individuais; Controle Cirúrgico por atividade; janela Efeitos OPRPG e regras do módulo 0.6.0 integradas. Consulte a revisão 1.23.0. Estilos exclusivos: parcela de dados confirmada; sequências e condições de Shoot/Ifrit/Hell Memories precisam de automação específica. Teste funcional real continua pendente.
