@@ -1,0 +1,44 @@
+.oprpg-roll-control {
+  display: grid;
+  gap: 4px;
+}
+
+.oprpg-card-modifier {
+  width: 100%;
+  padding: 4px;
+  font-size: 11px;
+  line-height: 1.2;
+  background: #0c0b0a;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  text-shadow: none;
+}
+
+.oprpg-attack-modifier {
+  color: #e3bb46;
+  border-color: #8d6f23;
+}
+
+.oprpg-damage-modifier {
+  color: #e77e5a;
+  border-color: #9b452e;
+}
+
+.oprpg-attack-modifier.active {
+  background: #1d1708;
+  box-shadow: 0 0 7px rgba(227, 187, 70, .55);
+}
+
+.oprpg-damage-modifier.active {
+  background: #21110d;
+  box-shadow: 0 0 7px rgba(231, 126, 90, .55);
+}
+
+.oprpg-modifier-dialog {
+  display: grid;
+  gap: 8px;
+}
+
+.oprpg-modifier-dialog input {
+  text-align: center;
+}

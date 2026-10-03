@@ -1,0 +1,12 @@
+dist/
+build/
+node_modules/
+__pycache__/
+*.pyc
+.env
+.env.*
+*.log
+*.pem
+*.key
+worlds/
+Config/

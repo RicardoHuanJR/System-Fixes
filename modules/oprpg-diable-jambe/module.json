@@ -1,0 +1,9 @@
+{
+  "id": "oprpg-diable-jambe",
+  "title": "OPRPG — Diable Jambe",
+  "description": "Efeito ativável: dados adicionais de Fogo conforme grau e dado da técnica.",
+  "version": "1.0.0",
+  "compatibility": {"minimum": "14", "verified": "14"},
+  "relationships": {"systems": [{"id": "oprpg-system", "type": "system"}]},
+  "esmodules": ["scripts/main.mjs"]
+}

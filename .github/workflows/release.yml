@@ -1,0 +1,31 @@
+name: Publicar módulos
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Etiqueta de versão do conjunto (exemplo v1.20.1)
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: publicar-modulos
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validar e compactar módulos
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: python scripts/build_release.py --repository "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG"
+      - name: Publicar release com arquivos para o Foundry
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          gh release create "$RELEASE_TAG" dist/*.zip dist/*.json dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "Módulos OPRPG — $RELEASE_TAG" --notes-file dist/RELEASE-NOTES.md

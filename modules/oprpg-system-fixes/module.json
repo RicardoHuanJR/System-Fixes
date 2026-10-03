@@ -1,0 +1,45 @@
+{
+  "id": "oprpg-system-fixes",
+  "title": "OPRPG System Fixes & Compatibility",
+  "description": "Correções OPRPG para Foundry v14: Livro 2.1, alvos, Haki e concentração, múltiplas atividades, frutas, cura, Escudo e descanso.",
+  "version": "1.20.1",
+  "authors": [
+    {
+      "name": "Adaptação OPRPG — módulo de compatibilidade local"
+    },
+    {
+      "name": "Mesa OPRPG — contribuições do Haki Unificado 1.2.0"
+    }
+  ],
+  "esmodules": [
+    "main.js"
+  ],
+  "languages": [
+    {
+      "lang": "pt-BR",
+      "name": "Português (Brasil)",
+      "path": "languages/pt-BR.json"
+    }
+  ],
+  "relationships": {
+    "systems": [
+      {
+        "id": "oprpg-system",
+        "type": "system",
+        "compatibility": {
+          "minimum": "1.0.20",
+          "verified": "1.0.20"
+        }
+      }
+    ]
+  },
+  "compatibility": {
+    "minimum": "14.360",
+    "verified": "14.367",
+    "maximum": "14.999"
+  },
+  "styles": [
+    "styles/haki-unified.css",
+    "styles/workspace.css"
+  ]
+}

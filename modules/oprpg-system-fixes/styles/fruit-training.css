@@ -1,0 +1,4 @@
+.oprpg-free-training { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.oprpg-free-training > span { flex: 1 1 12rem; font-size: .85em; }
+.oprpg-free-training-button { display: block; width: 100%; margin-top: .3rem; white-space: normal; }
+.oprpg-free-training-button:not(:disabled) { border-color: #688b60; }

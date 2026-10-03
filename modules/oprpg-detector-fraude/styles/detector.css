@@ -1,0 +1,9 @@
+.oprpg-alerta { border-left: 3px solid #b00; padding-left: 6px; }
+.oprpg-alerta ul { margin: 4px 0 6px 18px; font-size: 0.9em; }
+.oprpg-alerta button { margin-top: 4px; }
+.oprpg-alerta .oprpg-id { cursor: pointer; text-decoration: underline dotted; }
+.oprpg-destaque {
+  outline: 2px solid #ffcc00;
+  background: rgba(255, 204, 0, 0.18) !important;
+  transition: background 0.4s ease;
+}

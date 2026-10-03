@@ -1,0 +1,10 @@
+{
+  "OPRPGFIXES.Name": "OPRPG System Fixes & Compatibility",
+  "OPRPGFIXES.SystemUnverified": "OPRPG System Fixes: a versão {version} do OPRPG ainda não foi validada com este módulo. As correções compatíveis serão aplicadas por detecção de recursos; execute OPRPG_FIXES_SELF_TEST() se notar algo estranho.",
+  "OPRPGFIXES.FormulaMigration": "OPRPG System Fixes corrigiu e salvou fórmulas antigas em {count} item(ns).",
+  "OPRPGFIXES.TempApply": "{amount} PV temporários aplicados.",
+  "OPRPGFIXES.TempNoChange": "Nenhum PV temporário foi alterado: os alvos já possuíam valor igual ou maior que {amount}.",
+  "OPRPGFIXES.SelectToken": "Selecione um token para aplicar o efeito.",
+  "OPRPGFIXES.HealLimitExhausted": "Limite de cura esgotado.",
+  "OPRPGFIXES.HealApplied": "{amount} de cura aplicada."
+}

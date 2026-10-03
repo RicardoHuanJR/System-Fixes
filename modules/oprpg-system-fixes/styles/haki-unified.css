@@ -1,0 +1,63 @@
+.oprpg-haki-hud [data-haki-managed] {
+  pointer-events: auto !important;
+  cursor: pointer;
+}
+.oprpg-haki-hud [data-haki-managed].esgotado { opacity: 1; }
+.oprpg-haki-hud [data-haki-managed] .oprpg-hud-name { white-space: normal; }
+.oprpg-haki-hud .haki-auto-summary {
+  padding: 6px 9px; color: var(--jj-accent-soft, #f6d97a); background: var(--jj-bg-main, #0c0908);
+  border-top: 1px solid var(--jj-border, #3c2622); font-size: 12px;
+}
+
+/* Keep labels readable; exhausted is a resource state, not hidden content. */
+.oprpg-haki-hud .oprpg-hud-item {
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;
+  background:var(--jj-bg-card,#1d1413);border-color:#80653f;
+  color:var(--jj-text-main,#f1e7dc);min-height:42px;height:auto;
+  opacity:1;text-shadow:none;
+}
+.oprpg-haki-hud .oprpg-hud-item.esgotado {
+  opacity:1;border-style:dashed;border-color:#927756;
+  background:var(--jj-bg-soft,#171010);
+}
+.oprpg-haki-hud .oprpg-hud-name {
+  min-width:0;white-space:normal;overflow-wrap:anywhere;
+  font-size:13px;line-height:1.4;color:inherit;
+}
+.oprpg-haki-hud .oprpg-hud-pips {align-items:center;flex-wrap:wrap;justify-content:flex-end;max-width:110px;}
+.oprpg-haki-hud .oprpg-hud-item:has(.oprpg-hud-switch.on) {
+  background:#302312;border-color:var(--jj-accent,#e3b53c);color:var(--jj-accent-soft,#f6d97a);
+}
+.oprpg-haki-hud .oprpg-hud-item:has(.oprpg-hud-switch)::after {
+  content:'Desativado';grid-column:1/-1;font-size:11px;font-weight:600;color:var(--jj-text-soft,#c4ad95);
+}
+.oprpg-haki-hud .oprpg-hud-item:has(.oprpg-hud-switch.on)::after {content:'Ativo';color:var(--jj-accent-soft,#f6d97a);}
+.oprpg-haki-hud .oprpg-hud-item.esgotado::after {
+  content:'Sem usos';grid-column:1/-1;font-size:11px;font-weight:600;color:#edbbad;
+}
+.oprpg-haki-hud .oprpg-hud-item:hover {border-color:var(--jj-accent-soft,#f6d97a);}
+.oprpg-haki-hud .oprpg-hud-item:focus-visible {
+  outline:2px solid var(--jj-accent-soft,#f6d97a);outline-offset:2px;
+}
+.oprpg-haki-hud .oprpg-hud-switch {width:36px;height:20px;background:#231a13;border-color:#ab9270;}
+.oprpg-haki-hud .oprpg-hud-switch .oprpg-hud-knob {width:14px;height:14px;left:2px;top:2px;background:#ddc9b9;}
+.oprpg-haki-hud .oprpg-hud-switch.on {background:#795822;border-color:#f6d97a;}
+.oprpg-haki-hud .oprpg-hud-switch.on .oprpg-hud-knob {left:18px;background:#fff3d6;}
+.oprpg-haki-hud :is(.oprpg-hud-turn.used,.oprpg-hud-info,.oprpg-hud-tipswitch) {
+  color:var(--jj-text-soft,#c4ad95);opacity:1;
+}
+.dnd5e2 :is(.jj-haki-efeito-toggle,.jj-antevisao-btn,.jj-corpoarm-btn,.jj-foco-btn.jj-haki-ofensivo,.jj-foco-btn.jj-haki-defensivo) {
+  color:var(--jj-text-main,#f1e7dc);border-color:#80653f;background-color:var(--jj-bg-card,#1d1413);
+  min-height:38px;height:auto;
+}
+.dnd5e2 :is(.jj-haki-efeito-sub,.jj-haki-efeito-state,.jj-antevisao-val.off,.jj-corpoarm-val) {
+  color:var(--jj-text-soft,#c4ad95);
+}
+.dnd5e2 :is(.jj-haki-efeito-toggle,.jj-antevisao-btn,.jj-corpoarm-btn,.jj-foco-btn.jj-haki-ofensivo,.jj-foco-btn.jj-haki-defensivo).active {
+  border-color:var(--jj-accent,#e3b53c);box-shadow:inset 3px 0 0 var(--jj-accent,#e3b53c);
+  color:var(--jj-accent-soft,#f6d97a);
+}
+.dnd5e2 .jj-corpoarm-btn.usado:not(.active) {opacity:1;border-style:dashed;}
+.dnd5e2 :is(.jj-haki-efeito-toggle,.jj-antevisao-btn,.jj-corpoarm-btn,.jj-foco-btn.jj-haki-ofensivo,.jj-foco-btn.jj-haki-defensivo):disabled {
+  opacity:1;border-style:dashed;color:var(--jj-text-soft,#c4ad95);cursor:default;
+}

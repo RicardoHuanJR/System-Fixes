@@ -1,0 +1,99 @@
+/* Scope all overrides to surfaces owned by Fixes; inherit OPRPG tokens. */
+.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form {
+  --color-text-primary:var(--jj-text-main,#f1e7dc);
+  --color-text-secondary:var(--jj-text-soft,#c4ad95);
+  --input-background-color:var(--jj-bg-soft,#171010);
+  --input-text-color:var(--jj-text-main,#f1e7dc);
+  --input-border-color:var(--jj-border,#3c2622);
+  max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);
+  font-family:var(--dnd5e-font-roboto,sans-serif);
+}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form) .window-header {
+  background:var(--jj-bg-card,#1d1413);color:var(--jj-accent-soft,#f6d97a);
+  border-bottom:1px solid var(--jj-border,#3c2622);
+}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form) .window-content {
+  background:var(--jj-bg-main,#0c0908);color:var(--jj-text-main,#f1e7dc);padding:14px;min-height:0;
+}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form) .dialog-content {
+  max-height:62vh;overflow:auto;padding:0 4px 8px;
+  scrollbar-color:var(--jj-border,#3c2622) transparent;
+}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form) :is(p,li,.hint) {
+  color:var(--jj-text-soft,#c4ad95);font-size:13px;line-height:1.5;overflow-wrap:anywhere;
+}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form) :is(h3,summary) {
+  color:var(--jj-accent-soft,#f6d97a);font-family:var(--dnd5e-font-roboto-slab,serif);
+  border-bottom:1px solid var(--jj-border,#3c2622);padding-bottom:6px;margin:14px 0 8px;
+}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form) label {
+  display:grid;grid-template-columns:minmax(110px,0.8fr) minmax(0,1.2fr);align-items:center;
+  gap:8px;margin:10px 0;color:var(--jj-text-soft,#c4ad95);font-size:13px;
+}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form) label:has(input[type="checkbox"]) {
+  display:flex;flex-direction:row;
+}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form) :is(input,select,textarea) {
+  min-width:0;border:1px solid var(--jj-border,#3c2622);border-radius:4px;
+  background:var(--jj-bg-soft,#171010);color:var(--jj-text-main,#f1e7dc);accent-color:var(--jj-accent,#e3b53c);
+}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form) select option {
+  background:var(--jj-bg-soft,#171010);color:var(--jj-text-main,#f1e7dc);
+}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form) .dialog-buttons {
+  display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid var(--jj-border,#3c2622);padding-top:10px;
+}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form) .dialog-buttons button {
+  flex:1 1 120px;height:auto;min-height:32px;padding:6px 10px;white-space:normal;
+  background:var(--jj-bg-card,#1d1413);color:var(--jj-accent-soft,#f6d97a);
+  border:1px solid var(--jj-border,#3c2622);border-radius:4px;
+  font:600 12px var(--dnd5e-font-roboto,sans-serif);
+}
+.oprpg-fixes-workspace .dialog-buttons {
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-height:26vh;overflow:auto;
+}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form) table {
+  width:100%;border-collapse:collapse;background:var(--jj-bg-soft,#171010);
+  color:var(--jj-text-soft,#c4ad95);font-size:12px;
+}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form) :is(th,td) {
+  padding:7px 8px;border-bottom:1px solid var(--jj-border,#3c2622);overflow-wrap:anywhere;
+}
+.oprpg-fixes-status-ok {color:var(--jj-accent-soft,#f6d97a);}
+.oprpg-fixes-status-warning {color:var(--oprpg-blue-bright,#ea5a46);}
+.jujutsu-card .oprpg-fixes-save-damage {
+  width:100%;height:auto;min-height:32px;border-top:1px solid var(--jj-border-soft,#261814);border-radius:0;
+}
+.jujutsu-card.oprpg-fixes-notice > :is(p,ul,ol) {
+  padding:8px 14px;margin:0;color:var(--jj-text-soft,#c4ad95);
+  font-size:11px;line-height:1.5;overflow-wrap:anywhere;
+}
+.jujutsu-card.oprpg-fixes-notice {color:var(--jj-text-main,#f1e7dc);}
+.jujutsu-card.oprpg-fixes-notice .jj-top-name {color:var(--jj-accent-soft,#f6d97a);}
+.jujutsu-card.oprpg-fixes-notice .jj-description {color:var(--jj-text-soft,#c4ad95);}
+.jujutsu-card.oprpg-fixes-notice .jj-description :is(strong,b) {color:var(--jj-accent-soft,#f6d97a);}
+.jujutsu-card.oprpg-fixes-notice .jj-description > p + p {margin-top:8px;}
+.jujutsu-card .oprpg-fixes-notice-action {
+  width:100%;min-height:32px;height:auto;white-space:normal;margin:4px 0 0;border-radius:0;
+  display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border:none;
+  font:700 10.5px var(--dnd5e-font-roboto,sans-serif);letter-spacing:.06em;text-transform:uppercase;
+  background:#1c1408;color:var(--jj-accent,#e3b53c);
+}
+.jujutsu-card .oprpg-fixes-notice-action.jj-adv-btn {background:var(--jj-bg-soft,#171010);color:var(--jj-text-soft,#c4ad95);}
+.jujutsu-card .oprpg-fixes-healing-footer :is(button,.jj-footer-total) {color:var(--jj-accent-soft,#f6d97a);}
+.jujutsu-card .oprpg-fixes-healing-footer button {
+  background:var(--jj-bg-card,#1d1413);border-color:var(--jj-border,#3c2622);
+  white-space:normal;height:auto;min-height:28px;
+}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form) button:hover:not(:disabled),
+.jujutsu-card .oprpg-fixes-healing-footer button:hover:not(:disabled) {
+  border-color:var(--jj-accent,#e3b53c);background:var(--jj-bg-soft,#171010);
+}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form,.oprpg-fixes-notice) :is(button,input,select,textarea):focus-visible,
+.jujutsu-card .oprpg-fixes-save-damage:focus-visible {outline:2px solid var(--jj-accent,#e3b53c);outline-offset:-2px;}
+:is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form,.oprpg-fixes-notice) button:disabled {opacity:.5;cursor:default;}
+.oprpg-negative-hp {color:var(--jj-text-soft,#c4ad95);font-size:12px;border-top:1px solid var(--jj-border,#3c2622);padding:6px 0;}
+@media(max-width:520px) {
+  :is(.oprpg-fixes-dialog,.oprpg-fixes-workspace,.oprpg-fixes-form) label {grid-template-columns:1fr;}
+  .oprpg-fixes-workspace .dialog-buttons {grid-template-columns:1fr;}
+}
