@@ -4,6 +4,7 @@ import { messageAudience } from './roll-privacy.js';
 import { withActorOperation } from './operation-history.js';
 import { requestTargetDamage, installDamageRequests } from './damage-requests.js';
 import { recordActivityApplication } from './activity-guide.js';
+import { executionActors, areaSaveMultiplier } from './area-state.js';
 
 const inflight = new Set();
 let installed = false;
@@ -53,6 +54,12 @@ async function promptVitality(actor, card) {
 }
 
 export async function applyDamageTargets(button, card, actors=targetActors()) {
+  const sourceId=button.closest?.('[data-message-id]')?.dataset?.messageId;
+  const source=game.messages?.get(sourceId);
+  actors=await executionActors(source,actors);
+  const {activity}=getCardActivity(card);
+  // Validate all responses before changing any resource.
+  const factors=new Map(actors.map(a=>[a.uuid,areaSaveMultiplier(source,a,activity)]));
   if (!actors.length) throw Error('Marque um alvo com a ferramenta de alvo (T) antes de aplicar o dano.');
   if (actors.some(a=>!a.isOwner)) {
     await requestTargetDamage(button,card,actors);return [];
@@ -72,16 +79,25 @@ export async function applyDamageTargets(button, card, actors=targetActors()) {
       const receipts=actor.getFlag(MODULE_ID,'damageReceipts')??[];
       if (receipts.includes(receipt)) return;
       let adjustment;
+      const factor=factors.get(actor.uuid)??1;
+      const actorMeta={...meta,amount:Math.floor(meta.amount*factor)};
+      if(meta.typedDamage?.length){
+        const parts=meta.typedDamage.map((part,index)=>({...part,index,value:Math.floor(part.value*factor),remainder:part.value*factor%1}));
+        let extra=actorMeta.amount-parts.reduce((sum,part)=>sum+part.value,0);
+        for(const part of [...parts].sort((a,b)=>b.remainder-a.remainder||a.index-b.index))if(extra-->0)part.value++;
+        actorMeta.typedDamage=parts.map(({value,type})=>({value,type}));
+      }
       const receiptChanges={[`flags.${MODULE_ID}.damageReceipts`]:[...receipts,receipt].slice(-100)};
+      if(factor===0)return;
       if (actor.type==='character' && actor.system.attributes?.auraOn===false) {
         const choice=await promptVitality(actor,card);
         if (!choice) return;
         await actor.update({...vitalityUpdate(actor,choice),...receiptChanges});
-      } else adjustment=await applyTargetCardDamage(actor,{...meta,receiptChanges});
+      } else adjustment=await applyTargetCardDamage(actor,{...actorMeta,receiptChanges});
       applied.push(actor.name);
       const audience=messageAudience(message);
       const content=adjustment
-        ? rewriteNativeDamageMessage(`🛡️ <strong>${esc(actor.name)}</strong> (${meta.amount} de dano):`,adjustment)
+        ? rewriteNativeDamageMessage(`🛡️ <strong>${esc(actor.name)}</strong> (${actorMeta.amount} de dano):`,adjustment)
         : `🌀 <strong>${esc(actor.name)}</strong>: dano resolvido em Vitalidade.`;
       try { await ChatMessage.create({speaker:ChatMessage.getSpeaker({actor}),content,whisper:audience.whisper,blind:audience.blind}); }
       catch(error){ui.notifications.warn('Dano aplicado, mas não foi possível publicar o resumo.');console.error(error);}

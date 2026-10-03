@@ -1,3 +1,9 @@
+# Atualização 1.21.0
+
+Após confirmar as áreas de uma técnica, marca automaticamente os tokens que intersectam a geometria e envia um pedido de salvaguarda por ficha aos responsáveis e mestres. Controle Cirúrgico permite escolher aliados protegidos até o modificador de Destreza, mínimo de um. O dano utiliza os alvos registrados no cartão e cada resultado individual. Mantém os controles nativos de metade/quarto, a privacidade dos resultados e o dano após salvaguarda.
+
+522 verificações simuladas aprovadas; esta versão ainda não foi testada em um mundo Foundry real. Veja [REVISAO-1.21.0.md](REVISAO-1.21.0.md) para configuração, custos e limites.
+
 # Atualização 1.20.1
 
 Corrige uma falha observada no mundo real: a ponte DAE/Midi agora é instalada no evento init, quando game.system já existe. O erro da 1.20.0 interrompia o carregamento completo do Fixes. 481 verificações simuladas aprovadas. A compatibilidade Midi continua parcial.
@@ -397,3 +403,5 @@ Bypass manual de Intangibilidade para inimigo natural (aplique ao **atacante** a
 ```js
 await game.oprpgFixes.markIntangibilityBypass(canvas.tokens.controlled[0].actor, "inimigo-natural", 30)
 ```
+
+

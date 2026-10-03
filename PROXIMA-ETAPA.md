@@ -1,6 +1,6 @@
 # Áreas, salvaguardas e consolidação
 
-## Fluxo a implementar
+## Fluxo incorporado no Fixes 1.21.0
 
 1. Ativar a técnica e posicionar sua área pela ferramenta nativa do sistema.
 2. Após confirmar a posição, identificar os tokens com ficha dentro da geometria real e marcá-los como alvos. Considerar a área ocupada por tokens grandes; não usar apenas distância circular para cones, linhas ou retângulos.
@@ -28,7 +28,7 @@ O usuário confirmou consolidar somente módulos próprios de OPRPG. Excluiu da 
 
 Para cada recurso incorporado: opção de ativação no Fixes, migração das configurações/flags necessárias, detecção do módulo antigo para evitar execução dupla, autoria preservada e carregamento apenas quando necessário. Diable Jambe requer revisão da soma de bônus manual/automático antes da migração.
 
-## Testes necessários
+## Verificação simulada e próximos testes
 
 - Círculo, cone, linha e retângulo; tokens pequenos/grandes e bordas da área.
 - Cancelamento, reposicionamento, várias áreas e alvos repetidos.
@@ -38,3 +38,6 @@ Para cada recurso incorporado: opção de ativação no Fixes, migração das co
 - Protegidos sem salvaguarda/dano/condições; demais alvos com resultado individual.
 - Não reaplicar dano nem duplicar hooks com módulo antigo ativo.
 - Testes de regressão e teste real em documentos próprios de teste, sem gastar recursos dos personagens da mesa.
+
+A implementação de áreas passou em simulações. O teste em Foundry real continua pendente. Condições externas exigem associação ao cartão e a proteção prolongada não automatiza PP posterior ou criaturas que entrem depois; veja a revisão 1.21.0.
+

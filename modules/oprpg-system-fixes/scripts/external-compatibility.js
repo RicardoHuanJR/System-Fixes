@@ -137,7 +137,7 @@ export async function applyCompatibilityDamage(damage,targets,{multiplier=1,oper
   return results;
 }
 
-export async function applyCompatibilityEffects(activity,targets,{effectUuids,activate=true}={}) {
+export async function applyCompatibilityEffects(activity,targets,{effectUuids,activate=true,sourceMessage=null}={}) {
   if(!enabled())throw Error('Compatibilidade externa desativada.');
   if(!activity?.item?.isOwner)throw Error('Você precisa controlar o item de origem.');
   const api=daeAPI();
@@ -145,7 +145,15 @@ export async function applyCompatibilityEffects(activity,targets,{effectUuids,ac
   const linked=Array.from(activity.effects??[],entry=>entry.effect).filter(effect=>effect&&!effect.transfer);
   const ids=effectUuids??linked.map(effect=>effect.uuid);
   if(!ids.length || ids.some(id=>!linked.some(effect=>effect.uuid===id)))throw Error('Selecione apenas efeitos vinculados a esta atividade.');
-  const actors=compatibilityTargets(targets);
+  let actors=compatibilityTargets(targets);
+  if(sourceMessage){
+    const execution=sourceMessage.getFlag?.('oprpg-system-fixes','areaExecution');
+    if(execution){
+      if(execution.status!=='ready'||execution.activityUuid!==activity.uuid)throw Error('Execução da área inválida para estes efeitos.');
+      actors=actors.filter(actor=>execution.targets.includes(actor.uuid)&&!execution.protected.includes(actor.uuid));
+      if(!actors.length)return [];
+    }
+  }
   if(!actors.length)throw Error('Marque pelo menos um alvo.');
   // Delegate creation, durations, effect macros and GM routing to DAE itself.
   return api.doActivityEffects(activity,activate,actors,ids,{

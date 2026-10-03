@@ -28,6 +28,7 @@ import { installNpcSheetRepair } from "./scripts/npc-sheet-fix.js";
 import { installPublicAPI } from "./scripts/api.js";
 import { installDiagnostics, selfTest } from "./scripts/diagnostic.js";
 import { installExternalCompatibility } from './scripts/external-compatibility.js';
+import { installAreaWorkflow } from './scripts/area-workflow.js';
 
 // Register diagnostics as soon as the ES module is evaluated. This intentionally
 // happens before Foundry's init hook so an unrelated patch failure cannot hide
@@ -105,6 +106,7 @@ Hooks.once("ready", async () => {
     safeInstall("Dano nos alvos",installTargetDamage);
     try { await installNativeTargets(); } catch(error) { STATE.warnings.push(`Dano nativo nos alvos: ${error.message}`); }
     try { await installTechniqueTargets(); } catch(error) { STATE.warnings.push(`Alvos e áreas: ${error.message}`); }
+    try { await installAreaWorkflow(); } catch(error) { STATE.warnings.push(`Execuções de área: ${error.message}`); }
   }
   if(featureEnabled('multiActivity'))safeInstall('Compartilhamento do dano',installCardSync);
   if(featureEnabled("sustained"))safeInstall("Duração de técnicas sustentadas e cura por turno", installSustainedDurationFix);

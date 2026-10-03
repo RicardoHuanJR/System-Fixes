@@ -3,6 +3,7 @@ import { messageAudience, showPrivateDice } from './roll-privacy.js';
 import { rollSelectedActivityDamage, applyDamageState, prepareSaveDamageCard } from './multi-activity-damage-fix.js';
 import { targetActors } from './target-damage.js';
 import { styleSaveDamageButton } from './presentation.js';
+import { areaExecution, areaProtected, executionActors } from './area-state.js';
 
 const busy=new Set();
 let installed=false;
@@ -49,6 +50,8 @@ export function saveConfiguration(card) {
 }
 export async function rollSaveForActor(actor,source) {
   if(!actor?.isOwner || source?.isContentVisible===false)throw Error('Você precisa controlar a ficha e poder ver o cartão da técnica.');
+  const execution=areaExecution(source);
+  if(execution&&(execution.status!=='ready'||!execution.targets.includes(actor.uuid)||areaProtected(source,actor)))throw Error('Este alvo não precisa rolar a salvaguarda desta execução.');
   const card=sourceCard(source),{ability,dc}=saveConfiguration(card);
   const key=`${source.id}:${card.dataset.activityId}:${actor.uuid}`;
   if(busy.has(key))return null;
@@ -70,10 +73,33 @@ export async function rollSaveForActor(actor,source) {
     return result;
   } finally {busy.delete(key);}
 }
-export async function rollTargetSaves(card,source,actors=targetActors()) {
+export function saveRequestRecipients(actor,source,users=game.users) {
+  const audience=messageAudience(source);
+  const allowed=audience.whisper.length?new Set(audience.whisper):null;
+  return Array.from(users??[]).filter(u=>(u.isGM||!audience.blind&&actor.testUserPermission?.(u,'OWNER'))&&(!allowed||allowed.has(u.id))).map(u=>u.id);
+}
+export async function requestIndividualSaves(card,source,actors) {
+  if(!game.user.isGM&&source.author?.id!==game.user.id)throw Error('O autor da técnica ou o mestre deve solicitar os testes; use o seu pedido individual para rolar.');
+  const results=[];
+  for(const actor of actors) {
+    const key=`${source.id}:${card.dataset.activityId}:${actor.uuid}`;
+    const previous=Array.from(game.messages??[]).find(m=>m.getFlag?.(MODULE_ID,'saveRequest')?.key===key||m.getFlag?.(MODULE_ID,'saveResult')?.key===key);
+    if(previous){results.push(previous);continue;}
+    const recipients=saveRequestRecipients(actor,source);
+    if(!recipients.length){ui.notifications.warn(`${actor.name}: nenhum responsável pode ver o cartão de origem. A visibilidade não foi ampliada.`);continue;}
+    const {ability,dc}=saveConfiguration(card);
+    results.push(await ChatMessage.create({whisper:recipients,blind:false,
+      content:`<div class="jujutsu-card oprpg-fixes-notice oprpg-save-request"><div class="jj-top"><strong class="jj-top-name">${esc(actor.name)} — Salvaguarda</strong></div><div class="jj-description"><p>${esc(CONFIG.DND5E.abilities[ability].label??ability)} · CD ${dc}</p></div><button class="oprpg-fixes-notice-action" type="button" data-fixes-save-actor="${esc(actor.uuid)}">Rolar salvaguarda</button></div>`,
+      flags:{[MODULE_ID]:{saveRequest:{key,source:source.id,targets:[actor.uuid]}}}}));
+  }
+  return results;
+}
+export async function rollTargetSaves(card,source,actors=targetActors(),{individual=false}={}) {
+  actors=await executionActors(source,actors);
   if(!actors.length)throw Error('Marque todos os alvos da técnica com T antes de pedir as salvaguardas.');
   saveConfiguration(card);
   if(!source || source.isContentVisible===false)throw Error('Cartão de origem indisponível.');
+  if(individual||areaExecution(source))return requestIndividualSaves(card,source,actors);
   const pending=actors.filter(a=>!a.isOwner);
   if(pending.length) {
     const audience=messageAudience(source);
@@ -94,6 +120,7 @@ export async function resolveSaveRequest(request,uuid) {
   if(!info?.targets?.includes(uuid) || request.isContentVisible===false)throw Error('Alvo ausente desta solicitação.');
   const actor=await fromUuid(uuid),source=game.messages.get(info.source);
   if(!source || source.isContentVisible===false)throw Error('Cartão de origem indisponível.');
+  if(areaProtected(source,actor))throw Error('Alvo protegido pelo Controle Cirúrgico.');
   return rollSaveForActor(actor,source);
 }
 export async function rollSaveDamage(card,message,{scalePrompt=null}={}) {

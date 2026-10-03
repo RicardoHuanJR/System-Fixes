@@ -16,7 +16,7 @@ Na configuração do Foundry, abra **Módulos adicionais → Instalar módulo �
 
 Usar esses manifests registra a origem para atualizações futuras. Uma instalação local antiga sem campo `manifest` pode precisar de reinstalação pelo link para registrar essa origem; preserve o ID do módulo. Não é necessário apagar fichas ou configurações do mundo.
 
-A primeira release mantém o System Fixes 1.20.1 e as versões atuais dos demais módulos. Não contém ainda a nova seleção automática por área nem a consolidação do Diable Jambe.
+A release v1.21.0 inclui seleção automática por área, pedidos individuais de salvaguarda e Controle Cirúrgico no System Fixes. Veja modules/oprpg-system-fixes/REVISAO-1.21.0.md para os limites e testes. Os demais módulos mantêm suas versões; Diable Jambe ainda não foi consolidado.
 
 ## Organização
 
@@ -41,9 +41,10 @@ Em um repositório privado, os links dos arquivos de release normalmente exigem 
 Preparar e validar localmente:
 
 ```text
-python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.20.1
+python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.21.0
 ```
 
 ## Próxima etapa
 
-O escopo das áreas e Controle Cirúrgico está descrito em `PROXIMA-ETAPA.md`. Nenhuma dessas novas mecânicas foi incorporada ao pacote 1.20.1 apenas por preparar este repositório.
+As áreas e Controle Cirúrgico foram incorporados ao Fixes 1.21.0, com 522 verificações simuladas. Falta o teste desta versão em mundo real e a consolidação dos demais módulos próprios, conforme PROXIMA-ETAPA.md.
+

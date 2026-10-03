@@ -1,3 +1,9 @@
+# Atualização 1.21.0
+
+Após confirmar as áreas de uma técnica, marca automaticamente os tokens que intersectam a geometria e envia um pedido de salvaguarda por ficha aos responsáveis e mestres. Controle Cirúrgico permite escolher aliados protegidos até o modificador de Destreza, mínimo de um. O dano utiliza os alvos registrados no cartão e cada resultado individual. Mantém os controles nativos de metade/quarto, a privacidade dos resultados e o dano após salvaguarda.
+
+522 verificações simuladas aprovadas; esta versão ainda não foi testada em um mundo Foundry real. Veja [REVISAO-1.21.0.md](REVISAO-1.21.0.md) para configuração, custos e limites.
+
 # Atualização 1.20.1
 
 Instala a ponte de compatibilidade no init e protege a leitura do sistema ainda ausente. Correção de falha de carregamento confirmada no Foundry real, com duas novas regressões de inicialização.
@@ -242,3 +248,5 @@ Consulte [REVISAO-1.9.2.md](REVISAO-1.9.2.md) para correções, cobertura dos 96
 - Corrige a mensagem nativa de dano para registrar quanto o Escudo absorveu e os valores reais que chegaram a PV temporários/PV.
 - Nova API: `game.oprpgFixes.shieldPointsStatus()` e `game.oprpgFixes.previewShieldDamage(actor, amount)`.
 - Nova auditoria: `OPRPG_FIXES_NATIVE_AUDIT()` / `OPRPG_FIXES_NATIVE_AUDIT_REPORT()`.
+
+

@@ -13,6 +13,8 @@ import { npcSheetRepairStatus } from "./npc-sheet-fix.js";
 import { automationStatus } from './automation-runtime.js';
 import { undoResources } from './operation-history.js';
 import { externalCompatibilityStatus, applyCompatibilityDamage, applyCompatibilityEffects, runItemMacros, openDAEEffects } from './external-compatibility.js';
+import { configureSurgicalControl, finalizeAreaExecution } from './area-workflow.js';
+import { areaProtected } from './area-state.js';
 
 export function installPublicAPI() {
   game.oprpg ??= {};
@@ -41,9 +43,10 @@ export function installPublicAPI() {
   globalThis.OPRPG_FIXES_NPC_SHEET_STATUS = npcSheetRepairStatus;
 
   game.oprpgFixes = {
+    areas:{configureSurgicalControl,finalize:finalizeAreaExecution,isProtected:areaProtected},
     compatibility:{status:externalCompatibilityStatus,applyDamage:applyCompatibilityDamage,
       applyEffects:applyCompatibilityEffects,runItemMacros,openEffects:openDAEEffects},
-    version: game.modules.get("oprpg-system-fixes")?.version ?? "1.20.1",
+    version: game.modules.get("oprpg-system-fixes")?.version ?? "1.21.0",
     automationStatus,
     undoResources,
     get status() { return foundry.utils.deepClone(STATE); },
@@ -75,3 +78,4 @@ export function installPublicAPI() {
   };
   STATE.api = true;
 }
+
