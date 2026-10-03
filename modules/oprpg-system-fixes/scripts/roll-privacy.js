@@ -85,6 +85,9 @@ export async function showPrivateDice(roll,{card=null,actor=null,message=null,mo
   catch(error){console.warn(`${MODULE_ID} | Animação de dados indisponível; a rolagem continua sem animação.`,error);return false;}
 }
 export function protectCustomMessage(message,data,options={}) {
+  // Invitations deliberately notify target owners even when the GM attacks privately.
+  // Never replace their explicit recipients with the toolbar's roll mode.
+  if(data.flags?.[MODULE_ID]?.saveRequest||message.flags?.[MODULE_ID]?.saveRequest)return;
   if(!/jujutsu-card|jj-heal-card|jj-extra-card/.test(String(data.content??message.content??'')))return;
   const explicit=normalizeRollMode(options.messageMode)??normalizeRollMode(options.rollMode);
   const existing={whisper:ids(data.whisper??message.whisper),blind:!!(data.blind??message.blind)};

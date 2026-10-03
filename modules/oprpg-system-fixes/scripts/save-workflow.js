@@ -50,10 +50,10 @@ export function saveConfiguration(card) {
   return {ability,dc};
 }
 export async function rollSaveForActor(actor,source,requestInfo=null) {
-  if(!actor?.isOwner || source?.isContentVisible===false)throw Error('Você precisa controlar a ficha e poder ver o cartão da técnica.');
+  if(!actor?.isOwner || source?.isContentVisible===false&&!requestInfo?.authorizedRequest)throw Error('Você precisa controlar a ficha e poder ver o cartão da técnica.');
   const execution=areaExecution(source);
   if(execution&&(execution.status!=='ready'||!execution.targets.includes(actor.uuid)||areaProtected(source,actor)))throw Error('Este alvo não precisa rolar a salvaguarda desta execução.');
-  const card=sourceCard(source);
+  const card=source?.isContentVisible===false?null:sourceCard(source);
   let spec;try{spec=saveConfiguration(card);}catch(error){if(!requestInfo?.ability||!CONFIG.DND5E.abilities[requestInfo.ability]||!Number.isFinite(requestInfo.dc)||requestInfo.dc<=0)throw error;spec=requestInfo;}
   const {ability,dc}=spec,activityId=requestInfo?.activityId??card?.dataset.activityId;
   if(!activityId)throw Error('Atividade da salvaguarda indisponível.');
@@ -69,7 +69,7 @@ export async function rollSaveForActor(actor,source,requestInfo=null) {
     // Native saves include proficiency, effects, advantage and Haki modifiers.
     const rolls=await actor.rollSavingThrow({ability,target:dc}, {}, {create:false});
     if(!rolls?.length)return null;
-    const audience=messageAudience(source);
+    const audience=requestInfo?.authorizedRequest&&messageAudience(source).whisper.length?messageAudience(requestInfo.authorizedRequest):messageAudience(source);
     const total=Number(rolls[0].total);
     const result=await ChatMessage.create({speaker:ChatMessage.getSpeaker({actor}),rolls,
       whisper:audience.whisper,blind:audience.blind,
@@ -77,14 +77,13 @@ export async function rollSaveForActor(actor,source,requestInfo=null) {
       flags:{[MODULE_ID]:{saveResult:{key,source:source.id,actor:actor.uuid,ability,dc,total,success:total>=dc}},dnd5e:{messageType:'roll',roll:{type:'save',ability}},OPRPG:{roll:{type:'save',ability}}}});
     refreshSourceForResult(result);
     if(macros)await runItemMacros(item,'postSave',{activity,target:actor,source,rolls,success:total>=dc});
-    for(const roll of rolls)await showPrivateDice(roll,{actor,message:source});
+    for(const roll of rolls)await showPrivateDice(roll,{actor,message:result});
     return result;
   } finally {busy.delete(key);}
 }
 export function saveRequestRecipients(actor,source,users=game.users) {
-  const audience=messageAudience(source);
-  const allowed=audience.whisper.length?new Set(audience.whisper):null;
-  return Array.from(users??[]).filter(u=>(u.isGM||!audience.blind&&actor.testUserPermission?.(u,'OWNER'))&&(!allowed||allowed.has(u.id))).map(u=>u.id);
+  // The test invitation is independent of the attack card's private audience.
+  return [...new Set(Array.from(users??[]).filter(u=>u.isGM||actor.testUserPermission?.(u,'OWNER')).map(u=>u.id))];
 }
 export async function requestIndividualSaves(card,source,actors) {
   if(!game.user.isGM&&source.author?.id!==game.user.id)throw Error('O autor da técnica ou o mestre deve solicitar os testes; use o seu pedido individual para rolar.');
@@ -95,14 +94,16 @@ export async function requestIndividualSaves(card,source,actors) {
   const results=[];
   for(const actor of actors) {
     const key=`${source.id}:${card.dataset.activityId}:${actor.uuid}`;
-    const previous=Array.from(game.messages??[]).find(m=>m.getFlag?.(MODULE_ID,'saveRequest')?.key===key||m.getFlag?.(MODULE_ID,'saveResult')?.key===key);
-    if(previous){results.push(previous);continue;}
+    const messages=Array.from(game.messages??[]);
+    const previous=messages.find(m=>m.getFlag?.(MODULE_ID,'saveResult')?.key===key)??messages.find(m=>m.getFlag?.(MODULE_ID,'saveRequest')?.key===key);
+    if(previous?.getFlag?.(MODULE_ID,'saveResult')){results.push(previous);continue;}
     const recipients=saveRequestRecipients(actor,source);
-    if(!recipients.length){ui.notifications.warn(`${actor.name}: nenhum responsável pode ver o cartão de origem. A visibilidade não foi ampliada.`);continue;}
+    if(!recipients.length){ui.notifications.warn(`${actor.name}: nenhum usuário controla a ficha para receber a solicitação.`);continue;}
     const {ability,dc}=saveConfiguration(card);
-    results.push(await ChatMessage.create({whisper:recipients,blind:false,
+    const data={whisper:recipients,blind:false,
       content:`<div class="jujutsu-card oprpg-fixes-notice oprpg-save-request"><div class="jj-top"><strong class="jj-top-name">${esc(actor.name)} — Salvaguarda</strong></div><div class="jj-description"><p>${esc(CONFIG.DND5E.abilities[ability].label??ability)} · CD ${dc}</p></div><button class="oprpg-fixes-notice-action" type="button" data-fixes-save-actor="${esc(actor.uuid)}">Rolar salvaguarda</button></div>`,
-      flags:{[MODULE_ID]:{saveRequest:{key,source:source.id,activityId:card.dataset.activityId,ability,dc,targets:[actor.uuid]}}}}));
+      flags:{[MODULE_ID]:{saveRequest:{key,source:source.id,activityId:card.dataset.activityId,ability,dc,targets:[actor.uuid],requestedBy:previous?.author?.id??game.user.id,independent:true}}}};
+    if(previous){await previous.update(data);results.push(previous);}else results.push(await ChatMessage.create(data));
   }
   return results;
 }
@@ -130,7 +131,18 @@ export async function rollTargetSaves(card,source,actors=targetActors(),{individ
 export async function resolveSaveRequest(request,uuid) {
   const info=request?.getFlag(MODULE_ID,'saveRequest');
   if(!info?.targets?.includes(uuid) || request.isContentVisible===false)throw Error('Alvo ausente desta solicitação.');
-  const actor=await fromUuid(uuid),source=game.messages.get(info.source);
+  const actor=await fromUuid(uuid);let source=game.messages.get(info.source);
+  if(!actor?.isOwner)throw Error('Você precisa controlar a ficha do alvo.');
+  if(info.independent){
+    const author=request.author;
+    if(!author?.id||author.id!==info.requestedBy||(!author.isGM&&author.id!==source?.author?.id))throw Error('Solicitação de salvaguarda sem autor autorizado.');
+    if(info.key!==`${info.source}:${info.activityId}:${uuid}`||info.targets.length!==1)throw Error('Solicitação de salvaguarda inválida.');
+    // A private GM attack may not exist in the player's message collection.
+    // Use only the minimal invitation snapshot, never reveal the attack card.
+    if(!source)source={id:info.source,isContentVisible:false,whisper:Array.from(request.whisper??[],u=>typeof u==='string'?u:u.id),blind:false,content:''};
+    if(areaProtected(source,actor))throw Error('Alvo protegido pelo Controle Cirúrgico.');
+    return rollSaveForActor(actor,source,{...info,authorizedRequest:request});
+  }
   if(!source || source.isContentVisible===false)throw Error('Cartão de origem indisponível.');
   if(areaProtected(source,actor))throw Error('Alvo protegido pelo Controle Cirúrgico.');
   return rollSaveForActor(actor,source,info);

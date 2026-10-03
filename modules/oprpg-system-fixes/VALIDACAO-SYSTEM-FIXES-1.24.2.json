@@ -1,0 +1,92 @@
+{
+  "version": "1.24.2",
+  "simulations": {
+    "targets": {
+      "passed": 392,
+      "total": 392
+    },
+    "audit": {
+      "passed": 104,
+      "total": 104
+    },
+    "regression": {
+      "passed": 18,
+      "total": 18
+    },
+    "sustained": {
+      "passed": 26,
+      "total": 26
+    },
+    "book-rules": {
+      "passed": 53,
+      "total": 53
+    },
+    "external-compatibility": {
+      "passed": 48,
+      "total": 48
+    }
+  },
+  "total": 641,
+  "syntaxCheck": true,
+  "installed": false,
+  "fullMidiQOLCompatibility": false,
+  "realFoundryTest": false,
+  "sha256": {
+    "module.json": "2c3257413f33c33c18aec931dd87cdf496fc1882322b085ed7fec0dc244125ea",
+    "main.js": "f065679389202d01fec3d1a6d078d9f0825b7006e9f4207c8cb9051bc6890617",
+    "scripts/activity-damage.js": "75dfd9bd64c4cb7f22b07c0cc105d1fe73f099d63da11539d501ad228abbf504",
+    "scripts/activity-guide.js": "9a7eb90551d3e6952bb50ce4018750e68f3338198877ced653794ab872816d0f",
+    "scripts/akuma-combat-fix.js": "0530950c9e3289ad0505c8c12db98ad9d02dcae2d62b315601ba404992964fe6",
+    "scripts/akuma-fix.js": "040c1fe4f69fd10e5457502a79cb12165b27909ec2a72d018dd6e8eb5653670b",
+    "scripts/api.js": "5824cd7fdaed6817e25ff4029f2ae6586a84bea1fe14522058a6e2020699dcd2",
+    "scripts/area-obstacles.js": "7049d9e12e7658bc29578f3e88aea6d9cbb80f0043f9ea7ed729718a0a15076d",
+    "scripts/area-refund.js": "6a2fffdefa74dfa9d714c06db8bee76c7ff263f427c7dfcb7efd553a061d15d5",
+    "scripts/area-state.js": "309620000386d0c03160264e5c880a9775341a27d158a8b544c8e33fa408a595",
+    "scripts/area-workflow.js": "03d60759e93362e7e3d4d6c39498f761e217d94d22fb6198b3027f7f2acb9902",
+    "scripts/automation-catalogue.js": "2d16ea960ef6c52baef28d1db2721a9d0950bc9d29fcf3e82b7e04923828930a",
+    "scripts/automation-runtime.js": "4d4c04bf8ca627357c9e1f31e2b4e88e36eea2c46a9f42c93b57ccfa378f522f",
+    "scripts/book-rules.js": "97b1521184eb885d403e83f7b82a859930868dc146557f275b56ec742fc8dd41",
+    "scripts/card-sync.js": "be5ee3fb592a9b991a75e016baffa257d3fabe84176debb43f919979134b5f35",
+    "scripts/characteristic-automations.js": "847bab3a1843fa9b89de9baf7e3b04f85e854d91449de52c6e217c84788ca0c5",
+    "scripts/compatibility-macros.js": "5f7b658963aee55131da53920e4082b90e8b39f1dde0cc5defec1e6928ac8e08",
+    "scripts/damage-requests.js": "6ebb07cec7c8f672a460625100f8f17d07591381603520c0cfb3b82ec4f46923",
+    "scripts/diagnostic.js": "861f226b662665d042fd77bd02f26db1002de6676f14b6c393a7493e9baee522",
+    "scripts/effect-automation-editor.js": "807b4ad4a9804eb1cbfa5b68c9b980003756e23314510aea0f620173a09c3289",
+    "scripts/effect-automation-rules.js": "6cd61560ad12f8c18999b548e051abe2088136cdf3569f882154e2fe158c954a",
+    "scripts/effect-automations.js": "f3e7d7c82bb0075abe644b5ff63f250d79ecd706be732af0b7b4ecf7cb1e85fa",
+    "scripts/external-compatibility.js": "8336d114f4d0825c1248b3f46972a9862be36632c908dee63164e5b499895ab0",
+    "scripts/feature-settings.js": "08bcf4887519f72759ff60f9606ac32cfbb16fdc0e81e12236e9259e24d7e750",
+    "scripts/formula-fix.js": "2b7af84f74eb8dbf9e4aa556f31a37fb907a46c3d27f1da78107c6ed6b41cb82",
+    "scripts/free-training-fix.js": "54ea723b13cd50c9655661ec121c537311830b3902f380f74375c2cce43bd0cd",
+    "scripts/fruit-sheet-fix.js": "38ef9a5203ee7a5d676b392280d1fed683e4fe0727099b71cebacb7b78e06b03",
+    "scripts/haki-awakening-fix.js": "6be20882f681bbeef73f3b5ab60c3c86a487d652374104e9d17ba61caa8775a9",
+    "scripts/haki-card-damage-fix.js": "81c896188fb04a9b7337ef26cc239f90166e3ec9ebe0d8bfa7d0985f815fd97a",
+    "scripts/haki-content-fix.js": "0e8fdb3fc8250890d80cc7e29889189d4fadd815167e1b25a2966fab8d9743d6",
+    "scripts/haki-mechanics-fix.js": "078a26b7b4a08482012af8935cd2d580ea21025cf436a5b569f8a416a2700514",
+    "scripts/haki-perito-fix.js": "a52a3e34c9be8902d8b7479df20b6e62f60d92e84a7c76f69842efc385964d9c",
+    "scripts/haki-stages-fix.js": "230d5d13031cc68cad218cdd8affc64cf26e4f6a97c81c1c120199dad99abafb",
+    "scripts/haki-unified-fix.js": "e4885a375ba3fe3d4cd50d34168a7c8f0418bbf323f28f711b3f9319e04aa670",
+    "scripts/haki-unified-rules.js": "50bc83bc38abbe8fc7c04af5d3d6f968510edd2d22deffda380f430dd4524d97",
+    "scripts/healing-fix.js": "687eebe827ea6633d727d0407b71c1dd2fc76bd7117d67d3b7468c3805eb99c9",
+    "scripts/live-sheet-bridge.js": "32cf0392658ca665e8c6ef08741fa115bcfd7e47b4b41144614a3493d306062c",
+    "scripts/multi-activity-attack-fix.js": "9e4550403bc944b3336cd27e67893e7137bb97f1a080b702ec4e674a1a37aab8",
+    "scripts/multi-activity-damage-fix.js": "a5291c17590ce8cde12e4aabf9267373dd5d214b78497be7cb4a22488f2d6527",
+    "scripts/multi-activity-label-fix.js": "285bbd7c85ffa1f70f29471fb3e45330b441eda50a6c8664cfdc37e8f64f9ccc",
+    "scripts/native-audit.js": "93525d6f4968ab5ee49cbac090f63e1dc1939d0ccbe311e241e907c47a9d716a",
+    "scripts/native-targets.js": "a8bb1686f8061427c72fd108ac5514cf1d3a778c5ab7d9016aa6bc0758c84e11",
+    "scripts/npc-sheet-fix.js": "c1ff1e0e70f816e10edeb3e3505eb0d159f676cb7ba771ac2dd943fea78157fb",
+    "scripts/operation-history.js": "582e50de1fb9b550acd01c9bc1bd3d88131f9c4def9def70baf2a0ac0af04569",
+    "scripts/periodic-effects.js": "f31c96a4d015800c04ee8f21a6180474158fea364ce2a87550f9161b3ec6808e",
+    "scripts/persistent-areas.js": "b609e36bf8c7f2135abd3e18e4dbce03c49d77741b7dde0a7347dbe4a9210465",
+    "scripts/presentation.js": "d4c678c64c94692d2393b678079733c58cc03b2622df31406837ff4f34abeb35",
+    "scripts/roll-privacy.js": "cb1a8a8eec4627be4ce70636f67bff35fcdee91486a8612ea987a94eee634f2c",
+    "scripts/save-workflow.js": "30ca4ade8f0e1cd93d1a9cded1e1241dc654d1cc71982c1d59fa92f815a5c244",
+    "scripts/shared.js": "fe24ba7f4320f76674220625b49e53ec1436ce7921c7bf6ec1a84df3a827925a",
+    "scripts/shield-points-fix.js": "ec747e5ad1f6250f2b7ac2a8dfdb34f060c2e3fdd6de7418aa9476cc25df83b3",
+    "scripts/sustained-duration-fix.js": "735f265f4feb9f633a42f9647b3484030507fe8cb1ceebd4b044fe0849990f64",
+    "scripts/target-damage.js": "bac5b64cfa04c455b0ddabbe6e7656d43875f48387fca0cf67226b08589436b8",
+    "scripts/technique-effects.js": "c220aebdda8d4565c371c4ccdc79bd81277eceec7d016866d92f642f3c58bf1d",
+    "scripts/technique-targets.js": "8345ebf5bafb8eef6a85be4e9adf3e5c9f0c9a694d7c5e9561b8d627f6a2bbef",
+    "scripts/workspace.js": "35be00381f9170cc653ba01273e8beafbb81643db0604812f54c775fd2ff598d"
+  }
+}

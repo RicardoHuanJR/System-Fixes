@@ -1,3 +1,7 @@
+# Salvaguardas privadas 1.24.2
+
+Pedido individual independente da audiência do ataque privado. Dono responde sem acesso ao cartão do mestre; resultado restrito aos responsáveis. Correção de pedidos antigos ao solicitar novamente. 641 verificações simuladas; teste funcional real pendente.
+
 # Legibilidade 1.24.1
 
 Indicador com texto escuro sobre fundo dourado; contraste visual verificado (9,30:1). Regras da 1.24.0 preservadas.
