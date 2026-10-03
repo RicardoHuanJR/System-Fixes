@@ -1,0 +1,172 @@
+{
+  "enhancedcombathud-oprpg-system": {
+    "settings": {
+      "showBasicActions": {
+        "name": "Mostrar Ações Básicas",
+        "hint": "Mostra Esquivar, Preparar, Disparada e Esconder no painel de Ação."
+      },
+      "switchEquip": {
+        "name": "Equipar ao trocar conjunto",
+        "hint": "Equipa e desequipa armas automaticamente quando o conjunto de armas muda. Desativado por padrão para evitar alterações acidentais na ficha."
+      },
+      "showFavorites": {
+        "name": "Mostrar Favoritos",
+        "hint": "Adiciona ao HUD os Favoritos já configurados na ficha do OPRPG."
+      },
+      "showHaki": {
+        "name": "Mostrar Haki",
+        "hint": "Mostra um botão que abre o HUD nativo de Haki quando o personagem possui Haki."
+      },
+      "showAkuma": {
+        "name": "Mostrar Akuma no Mi",
+        "hint": "Mostra um painel próprio para Técnicas e Manifestações de Poder da Akuma no Mi."
+      },
+      "movementMode": {
+        "name": "Indicador de Deslocamento",
+        "hint": "Escolhe como o deslocamento é mostrado. O modo simples respeita a unidade configurada no ator e converte a distância da cena quando possível.",
+        "simple": "Restante (unidade do ator)",
+        "argon": "Barras do Argon",
+        "hidden": "Ocultar"
+      },
+      "diagnosticMode": {
+        "name": "Modo Diagnóstico",
+        "hint": "Adiciona um botão de diagnóstico ao retrato e habilita OPRPG_ARGON_DIAGNOSTIC() no Console."
+      },
+      "weaponSetMode": {
+        "name": "Modo dos Conjuntos de Armas",
+        "hint": "Visual troca apenas os atalhos do HUD. Equipamento também equipa/desequipa os itens na ficha.",
+        "visual": "Somente visual",
+        "equipment": "Alterar equipamento da ficha"
+      },
+      "layoutPreset": {
+        "name": "Tamanho das Técnicas",
+        "hint": "Ajusta o tamanho dos cards no painel expandido de Técnicas somente para este usuário.",
+        "compact": "Compacto",
+        "normal": "Normal",
+        "large": "Grande"
+      },
+      "utilityGap": {
+        "name": "Espaçamento dos ícones superiores",
+        "hint": "Distância, em pixels, entre iniciativa, abrir ficha, Haki/diagnóstico e minimizar HUD."
+      },
+      "utilityOffset": {
+        "name": "Distância após os Weapon Sets",
+        "hint": "Espaço, em pixels, entre o último Weapon Set e o primeiro ícone superior."
+      },
+      "techniqueOffsetX": {
+        "name": "Deslocamento horizontal das Técnicas",
+        "hint": "Move o painel expandido de Técnicas para a esquerda (negativo) ou direita (positivo), em pixels."
+      },
+      "utilityAnchor": {
+        "name": "Âncora dos ícones superiores",
+        "hint": "Escolhe se os ícones ficam ao lado dos dois quadrados do conjunto ativo ou após toda a área de Weapon Sets.",
+        "active": "Ao lado do conjunto ativo (2 quadrados)",
+        "all": "Após todos os Weapon Sets"
+      },
+      "favoritesPlacement": {
+        "name": "Posição dos Favoritos",
+        "hint": "Escolhe onde os Favoritos da ficha aparecem no HUD.",
+        "special": "Dentro de Especial",
+        "main": "Painel principal próprio",
+        "hidden": "Ocultar"
+      },
+      "favoritesMax": {
+        "name": "Máximo de Favoritos no HUD",
+        "hint": "Limita quantos Favoritos aparecem para evitar uma barra excessivamente larga."
+      }
+    },
+    "hud": {
+      "action": "Ação",
+      "powerful": "Ação Poderosa",
+      "bonus": "Ação Bônus",
+      "reaction": "Reação",
+      "special": "Especial",
+      "technique": "Usar Técnica",
+      "combatTechnique": "Técnica de Combate",
+      "auxTechnique": "Técnica Auxiliar",
+      "feature": "Usar Característica",
+      "item": "Usar Item",
+      "favorites": "Favoritos",
+      "haki": "Haki",
+      "akuma": "Akuma no Mi",
+      "manifestations": "Manifestações de Poder",
+      "auxiliary": "Auxiliares",
+      "grade": "{grade}º Grau",
+      "hp": "PV",
+      "ac": "CR",
+      "pp": "PP",
+      "tempHp": "Temp",
+      "movement": "Deslocamento",
+      "variablePP": "PP variável",
+      "variablePPBase": "{value}+ PP",
+      "chooseActivity": "Escolha a atividade desta Técnica",
+      "useActivity": "Usar",
+      "cancel": "Cancelar",
+      "activity": "Atividade",
+      "activityCount": "{count} formas de uso",
+      "insufficientPP": "PP insuficiente: {current} disponível, {required} necessário.",
+      "type": "Tipo",
+      "effect": "Efeito",
+      "rememberActivity": "A última forma usada fica pré-selecionada neste navegador.",
+      "effectEnabled": "Efeito ativo — clique para desativar",
+      "effectDisabled": "Efeito desativado — clique para ativar",
+      "effectSuppressed": "Efeito suprimido; não pode ser alternado agora.",
+      "noEffectPermission": "Você não tem permissão para alterar este efeito.",
+      "compatibility": "Compatibilidade OPRPG",
+      "compatibilityHint": "Alt+clique no botão de diagnóstico abre este painel. Shift+clique exporta JSON; Ctrl+clique executa o autoteste.",
+      "exportDiagnostic": "Exportar diagnóstico",
+      "close": "Fechar"
+    },
+    "basic": {
+      "dodge": {
+        "name": "Esquivar",
+        "desc": "<p>Até o começo do seu próximo turno, jogadas de ataque (comum ou Técnicas) contra você são feitas com desvantagem se você puder ver o atacante, e você tem vantagem em Salvaguardas de Destreza. O benefício termina se você ficar incapacitado ou com deslocamento 0.</p>",
+        "active": "Esquivar está ativo até o início do seu próximo turno."
+      },
+      "ready": {
+        "name": "Preparar",
+        "desc": "<p>Defina um gatilho perceptível e escolha uma ação para executar quando ele ocorrer, usando sua Reação. Para preparar uma Técnica, use Preparar em conjunto com a Ação Poderosa; manter a Técnica exige concentração.</p>",
+        "noActivities": "Nenhuma ação utilizável foi encontrada para preparar.",
+        "dialogTitle": "Preparar Ação",
+        "triggerLabel": "Gatilho",
+        "triggerPlaceholder": "Ex.: quando o inimigo atravessar a porta",
+        "activityLabel": "Ação preparada",
+        "hint": "A ação será executada pela sua Reação quando você clicar em Executar no card. Ela expira no início do seu próximo turno.",
+        "confirm": "Preparar",
+        "missingData": "Informe o gatilho e escolha uma ação.",
+        "execute": "Executar",
+        "cancel": "Cancelar",
+        "notFound": "A ação preparada não existe mais.",
+        "activityMissing": "A Activity preparada não pôde ser localizada.",
+        "executeFailed": "Falha ao executar a ação preparada. Veja o console."
+      },
+      "dash": {
+        "name": "Disparada",
+        "desc": "<p>Você recebe deslocamento adicional neste turno igual ao seu deslocamento atual, após aplicar modificadores.</p>",
+        "alreadyActive": "Disparada já está ativa neste turno.",
+        "movementAdded": "de deslocamento adicional neste turno."
+      },
+      "hide": {
+        "name": "Esconder",
+        "desc": "<p>Faça um Teste de Atributo de Destreza (Furtividade) para tentar se esconder.</p>",
+        "skillFallback": "Perícia Furtividade não localizada; usando teste de Destreza.",
+        "noRollApi": "Este ator não possui uma API compatível para rolar Furtividade/Destreza."
+      },
+      "active": "Ativa",
+      "noActor": "Selecione um token/ator para usar esta ação.",
+      "noPermission": "Você não tem permissão para alterar este ator."
+    },
+    "tooltip": {
+      "range": "Alcance",
+      "target": "Alvo",
+      "duration": "Duração",
+      "activation": "Requisito",
+      "cost": "Custo",
+      "properties": "Detalhes"
+    },
+    "warnings": {
+      "oldSystem": "Argon OPRPG: OPRPG System {current} detectado. Esta integração requer pelo menos {minimum}.",
+      "unknownMovementConversion": "Não foi possível converter o deslocamento da cena ({scene}) para a unidade do ator ({actor})."
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "title": "Argon - Combat HUD (OPRPG-SYSTEM) — Integração Nativa",
+  "id": "enhancedcombathud-oprpg-system",
+  "description": "Integração nativa e responsiva do Argon Combat HUD para OPRPG System no Foundry VTT v14. Activities múltiplas, Favoritos inclusive Active Effects, PP, Haki, Akuma no Mi, ações básicas automatizadas (Esquivar, Preparar, Disparada e Esconder), diagnóstico/compatibilidade e layout adaptativo sem alterar o Argon Core.",
+  "version": "6.4.0",
+  "authors": [
+    {
+      "name": "theripper93 / Mouse0270 — Argon Core e base histórica"
+    },
+    {
+      "name": "Adaptação OPRPG — reconstrução local"
+    }
+  ],
+  "languages": [
+    {
+      "lang": "pt-BR",
+      "name": "Português (Brasil)",
+      "path": "languages/pt-BR.json"
+    },
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "languages/en.json"
+    }
+  ],
+  "esmodules": [
+    "main.js"
+  ],
+  "styles": [
+    "styles/module.css"
+  ],
+  "relationships": {
+    "requires": [
+      {
+        "id": "enhancedcombathud",
+        "type": "module",
+        "compatibility": {
+          "minimum": "5.0.1",
+          "verified": "5.0.1",
+          "maximum": "5.0.1"
+        }
+      }
+    ],
+    "systems": [
+      {
+        "id": "oprpg-system",
+        "type": "system",
+        "compatibility": {
+          "minimum": "1.0.20",
+          "verified": "1.0.20"
+        }
+      }
+    ]
+  },
+  "compatibility": {
+    "minimum": "14.360",
+    "verified": "14.367",
+    "maximum": "14.999"
+  }
+}

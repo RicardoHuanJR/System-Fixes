@@ -1,0 +1,246 @@
+/* Argon OPRPG 6.1 — consolidated responsive skin. Core 5.0.1 remains untouched. */
+.extended-combat-hud {
+  --oprpg-charcoal: #282828;
+  --oprpg-parchment: #d8c49f;
+  --oprpg-parchment-light: #efe2c8;
+  --oprpg-purple: #54276f;
+  --oprpg-purple-bright: #7d3da0;
+  --oprpg-gold: #c99c49;
+  --oprpg-tech-width: 150px;
+  --oprpg-tech-height: 172px;
+  --oprpg-tech-title-size: 12px;
+  --oprpg-tech-gap: 8px;
+  --oprpg-utility-gap: 14px;
+  --oprpg-technique-offset-x: 0px;
+}
+
+.extended-combat-hud .portrait-hud,
+.extended-combat-hud .action-element,
+.extended-combat-hud .ability-menu,
+.extended-combat-hud .movement-hud,
+.extended-combat-hud .button-hud-button {
+  border-color: var(--oprpg-parchment) !important;
+}
+
+.extended-combat-hud .portrait-hud,
+.extended-combat-hud .action-element {
+  outline: 1px solid rgb(71 49 25 / 75%);
+  box-shadow: inset 0 0 0 1px rgb(239 226 200 / 18%), inset 0 0 18px rgb(0 0 0 / 35%), 0 3px 10px rgb(0 0 0 / 45%);
+}
+
+.extended-combat-hud .action-element-title,
+.extended-combat-hud .ability-title {
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 2px rgb(0 0 0 / 70%);
+}
+
+/* Action economy is managed manually in OPRPG. */
+.extended-combat-hud .actions-uses-container { display: none !important; }
+.extended-combat-hud .features-container.is-spells .feature-spell-slots { display: none !important; }
+
+.extended-combat-hud .oprpg-technique-button,
+.extended-combat-hud .oprpg-technique-panel-button {
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: cover !important;
+}
+.extended-combat-hud .oprpg-technique-panel-button { background-size: contain !important; }
+
+.extended-combat-hud .oprpg-pp-badge {
+  position: absolute;
+  right: 3px;
+  top: 3px;
+  z-index: 4;
+  padding: 1px 4px;
+  border: 1px solid rgb(216 196 159 / 70%);
+  border-radius: 3px;
+  background: rgb(41 20 55 / 88%);
+  color: #fff4d5;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-shadow: 0 1px 2px #000;
+  pointer-events: none;
+}
+.extended-combat-hud .oprpg-pp-badge.oprpg-pp-badge-dynamic {
+  border-style: dashed;
+  background: rgb(69 43 24 / 90%);
+  color: #fff0bf;
+}
+.extended-combat-hud .oprpg-pp-badge.oprpg-pp-badge-insufficient {
+  background: rgb(85 20 22 / 94%);
+  border-color: rgb(230 105 105 / 90%);
+  color: #ffd8d8;
+}
+.extended-combat-hud .oprpg-pp-insufficient { filter: saturate(.7) brightness(.82); }
+.extended-combat-hud .oprpg-pp-insufficient:hover { filter: brightness(1.1); }
+
+.extended-combat-hud .portrait-stat-block {
+  background: rgb(37 37 37 / 88%);
+  border: 1px solid rgb(216 196 159 / 45%);
+  color: var(--oprpg-parchment-light);
+}
+.extended-combat-hud .portrait-stat-block:last-child {
+  border-color: rgb(125 61 160 / 85%);
+  box-shadow: inset 0 0 10px rgb(84 39 111 / 35%);
+}
+
+.extended-combat-hud .oprpg-simple-movement .movement-spaces { display: none !important; }
+.extended-combat-hud .oprpg-simple-movement .movement-text { min-width: 74px; line-height: 1.15; font-weight: 800; }
+.extended-combat-hud .oprpg-simple-movement .movement-current,
+.extended-combat-hud .oprpg-simple-movement .movement-max { white-space: nowrap; }
+
+.extended-combat-hud .item-button:hover,
+.extended-combat-hud .button-hud-button:hover,
+.extended-combat-hud .ability:hover {
+  box-shadow: 0 0 0 1px var(--oprpg-parchment), 0 0 12px rgb(125 61 160 / 55%) !important;
+}
+
+.oprpg-tooltip .ech-tooltip-header { border-color: var(--oprpg-parchment, #d8c49f); }
+.extended-combat-hud .oprpg-powerful-button {
+  background-color: rgb(86 42 111 / 94%) !important;
+  border-color: var(--oprpg-parchment) !important;
+  box-shadow: inset 0 0 28px rgb(151 76 190 / 32%), inset 0 0 0 1px rgb(239 226 200 / 12%), 0 3px 10px rgb(0 0 0 / 45%) !important;
+}
+.extended-combat-hud .oprpg-powerful-button:hover { background-color: rgb(111 52 143 / 98%) !important; }
+
+/* Responsive technique accordion: driven by client settings instead of hard-coded revision offsets. */
+.extended-combat-hud .action-hud .features-container.is-spells {
+  bottom: calc(var(--oprpg-tech-height) + 122px);
+  max-width: min(90vw, 1800px);
+  padding: 0 .4rem;
+  gap: var(--oprpg-tech-gap);
+  margin-left: var(--oprpg-technique-offset-x);
+}
+.extended-combat-hud .action-hud .features-container.is-spells .features-accordion {
+  min-height: calc(var(--oprpg-tech-height) + 50px);
+  padding-left: 46px;
+  margin-right: 10px;
+  align-items: stretch;
+  overflow: visible;
+}
+.extended-combat-hud .action-hud .features-container.is-spells .features-accordion-content {
+  grid-template-columns: repeat(auto-fit, minmax(var(--oprpg-tech-width), var(--oprpg-tech-width)));
+  grid-auto-rows: var(--oprpg-tech-height);
+  gap: var(--oprpg-tech-gap);
+  align-content: end;
+  margin-bottom: 54px;
+}
+.extended-combat-hud .action-hud .features-container.is-spells .feature-element {
+  min-width: var(--oprpg-tech-width) !important;
+  max-width: var(--oprpg-tech-width) !important;
+  width: var(--oprpg-tech-width) !important;
+  min-height: var(--oprpg-tech-height) !important;
+  max-height: var(--oprpg-tech-height) !important;
+  height: var(--oprpg-tech-height) !important;
+  background-size: cover !important;
+  background-position: center top !important;
+}
+.extended-combat-hud .action-hud .features-container.is-spells .feature-element .feature-element-title {
+  min-height: 3.4rem;
+  max-height: 3.4rem;
+  padding: .45rem .35rem;
+  font-size: var(--oprpg-tech-title-size);
+  line-height: 1.15;
+  font-weight: 800;
+  text-transform: none;
+  text-align: center;
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  background-color: rgb(0 0 0 / 52%);
+  backdrop-filter: var(--ech-blur-amount);
+}
+.extended-combat-hud .action-hud .features-container.is-spells .feature-accordion-title {
+  width: var(--oprpg-tech-width);
+  height: 2.55rem;
+  bottom: calc(var(--oprpg-tech-height) / 2 - 6px);
+  left: -15px;
+  margin-right: calc(var(--oprpg-tech-width) / -2);
+  padding: .55rem .3rem;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: .025em;
+  font-weight: 800;
+}
+.extended-combat-hud .action-hud .features-container:not(.is-spells) .feature-element {
+  min-width: 118px; max-width: 118px; min-height: 124px; max-height: 124px;
+}
+
+/* Utility controls are bare icons. layout.js places them immediately after the measured Weapon Sets. */
+.extended-combat-hud .portrait-hud .player-buttons {
+  right: auto !important;
+  top: calc(-87px - 1rem) !important;
+  height: 50px !important;
+  width: auto !important;
+  gap: var(--oprpg-utility-gap) !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  white-space: nowrap;
+}
+.extended-combat-hud .portrait-hud .player-button {
+  width: auto !important;
+  min-width: 0 !important;
+  height: 50px !important;
+  min-height: 0 !important;
+  padding: 0 3px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 1.35rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.extended-combat-hud .portrait-hud .player-button::before { display: none !important; content: none !important; }
+.extended-combat-hud .portrait-hud .player-button:hover,
+.extended-combat-hud .portrait-hud .player-button:focus {
+  border: 0 !important; background: transparent !important; box-shadow: none !important; filter: brightness(1.35);
+}
+.extended-combat-hud .portrait-hud .player-button i,
+.extended-combat-hud .portrait-hud .player-button svg { margin: 0 !important; padding: 0 !important; line-height: 1 !important; }
+.extended-combat-hud .portrait-hud .player-button.ech-close i,
+.extended-combat-hud .portrait-hud .minimize-hud .player-button.ech-close i { margin-top: 0 !important; }
+
+/* Multi-activity chooser and tooltip. */
+.oprpg-activity-choice { padding: 6px 0; }
+.oprpg-activity-choice > p { margin: 0 0 8px; }
+.oprpg-activity-choice-grid { display: grid; grid-template-columns: 1fr; gap: 7px; max-height: 55vh; overflow-y: auto; }
+.oprpg-activity-choice-card {
+  display: grid; grid-template-columns: 20px 46px 1fr; align-items: center; gap: 8px;
+  padding: 7px; border: 1px solid var(--color-border-light-2, #777); border-radius: 4px;
+  cursor: pointer; background: rgb(0 0 0 / 15%);
+}
+.oprpg-activity-choice-card:has(input:checked) { outline: 2px solid #7d3da0; background: rgb(84 39 111 / 20%); }
+.oprpg-activity-choice-card img { width: 46px; height: 46px; object-fit: cover; border: 0; }
+.oprpg-activity-choice-card input { margin: 0; }
+.oprpg-multi-activity-tooltip { margin-top: .6rem; }
+.oprpg-multi-activity-tooltip ul { margin: .35rem 0 0; padding-left: 1.2rem; }
+.oprpg-multi-activity-tooltip li { margin: .2rem 0; }
+.oprpg-multi-activity-tooltip li span { display: block; opacity: .82; font-size: .9em; }
+
+
+/* 6.3.0 — richer activity chooser, Active Effect favorites, compatibility panel. */
+.oprpg-activity-choice-card { grid-template-columns: 20px 52px minmax(0,1fr); }
+.oprpg-activity-choice-card img { width: 52px; height: 52px; }
+.oprpg-activity-choice-body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.oprpg-activity-choice-body > strong { font-size: 1.05em; }
+.oprpg-activity-choice-body small { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 2px 10px; opacity: .9; }
+.oprpg-activity-choice-body small span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.extended-combat-hud .oprpg-favorite-effect.oprpg-effect-disabled { filter: grayscale(.75) brightness(.68); }
+.extended-combat-hud .oprpg-favorite-effect.oprpg-effect-suppressed { filter: grayscale(1) brightness(.5); opacity: .65; }
+.oprpg-compatibility-panel table { width:100%; border-collapse:collapse; }
+.oprpg-compatibility-panel th,.oprpg-compatibility-panel td { padding:5px 7px; border-bottom:1px solid rgb(127 127 127 / 25%); text-align:left; }
+.oprpg-compatibility-panel td.ok { color:#77c879; }
+.oprpg-compatibility-panel td.bad { color:#e27474; font-weight:700; }
+@media (max-width: 900px) { .oprpg-activity-choice-body small { grid-template-columns:1fr; } }
+
+/* Fase 2: estado temporário de ações básicas automatizadas */
+.oprpg-basic-action-active { outline: 2px solid currentColor; outline-offset: -2px; filter: brightness(1.12); }
+.oprpg-basic-action-card .card-buttons { display: flex; gap: 0.35rem; margin-top: 0.45rem; }
+.oprpg-basic-action-card .card-buttons button { flex: 1; }

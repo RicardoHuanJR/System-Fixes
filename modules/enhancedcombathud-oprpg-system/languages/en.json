@@ -1,0 +1,172 @@
+{
+  "enhancedcombathud-oprpg-system": {
+    "settings": {
+      "showBasicActions": {
+        "name": "Show Basic Actions",
+        "hint": "Shows Dodge, Ready, Dash and Hide on the Action panel."
+      },
+      "switchEquip": {
+        "name": "Equip on set change",
+        "hint": "Automatically equips and unequips weapons when changing weapon sets. Disabled by default to avoid accidental sheet changes."
+      },
+      "showFavorites": {
+        "name": "Show Favorites",
+        "hint": "Adds OPRPG character favorites to the HUD."
+      },
+      "showHaki": {
+        "name": "Show Haki",
+        "hint": "Shows a button that opens the native Haki HUD when available."
+      },
+      "showAkuma": {
+        "name": "Show Devil Fruit",
+        "hint": "Shows a dedicated panel for Devil Fruit techniques and Power Manifestations."
+      },
+      "movementMode": {
+        "name": "Movement Indicator",
+        "hint": "Choose how movement is displayed. Simple mode respects the actor movement unit and converts scene distance when possible.",
+        "simple": "Remaining (actor unit)",
+        "argon": "Argon bars",
+        "hidden": "Hidden"
+      },
+      "diagnosticMode": {
+        "name": "Diagnostic Mode",
+        "hint": "Adds a diagnostic button to the portrait and enables OPRPG_ARGON_DIAGNOSTIC() in the Console."
+      },
+      "weaponSetMode": {
+        "name": "Weapon Set Mode",
+        "hint": "Visual only changes HUD shortcuts. Equipment also equips/unequips items on the actor.",
+        "visual": "Visual only",
+        "equipment": "Change actor equipment"
+      },
+      "layoutPreset": {
+        "name": "Technique Card Size",
+        "hint": "Changes expanded Technique card size for this client.",
+        "compact": "Compact",
+        "normal": "Normal",
+        "large": "Large"
+      },
+      "utilityGap": {
+        "name": "Top Icon Spacing",
+        "hint": "Pixel gap between initiative, open sheet, Haki/diagnostic and minimize controls."
+      },
+      "utilityOffset": {
+        "name": "Gap After Weapon Sets",
+        "hint": "Pixel gap between the last Weapon Set and the first utility icon."
+      },
+      "techniqueOffsetX": {
+        "name": "Technique Horizontal Offset",
+        "hint": "Moves the expanded Technique panel left (negative) or right (positive), in pixels."
+      },
+      "utilityAnchor": {
+        "name": "Top Icon Anchor",
+        "hint": "Places utility icons after the active two-slot weapon set or after the entire Weapon Sets area.",
+        "active": "After active set (2 slots)",
+        "all": "After all Weapon Sets"
+      },
+      "favoritesPlacement": {
+        "name": "Favorites placement",
+        "hint": "Choose where actor Favorites appear in the HUD.",
+        "special": "Inside Special",
+        "main": "Dedicated main panel",
+        "hidden": "Hide"
+      },
+      "favoritesMax": {
+        "name": "Maximum HUD Favorites",
+        "hint": "Limits how many Favorites are shown to avoid an excessively wide action bar."
+      }
+    },
+    "hud": {
+      "action": "Action",
+      "powerful": "Powerful Action",
+      "bonus": "Bonus Action",
+      "reaction": "Reaction",
+      "special": "Special",
+      "technique": "Use Technique",
+      "combatTechnique": "Combat Technique",
+      "auxTechnique": "Auxiliary Technique",
+      "feature": "Use Feature",
+      "item": "Use Item",
+      "favorites": "Favorites",
+      "haki": "Haki",
+      "akuma": "Devil Fruit",
+      "manifestations": "Power Manifestations",
+      "auxiliary": "Auxiliary",
+      "grade": "Grade {grade}",
+      "hp": "HP",
+      "ac": "DR",
+      "pp": "PP",
+      "tempHp": "Temp",
+      "movement": "Movement",
+      "variablePP": "Variable PP",
+      "variablePPBase": "{value}+ PP",
+      "chooseActivity": "Choose this Technique activity",
+      "useActivity": "Use",
+      "cancel": "Cancel",
+      "activity": "Activity",
+      "activityCount": "{count} ways to use",
+      "insufficientPP": "Not enough PP: {current} available, {required} required.",
+      "type": "Type",
+      "effect": "Effect",
+      "rememberActivity": "The last used form is preselected on this browser.",
+      "effectEnabled": "Effect enabled — click to disable",
+      "effectDisabled": "Effect disabled — click to enable",
+      "effectSuppressed": "Effect is suppressed and cannot be toggled right now.",
+      "noEffectPermission": "You do not have permission to change this effect.",
+      "compatibility": "OPRPG Compatibility",
+      "compatibilityHint": "Alt-click the diagnostic button to open this panel. Shift-click exports JSON; Ctrl-click runs self-test.",
+      "exportDiagnostic": "Export diagnostic",
+      "close": "Close"
+    },
+    "basic": {
+      "dodge": {
+        "name": "Dodge",
+        "desc": "<p>Focus on avoiding attacks until the start of your next turn.</p>",
+        "active": "Dodge is active until the start of your next turn."
+      },
+      "ready": {
+        "name": "Ready",
+        "desc": "<p>Choose a perceivable trigger and an action to perform with your Reaction.</p>",
+        "noActivities": "No usable action was found to ready.",
+        "dialogTitle": "Ready Action",
+        "triggerLabel": "Trigger",
+        "triggerPlaceholder": "E.g. when the enemy crosses the door",
+        "activityLabel": "Readied action",
+        "hint": "The action is executed with your Reaction when you click Execute on the card. It expires at the start of your next turn.",
+        "confirm": "Ready",
+        "missingData": "Enter a trigger and choose an action.",
+        "execute": "Execute",
+        "cancel": "Cancel",
+        "notFound": "The readied action no longer exists.",
+        "activityMissing": "The readied Activity could not be found.",
+        "executeFailed": "Failed to execute the readied action. See the console."
+      },
+      "dash": {
+        "name": "Dash",
+        "desc": "<p>Gain additional movement equal to your current movement.</p>",
+        "alreadyActive": "Dash is already active this turn.",
+        "movementAdded": "additional movement this turn."
+      },
+      "hide": {
+        "name": "Hide",
+        "desc": "<p>Make a Dexterity (Stealth) check to hide.</p>",
+        "skillFallback": "Stealth skill not found; rolling Dexterity instead.",
+        "noRollApi": "This actor has no compatible Stealth/Dexterity roll API."
+      },
+      "active": "Active",
+      "noActor": "Select a token/actor to use this action.",
+      "noPermission": "You do not have permission to modify this actor."
+    },
+    "tooltip": {
+      "range": "Range",
+      "target": "Target",
+      "duration": "Duration",
+      "activation": "Requirement",
+      "cost": "Cost",
+      "properties": "Details"
+    },
+    "warnings": {
+      "oldSystem": "Argon OPRPG: OPRPG System {current} detected. This integration requires at least {minimum}.",
+      "unknownMovementConversion": "Could not convert scene movement ({scene}) to the actor unit ({actor})."
+    }
+  }
+}

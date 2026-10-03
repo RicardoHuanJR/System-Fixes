@@ -12,14 +12,18 @@ Na configuração do Foundry, abra **Módulos adicionais → Instalar módulo �
 | Antifraude | https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-antifraude.json |
 | Detector de rolagens suspeitas | https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-detector-fraude.json |
 | Modificadores de acerto e dano | https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-chat-modifiers.json |
+| Compatibilidade Argon OPRPG | https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/enhancedcombathud-oprpg-system.json |
 | Diable Jambe | https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-diable-jambe.json |
 
 Usar esses manifests registra a origem para atualizações futuras. Uma instalação local antiga sem campo `manifest` pode precisar de reinstalação pelo link para registrar essa origem; preserve o ID do módulo. Não é necessário apagar fichas ou configurações do mundo.
 
 A release v1.21.0 inclui seleção automática por área, pedidos individuais de salvaguarda e Controle Cirúrgico no System Fixes. Veja modules/oprpg-system-fixes/REVISAO-1.21.0.md para os limites e testes. Os demais módulos mantêm suas versões; Diable Jambe ainda não foi consolidado.
 
+A distribuição v1.21.1 adiciona a integração Argon OPRPG 6.4.0. O System Fixes continua na versão 1.21.0. A integração exige Argon Core (enhancedcombathud) 5.0.1 instalado separadamente; o Core não é distribuído aqui.
+
 ## Organização
 
+- `modules/enhancedcombathud-oprpg-system`: integração OPRPG do Argon, com licença e avisos de autoria preservados.
 - `modules/oprpg-system-fixes`: correções e automações da mesa, incluindo Haki integrado.
 - `modules/oprpg-antifraude`: permanece separado.
 - `modules/oprpg-detector-fraude`: permanece separado.
@@ -41,10 +45,11 @@ Em um repositório privado, os links dos arquivos de release normalmente exigem 
 Preparar e validar localmente:
 
 ```text
-python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.21.0
+python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.21.1
 ```
 
 ## Próxima etapa
 
 As áreas e Controle Cirúrgico foram incorporados ao Fixes 1.21.0, com 522 verificações simuladas. Falta o teste desta versão em mundo real e a consolidação dos demais módulos próprios, conforme PROXIMA-ETAPA.md.
+
 
