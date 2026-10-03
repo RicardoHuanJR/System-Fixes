@@ -1,3 +1,7 @@
+# Correções 1.23.0
+
+Aura/Vitalidade removidas do dano; pedidos individuais; Controle Cirúrgico por atividade; janela Efeitos OPRPG e regras do módulo 0.6.0 integradas. Consulte a revisão 1.23.0. Estilos exclusivos: parcela de dados confirmada; sequências e condições de Shoot/Ifrit/Hell Memories precisam de automação específica. Teste funcional real continua pendente.
+
 # Implementações 1.22.0
 
 Diable Jambe configurável, condições por resultado, áreas persistentes, reembolso de PP e efeitos periódicos implementados. Consulte modules/oprpg-system-fixes/REVISAO-1.22.0.md. A validação funcional com dois clientes reais continua pendente.

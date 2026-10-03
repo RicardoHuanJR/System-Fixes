@@ -3,7 +3,6 @@ import { queueActor } from './automation-runtime.js';
 import { responsibleExecutor } from './technique-effects.js';
 import { messageAudience, showPrivateDice } from './roll-privacy.js';
 import { featureEnabled } from './feature-settings.js';
-import { promptVitality, vitalityUpdate } from './target-damage.js';
 
 const inflight=new Set();let installed=false;
 const esc=s=>foundry.utils.escapeHTML(String(s??''));
@@ -58,19 +57,14 @@ export async function resolvePeriodic(request){
     const multiplier=success?(actual.onSave==='none'?0:actual.onSave==='half'?0.5:1):1;
     let damage=0;if(actual.formula){const roll=await new Roll(actual.formula,actor.getRollData()).evaluate();rolls.push(roll);damage=Math.floor(Number(roll.total)*multiplier);if(!Number.isFinite(damage)||damage<0)throw Error('Resultado de dano periódico inválido.');}
     const changes={[`flags.${MODULE_ID}.periodicReceipts`]:[...(actor.getFlag(MODULE_ID,'periodicReceipts')??[]),info.key].slice(-200)};
-    let vitality=false;
-    if(damage>0&&actor.type==='character'&&actor.system.attributes?.auraOn===false){
-      const root=document.createElement('div');root.innerHTML=source?.content??'';
-      const choice=await promptVitality(actor,root.querySelector('.jujutsu-card'),multiplier);if(!choice)return null;
-      await actor.update({...vitalityUpdate(actor,choice),...changes});vitality=true;
-    }else if(damage>0){
+    if(damage>0){
       let committed=false;
       const hook=Hooks.on('dnd5e.preApplyDamage',(target,_amount,updates,options)=>{if(target===actor&&options.oprpgPeriodic===info.key){Object.assign(updates,changes);committed=true;}});
       try{await actor.applyDamage([{value:damage,type:actual.type}],{multiplier:1,isDelta:true,oprpgPeriodic:info.key,origin:source});}finally{Hooks.off('dnd5e.preApplyDamage',hook);}
       if(!committed)return null;
     }else await actor.update(changes);
     const audience=source?messageAudience(source):{whisper:[],blind:false};
-    const data={speaker:ChatMessage.getSpeaker({actor}),rolls,whisper:audience.whisper,blind:audience.blind,flavor:`${actor.name} — ${effect.name}${actual.dc?success?' — sucesso':' — falha':''} — ${vitality?'resolvido em Vitalidade':`${damage} de dano`}`,flags:{[MODULE_ID]:{periodicResult:{key:info.key,damage,success,vitality}}}};
+    const data={speaker:ChatMessage.getSpeaker({actor}),rolls,whisper:audience.whisper,blind:audience.blind,flavor:`${actor.name} — ${effect.name}${actual.dc?success?' — sucesso':' — falha':''} — ${damage} de dano`,flags:{[MODULE_ID]:{periodicResult:{key:info.key,damage,success}}}};
     if(!source)ChatMessage.applyRollMode?.(data,game.settings.get('core','rollMode'));
     const result=await ChatMessage.create(data);for(const roll of rolls)await showPrivateDice(roll,{actor,message:result});
     if(success&&actual.removeOnSuccess)await actor.deleteEmbeddedDocuments('ActiveEffect',[effect.id]);return result;

@@ -1,3 +1,4 @@
+import { installEffectAutomations } from './scripts/effect-automations.js';
 import { registerFeatureSettings, featureEnabled } from './scripts/feature-settings.js';
 import { registerBookSettings, installBookRules } from './scripts/book-rules.js';
 import { installRollPrivacy } from './scripts/roll-privacy.js';
@@ -108,7 +109,7 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", async () => {
   if (game.system.id !== SYSTEM_ID) return;
-  if(featureEnabled('characteristics'))safeInstall('Características configuráveis',installCharacteristics);
+  if(featureEnabled('characteristics')){safeInstall('Características configuráveis',installCharacteristics);safeInstall('Efeitos OPRPG',installEffectAutomations);}
   if(featureEnabled('techniqueEffects'))safeInstall('Efeitos de técnicas',installTechniqueEffects);
   if(featureEnabled('persistentAreas'))safeInstall('Áreas persistentes',installPersistentAreas);
   if(featureEnabled('periodicEffects'))safeInstall('Efeitos periódicos',installPeriodicEffects);

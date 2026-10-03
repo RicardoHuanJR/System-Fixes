@@ -1,3 +1,4 @@
+import { openEffectsWindow } from './effect-automations.js';
 import { readHakiFlag } from './haki-unified-rules.js';
 import { MODULE_ID, STATE } from './shared.js';
 import { FEATURES, featureEnabled } from './feature-settings.js';
@@ -113,7 +114,7 @@ export async function openWorkspace(actor=null) {
   <details><summary>Diagnóstico e correções</summary><p>Privacidade: ${privacy.installed?'instalada':'inativa'}; dados 3D: ${privacy.dice?'protegidos':'não detectados'}; exibições protegidas nesta sessão: ${privacy.protected}.</p><p>${Object.entries(FEATURES).map(([key,label])=>`${esc(label)}: ${featureEnabled(key)?'habilitado':'desabilitado'}`).join('<br>')}</p><p>${(STATE.warnings??[]).map(esc).join('<br>')||'Sem avisos registrados.'}</p><p>Os grupos podem ser ligados ou desligados em Configurações de Jogo → OPRPG System Fixes.</p></details>`;
   const field=(b,n)=>b.form.elements.namedItem(n)?.value;
   const choice=await foundry.applications.api.DialogV2.wait({classes:['oprpg-fixes-dialog','oprpg-fixes-workspace'],window:{title:`Painel Fixes — ${actor.name}`},position:{width:650},content,buttons:[
-    ...(featureEnabled('characteristics')?[{action:'characteristics',label:'Características',callback:()=>({action:'characteristics'})}]:[]),
+    ...(featureEnabled('characteristics')?[{action:'characteristics',label:'Efeitos OPRPG',callback:()=>({action:'characteristics'})}]:[]),
     ...(featureEnabled('persistentAreas')?[{action:'areaEnd',label:'Encerrar área',callback:(_,b)=>({action:'areaEnd',id:field(b,'area')})}]:[]),
     ...(featureEnabled('periodicEffects')?[{action:'periodic',label:'Configurar periódico',callback:(_,b)=>({action:'periodic',id:field(b,'periodic')})}]:[]),
     ...(externalCompatibilityStatus().enabled&&externalCompatibilityStatus().dae.apiReady
@@ -129,7 +130,7 @@ export async function openWorkspace(actor=null) {
     ...(game.user.isGM?[{action:'backup',label:'Backup desta ficha',callback:()=>({action:'backup'})}]:[]),
     {action:'close',label:'Fechar',callback:()=>null}],rejectClose:false});
   if(!choice||!actor.isOwner)return;
-  if(choice.action==='characteristics')return openCharacteristics(actor);
+  if(choice.action==='characteristics')return openEffectsWindow(actor);
   if(choice.action==='areaEnd')return endPersistentArea(actor,choice.id);
   if(choice.action==='periodic')return configurePeriodic(actor.effects.get(choice.id));
   if(choice.action==='preview')return openPreview(actor);

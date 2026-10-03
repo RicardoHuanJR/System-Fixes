@@ -1,7 +1,7 @@
 import { MODULE_ID } from './shared.js';
 
 export function areaExecution(message) {
-  const direct=message?.getFlag?.(MODULE_ID,'areaExecution');if(direct)return direct;
+  const direct=message?.getFlag?.(MODULE_ID,'areaExecution')??message?.getFlag?.(MODULE_ID,'targetExecution');if(direct)return direct;
   const source=message?.flags?.OPRPG?.originatingMessage??message?.flags?.dnd5e?.originatingMessage;
   return source?game.messages?.get(source)?.getFlag?.(MODULE_ID,'areaExecution')??null:null;
 }

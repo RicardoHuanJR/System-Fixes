@@ -1,3 +1,4 @@
+import { automationBonuses } from './effect-automations.js';
 import { MODULE_ID, STATE, activitiesOf, getCardActivity, rememberCardActivitySelection, forgetCardActivitySelectionsForMessage } from "./shared.js";
 
 const pendingByMessage = new Map();
@@ -72,7 +73,7 @@ function restoreEntriesForItem(item) {
 function shouldBridge(item, activity) {
   if (!item || !activity || activity.type !== "attack") return false;
   const attacks = attackActivities(item);
-  if (attacks.length < 2) return false;
+  if (attacks.length < 2 && !automationBonuses(activity.actor??item.actor,activity)?.hit) return false;
   return typeof activity.labels?.toHit === "string" && activity.labels.toHit.length > 0;
 }
 
@@ -87,8 +88,9 @@ function bridgeSelectedAttack(card, message) {
 
   const originalToHit = item.labels.toHit;
   const originalModifier = item.labels.modifier;
-  const patchedToHit = activity.labels.toHit;
-  const patchedModifier = activity.labels.modifier ?? originalModifier;
+  const hitBonus=automationBonuses(actor,activity)?.hit??0;
+  const patchedToHit = activity.labels.toHit+(hitBonus?` + ${hitBonus}`:'');
+  const patchedModifier = (activity.labels.modifier ?? originalModifier)+(hitBonus?` + ${hitBonus}`:'');
 
   item.labels.toHit = patchedToHit;
   item.labels.modifier = patchedModifier;

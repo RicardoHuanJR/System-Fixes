@@ -1,3 +1,4 @@
+import { openEffectsWindow } from './effect-automations.js';
 import { STATE, activitiesOf, applyTempHP } from "./shared.js";
 import { rawHealLimit } from "./healing-fix.js";
 import { repairLoadedCompendium, normalizeFormulaReferences } from "./formula-fix.js";
@@ -48,13 +49,13 @@ export function installPublicAPI() {
   globalThis.OPRPG_FIXES_NPC_SHEET_STATUS = npcSheetRepairStatus;
 
   game.oprpgFixes = {
-    characteristics:{open:openCharacteristics,toggle:toggleCharacteristic,configure:saveProfiles},
+    characteristics:{open:openEffectsWindow,toggle:toggleCharacteristic,configure:saveProfiles},
     techniqueAutomation:{configure:configureTechniqueAutomation,applyEffects:applyTechniqueEffects},
     periodic:{configure:configurePeriodic,resolve:resolvePeriodic},
     areas:{configureSurgicalControl,finalize:finalizeAreaExecution,isProtected:areaProtected,end:endPersistentArea,refund:refundCancelledArea},
     compatibility:{status:externalCompatibilityStatus,applyDamage:applyCompatibilityDamage,
       applyEffects:applyCompatibilityEffects,runItemMacros,openEffects:openDAEEffects},
-    version: game.modules.get("oprpg-system-fixes")?.version ?? "1.22.0",
+    version: game.modules.get("oprpg-system-fixes")?.version ?? "1.23.0",
     automationStatus,
     undoResources,
     get status() { return foundry.utils.deepClone(STATE); },

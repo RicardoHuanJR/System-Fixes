@@ -1,14 +1,17 @@
 {
   "id": "oprpg-system-fixes",
   "title": "OPRPG System Fixes & Compatibility",
-  "description": "Correções OPRPG para Foundry v14: Livro 2.1, alvos, Haki e concentração, múltiplas atividades, frutas, cura, Escudo e descanso.",
-  "version": "1.22.0",
+  "description": "Correções OPRPG para Foundry v14: dano em PV, salvaguardas individuais, Controle Cirúrgico por atividade, janela de efeitos, Haki, múltiplas atividades e Fruta.",
+  "version": "1.23.0",
   "authors": [
     {
       "name": "Adaptação OPRPG — módulo de compatibilidade local"
     },
     {
       "name": "Mesa OPRPG — contribuições do Haki Unificado 1.2.0"
+    },
+    {
+      "name": "Mesa OPRPG — regras de Automações de Efeitos 0.6.0"
     }
   ],
   "esmodules": [
@@ -40,8 +43,7 @@
   },
   "styles": [
     "styles/haki-unified.css",
-    "styles/workspace.css"
+    "styles/workspace.css",
+    "styles/effect-automations.css"
   ]
 }
-
-

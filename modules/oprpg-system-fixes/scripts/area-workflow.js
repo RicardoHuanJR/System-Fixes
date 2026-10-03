@@ -49,9 +49,8 @@ export function tokensInAreas(templates,tokens=canvas.tokens?.placeables??[],use
   return tokens.filter(t=>t.actor&&t.visible!==false&&(!t.document?.hidden||user.isGM)&&templates.some(a=>tokenIntersectsArea(a,t)));
 }
 export function surgicalConfiguration(activity) {
-  const explicit=activity?.item?.getFlag?.(MODULE_ID,'surgicalControl');
-  const description=normalized(activity?.item?.system?.description?.value);
-  const enabled=explicit?.enabled??description.includes('controle cirurgico');
+  const explicit=activity?.item?.getFlag?.(MODULE_ID,`surgicalActivities.${activity.id}`);
+  const enabled=explicit?.enabled===true;
   if(!enabled||activity?.type!=='save'||!activity.target?.template?.type)return null;
   const dex=activity.actor?.system?.abilities?.dex;
   const mod=Number(dex?.mod??Math.floor((Number(dex?.value??10)-10)/2));
@@ -178,13 +177,21 @@ export async function installAreaWorkflow() {
   installed=true;STATE.areaWorkflowPatch=true;return true;
 }
 
-export async function configureSurgicalControl(item) {
+export async function configureSurgicalControl(subject) {
+  const item=subject?.item??subject;
   if(!item?.isOwner||item.type!=='spell')throw Error('Abra uma técnica que você controla.');
-  const current=item.getFlag(MODULE_ID,'surgicalControl')??{};
-  const result=await foundry.applications.api.DialogV2.wait({classes:['oprpg-fixes-dialog'],window:{title:'Controle Cirúrgico — técnica'},rejectClose:false,
-    content:`<label style="display:block"><input type="checkbox" name="enabled" ${current.enabled?'checked':''}> Esta técnica tem Controle Cirúrgico</label><label style="display:block"><input type="checkbox" name="costIncluded" ${current.costIncluded!==false?'checked':''}> O consumo da atividade já inclui 1 PP deste efeito</label><label style="display:block"><input type="checkbox" name="prolonged" ${current.prolonged?'checked':''}> Proteção durante a duração prolongada (incluir o PP adicional no consumo)</label><p>Aplica-se a técnicas de área com salvaguarda. Configure os PP na atividade; o módulo não cobra novamente. Protege até o modificador de Destreza, mínimo de um aliado.</p>`,
-    buttons:[{action:'save',label:'Salvar',callback:(_e,_b,d)=>Object.fromEntries(['enabled','costIncluded','prolonged'].map(key=>[key,d.element.querySelector(`[name="${key}"]`).checked]))},
-      {action:'cancel',label:'Cancelar',callback:()=>null}],close:()=>null});
-  if(result)await item.setFlag(MODULE_ID,'surgicalControl',result);
-  return result;
+  let activity=subject?.item?subject:null;
+  if(!activity){
+    const choices=Array.from(item.system.activities??[]).filter(a=>a.type==='save'&&a.target?.template?.type);
+    if(!choices.length)throw Error('Configure uma atividade de salvaguarda com área nesta técnica.');
+    const id=await foundry.applications.api.DialogV2.wait({classes:['oprpg-fixes-dialog'],window:{title:'Controle Cirúrgico — escolher atividade'},content:`<label>Atividade <select name="activity">${choices.map(a=>`<option value="${esc(a.id)}">${esc(a.name||a.id)}</option>`).join('')}</select></label>`,buttons:[{action:'next',label:'Configurar atividade',callback:(_e,_b,d)=>d.element.querySelector('[name="activity"]').value},{action:'cancel',label:'Cancelar',callback:()=>null}],rejectClose:false});
+    if(!id)return null;activity=choices.find(a=>a.id===id);
+  }
+  if(activity.type!=='save'||!activity.target?.template?.type)throw Error('Controle Cirúrgico exige salvaguarda e área nesta atividade.');
+  const current=item.getFlag(MODULE_ID,`surgicalActivities.${activity.id}`)??{};
+  const legacy=item.getFlag(MODULE_ID,'surgicalControl');
+  const result=await foundry.applications.api.DialogV2.wait({classes:['oprpg-fixes-dialog'],window:{title:`Controle Cirúrgico — ${activity.name||activity.id}`},rejectClose:false,
+    content:`<label><input type="checkbox" name="enabled" ${current.enabled?'checked':''}> Ativar nesta atividade</label><label><input type="checkbox" name="costIncluded" ${current.costIncluded!==false?'checked':''}> O consumo desta atividade já inclui 1 PP do efeito</label><label><input type="checkbox" name="prolonged" ${current.prolonged?'checked':''}> Proteção prolongada (incluir o PP adicional nesta atividade)</label><p>Protege até o modificador de Destreza, mínimo de um aliado. As outras atividades da técnica permanecem independentes.</p>${legacy?.enabled?'<p>Existe configuração antiga no item. Ela não ativa todas as atividades automaticamente; configure as desejadas aqui.</p>':''}`,
+    buttons:[{action:'save',label:'Salvar',callback:(_e,_b,d)=>Object.fromEntries(['enabled','costIncluded','prolonged'].map(key=>[key,d.element.querySelector(`[name="${key}"]`).checked]))},{action:'cancel',label:'Cancelar',callback:()=>null}]});
+  if(result)await item.setFlag(MODULE_ID,`surgicalActivities.${activity.id}`,result);return result;
 }

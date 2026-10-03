@@ -1,3 +1,12 @@
+# 1.23.0
+
+- Dano em PV/camadas sem campos legados de aura.
+- Pedidos individuais também sem área, com alvos e resultados registrados.
+- Controle Cirúrgico por atividade, sem ativação global pela descrição.
+- Janela Efeitos OPRPG e integração das regras de Automações de Efeitos 0.6.0.
+- Escopo de itens/alcance para características e dados extras pelo grau inteiro.
+- 610 verificações simuladas aprovadas; teste funcional real pendente.
+
 # 1.22.0
 
 - Características configuráveis, com proteção contra bônus manual/automático duplicado.

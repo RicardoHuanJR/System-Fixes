@@ -49,12 +49,15 @@ export function saveConfiguration(card) {
   if(!ability || !CONFIG.DND5E.abilities[ability] || !Number.isFinite(dc) || dc<=0)throw Error('Configure o atributo e a CD da salvaguarda na atividade.');
   return {ability,dc};
 }
-export async function rollSaveForActor(actor,source) {
+export async function rollSaveForActor(actor,source,requestInfo=null) {
   if(!actor?.isOwner || source?.isContentVisible===false)throw Error('Você precisa controlar a ficha e poder ver o cartão da técnica.');
   const execution=areaExecution(source);
   if(execution&&(execution.status!=='ready'||!execution.targets.includes(actor.uuid)||areaProtected(source,actor)))throw Error('Este alvo não precisa rolar a salvaguarda desta execução.');
-  const card=sourceCard(source),{ability,dc}=saveConfiguration(card);
-  const key=`${source.id}:${card.dataset.activityId}:${actor.uuid}`;
+  const card=sourceCard(source);
+  let spec;try{spec=saveConfiguration(card);}catch(error){if(!requestInfo?.ability||!CONFIG.DND5E.abilities[requestInfo.ability]||!Number.isFinite(requestInfo.dc)||requestInfo.dc<=0)throw error;spec=requestInfo;}
+  const {ability,dc}=spec,activityId=requestInfo?.activityId??card?.dataset.activityId;
+  if(!activityId)throw Error('Atividade da salvaguarda indisponível.');
+  const key=`${source.id}:${activityId}:${actor.uuid}`;
   if(busy.has(key))return null;
   const previous=Array.from(game.messages??[]).find(m=>m.getFlag?.(MODULE_ID,'saveResult')?.key===key);
   if(previous){ui.notifications.info(`${actor.name}: salvaguarda já registrada para este cartão.`);return previous;}
@@ -85,6 +88,10 @@ export function saveRequestRecipients(actor,source,users=game.users) {
 }
 export async function requestIndividualSaves(card,source,actors) {
   if(!game.user.isGM&&source.author?.id!==game.user.id)throw Error('O autor da técnica ou o mestre deve solicitar os testes; use o seu pedido individual para rolar.');
+  if(!areaExecution(source)){
+    const {activity}=getCardActivity(card);saveConfiguration(card);
+    await source.setFlag(MODULE_ID,'targetExecution',{status:'ready',sourceId:source.id,activityId:card.dataset.activityId,activityUuid:activity?.uuid,targets:[...new Set(actors.map(a=>a.uuid))],protected:[],templates:[]});
+  }
   const results=[];
   for(const actor of actors) {
     const key=`${source.id}:${card.dataset.activityId}:${actor.uuid}`;
@@ -95,11 +102,11 @@ export async function requestIndividualSaves(card,source,actors) {
     const {ability,dc}=saveConfiguration(card);
     results.push(await ChatMessage.create({whisper:recipients,blind:false,
       content:`<div class="jujutsu-card oprpg-fixes-notice oprpg-save-request"><div class="jj-top"><strong class="jj-top-name">${esc(actor.name)} — Salvaguarda</strong></div><div class="jj-description"><p>${esc(CONFIG.DND5E.abilities[ability].label??ability)} · CD ${dc}</p></div><button class="oprpg-fixes-notice-action" type="button" data-fixes-save-actor="${esc(actor.uuid)}">Rolar salvaguarda</button></div>`,
-      flags:{[MODULE_ID]:{saveRequest:{key,source:source.id,targets:[actor.uuid]}}}}));
+      flags:{[MODULE_ID]:{saveRequest:{key,source:source.id,activityId:card.dataset.activityId,ability,dc,targets:[actor.uuid]}}}}));
   }
   return results;
 }
-export async function rollTargetSaves(card,source,actors=targetActors(),{individual=false}={}) {
+export async function rollTargetSaves(card,source,actors=targetActors(),{individual=true}={}) {
   actors=await executionActors(source,actors);
   if(!actors.length)throw Error('Marque todos os alvos da técnica com T antes de pedir as salvaguardas.');
   saveConfiguration(card);
@@ -126,7 +133,7 @@ export async function resolveSaveRequest(request,uuid) {
   const actor=await fromUuid(uuid),source=game.messages.get(info.source);
   if(!source || source.isContentVisible===false)throw Error('Cartão de origem indisponível.');
   if(areaProtected(source,actor))throw Error('Alvo protegido pelo Controle Cirúrgico.');
-  return rollSaveForActor(actor,source);
+  return rollSaveForActor(actor,source,info);
 }
 export async function rollSaveDamage(card,message,{scalePrompt=null}={}) {
   const {actor,item,activity}=getCardActivity(card);

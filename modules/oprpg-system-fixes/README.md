@@ -1,3 +1,7 @@
+# Atualização 1.23.0
+
+Remove aura/Vitalidade do dano OPRPG, solicita salvaguardas individualmente, configura Controle Cirúrgico por atividade e adiciona a janela Efeitos OPRPG na ficha, baseada em Automações de Efeitos 0.6.0. 610 verificações simuladas aprovadas. Veja [REVISAO-1.23.0.md](REVISAO-1.23.0.md).
+
 # Atualização 1.22.0
 
 Características configuráveis com Diable Jambe, condições por resultado, áreas persistentes, reembolso de PP registrado e efeitos periódicos. 587 verificações simuladas aprovadas; teste funcional em Foundry real pendente. Veja [REVISAO-1.22.0.md](REVISAO-1.22.0.md) para configuração e limites.

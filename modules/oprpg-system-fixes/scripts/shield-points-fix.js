@@ -202,10 +202,6 @@ function shiftMessageAdjustment(actorId) {
   return next;
 }
 
-function isPVEPrevailing(actor) {
-  return actor?.type === "character" && actor.system?.attributes?.auraOn === false;
-}
-
 function parseDisplayedAmount(card, action) {
   const selectors = action === "jj-extra-apply"
     ? ["#jj-extra-total", "#jj-total-display"]
@@ -408,7 +404,6 @@ function bindApplyButtons(root) {
 export async function applyTargetCardDamage(actor, meta) {
   if (!actor?.isOwner) throw Error("Sem permissão para alterar este alvo.");
   if (!Number.isFinite(meta.amount) || meta.amount < 0) throw Error("Dano inválido.");
-  if (isPVEPrevailing(actor)) throw Error("Use a resolução de Vitalidade para este alvo.");
   const changes = { "system.attributes.hp.value": actor.system?.attributes?.hp?.value ?? 0 };
   markPending(actor, meta);
   let adjustment;
@@ -534,10 +529,6 @@ function repairNativeCardLayers(actor, changes) {
   if (!actor || !changes) return null;
   const pending = takePending(actor);
   if (!pending) return null;
-  if (isPVEPrevailing(actor)) {
-    clearPending(actor);
-    return null;
-  }
   if (!recognizedDamageUpdate(changes)) return null;
 
   const hp = actor.system?.attributes?.hp;
