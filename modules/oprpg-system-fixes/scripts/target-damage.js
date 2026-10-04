@@ -1,15 +1,15 @@
 import { MODULE_ID, STATE, getCardActivity } from './shared.js';
-import { captureCardMeta, applyTargetCardDamage, rewriteNativeDamageMessage } from './shield-points-fix.js';
+import { captureCardMeta, applyTargetCardDamage } from './shield-points-fix.js';
 import { messageAudience } from './roll-privacy.js';
 import { withActorOperation } from './operation-history.js';
 import { requestTargetDamage, installDamageRequests } from './damage-requests.js';
 import { recordActivityApplication } from './activity-guide.js';
 import { executionActors, areaSaveMultiplier } from './area-state.js';
 import { applyTechniqueEffects } from './technique-effects.js';
+import { damageExplanation } from './damage-explanation.js';
 
 const inflight = new Set();
 let installed = false;
-const esc = value => foundry.utils.escapeHTML(String(value ?? ''));
 
 export function targetActors(tokens = game.user.targets) {
   return [...new Map(Array.from(tokens ?? []).filter(t => t.actor).map(t => [t.actor.uuid ?? t.actor.id, t.actor])).values()];
@@ -40,6 +40,7 @@ export async function applyDamageTargets(button, card, actors=targetActors()) {
   if (inflight.has(key)) return [];
   inflight.add(key);button.disabled=true;
   const applied=[];
+  const appliedActors=[];
   try {
     for (const actor of actors) await withActorOperation(actor,async()=>{
       const receipts=actor.getFlag(MODULE_ID,'damageReceipts')??[];
@@ -54,18 +55,17 @@ export async function applyDamageTargets(button, card, actors=targetActors()) {
         actorMeta.typedDamage=parts.map(({value,type})=>({value,type}));
       }
       const receiptChanges={[`flags.${MODULE_ID}.damageReceipts`]:[...receipts,receipt].slice(-100)};
-      if(factor===0)return;
-      adjustment=await applyTargetCardDamage(actor,{...actorMeta,receiptChanges});
+      if(factor===0)await actor.update(receiptChanges);
+      else adjustment=await applyTargetCardDamage(actor,{...actorMeta,receiptChanges});
       applied.push(actor.name);
+      appliedActors.push(actor);
       const audience=messageAudience(message);
-      const content=adjustment
-        ? rewriteNativeDamageMessage(`🛡️ <strong>${esc(actor.name)}</strong> (${actorMeta.amount} de dano):`,adjustment)
-        : `🛡️ <strong>${esc(actor.name)}</strong>: dano aplicado.`;
+      const content=damageExplanation(actor,meta,factor,adjustment);
       try { await ChatMessage.create({speaker:ChatMessage.getSpeaker({actor}),content,whisper:audience.whisper,blind:audience.blind}); }
       catch(error){ui.notifications.warn('Dano aplicado, mas não foi possível publicar o resumo.');console.error(error);}
     });
     if(applied.length){
-      if(activity?.type!=='save')for(const actor of actors.filter(a=>applied.includes(a.name)))await applyTechniqueEffects(activity,actor,message,{receipt:receipt});
+      if(activity?.type!=='save')for(const actor of appliedActors)await applyTechniqueEffects(activity,actor,message,{receipt:receipt});
       try{await recordActivityApplication(message,meta.activityId,applied)}catch(error){console.warn('Registro das etapas do cartão indisponível',error)}
       ui.notifications.info(`Dano aplicado em: ${applied.join(', ')}.`);
     }

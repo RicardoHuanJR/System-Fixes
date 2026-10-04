@@ -1,3 +1,7 @@
+# System Fixes 1.26.0
+
+Ativação pelo item original e atalhos, explicação de dano por alvo e revisão da ficha. 712 verificações simuladas aprovadas. Testes reais de ativação, consumo, desativação, revisão e dano realizados em uma cópia da ficha, com jogador e mestre conectados. A cobertura real é parcial; as demais automações dos livros continuam pendentes. Veja [revisão 1.26.0](modules/oprpg-system-fixes/REVISAO-1.26.0.md).
+
 # System Fixes 1.25.0
 
 Primeira etapa das automações de personagens: usos nativos na aba, coordenação pelo mestre e novos efeitos. 680 verificações simuladas aprovadas. As demais automações e testes em Foundry real continuam pendentes. Veja [revisão 1.25.0](modules/oprpg-system-fixes/REVISAO-1.25.0.md).

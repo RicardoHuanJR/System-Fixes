@@ -1,0 +1,60 @@
+{
+  "version": "1.26.0",
+  "passed": 712,
+  "total": 712,
+  "suites": [
+    {
+      "suite": "audit",
+      "passed": 104,
+      "total": 104
+    },
+    {
+      "suite": "regression",
+      "passed": 18,
+      "total": 18
+    },
+    {
+      "suite": "sustained",
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "suite": "targets",
+      "passed": 396,
+      "total": 396
+    },
+    {
+      "suite": "book-rules",
+      "passed": 53,
+      "total": 53
+    },
+    {
+      "suite": "external-compatibility",
+      "passed": 48,
+      "total": 48
+    },
+    {
+      "suite": "catalogue-126",
+      "passed": 67,
+      "total": 67
+    }
+  ],
+  "foundryRealTests": true,
+  "nativeContractsReviewed": true,
+  "visualPreviewReviewed": true,
+  "foundryRealCoverage": [
+    "activation-via-catalogue",
+    "activation-via-native-item",
+    "single-use-consumption",
+    "free-deactivation",
+    "sheet-review-stale-binding",
+    "sheet-review-after-configuration",
+    "public-target-damage-summary",
+    "native-half-damage-11-to-5",
+    "target-copy-hp-63-to-58",
+    "repeat-application-no-extra-hp-loss"
+  ],
+  "allMechanicsTestedInFoundry": false,
+  "installed": true,
+  "originalActorUnchanged": true
+}

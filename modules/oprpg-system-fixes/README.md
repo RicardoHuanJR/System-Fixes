@@ -1,3 +1,7 @@
+# Atualização 1.26.0
+
+Ativação pelo item original e atalhos, resumo do dano por alvo e botão Revisar ficha na aba Automações. Veja [revisão 1.26.0](REVISAO-1.26.0.md) para uso, limites e validação. 712 verificações simuladas aprovadas; ativação e revisão testadas em Foundry real; demais testes reais pendentes.
+
 # Atualização 1.25.0
 
 Primeira etapa das automações de personagens, com usos nativos na aba, coordenação pelo mestre, novos efeitos e correção dos bônus de PV máximos manuais. 680 verificações simuladas aprovadas; testes no Foundry real e as demais etapas continuam pendentes. Veja [REVISAO-1.25.0.md](REVISAO-1.25.0.md) para o escopo exato.

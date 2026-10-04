@@ -136,3 +136,8 @@
 .oprpg-catalogue button {color:var(--jj-text-main,#e2cebb);background:var(--jj-bg-soft,#171010);border:1px solid var(--jj-border,#65513c);border-radius:4px;padding:5px 10px;min-height:30px;}
 .oprpg-catalogue button:hover:not(:disabled) {border-color:var(--oprpg-gold-bright,#e3b53c);}
 .oprpg-catalogue button:focus-visible {outline:2px solid var(--oprpg-gold-bright,#e3b53c);outline-offset:2px;}
+.oprpg-damage-explanation {font-family:var(--dnd5e-font-roboto,sans-serif);background:var(--jj-bg-soft,#171010);color:var(--jj-text-main,#e2cebb);border:1px solid var(--jj-border,#65513c);border-radius:6px;padding:10px;line-height:1.4;}
+.oprpg-damage-explanation > strong {color:var(--oprpg-gold-bright,#e3b53c);}
+.oprpg-damage-explanation p {margin:8px 0;}
+.oprpg-damage-explanation summary {cursor:pointer;font-weight:600;}
+.oprpg-damage-explanation summary:focus-visible {outline:2px solid var(--oprpg-gold-bright,#e3b53c);outline-offset:2px;}

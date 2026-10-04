@@ -1,4 +1,5 @@
-import { MODULE_ID } from './shared.js';
+import { MODULE_ID, activitiesOf } from './shared.js';
+import { openSheetReview } from './sheet-review.js';
 import { queueActor, registerActorTimer } from './automation-runtime.js';
 import { CHARACTER_RULES, characterRuleChanges, ruleDamage } from './catalogue-rules.js';
 
@@ -48,15 +49,18 @@ export async function configureCatalogue(actor,id,choice){
   const p=AUTOMATIONS.find(p=>p.id===id),source=p&&(choice.sourceItemId?catalogueCandidates(actor,p).find(i=>i.id===choice.sourceItemId):catalogueSource(actor,p));if(!p||!source)throw Error('Escolha uma característica correspondente da ficha.');
   if(p.style&&(!Number.isInteger(Number(choice.level))||Number(choice.level)<p.level||Number(choice.level)>20))throw Error(`Informe o nível de ${p.style}, de ${p.level} a 20.`);
   const list=(ids,type)=>[...new Set(ids??[])].filter(id=>actor.items.get(id)?.type===type);
-  const c={enabled:!!choice.enabled,level:Number(choice.level)||0,sourceItemId:source.id,weaponIds:list(choice.weaponIds,'weapon'),techniqueIds:list(choice.techniqueIds,'spell'),ability:choice.ability??'',form:choice.form??''};
+  const usable=activitiesOf(source).filter(a=>a.canUse!==false);
+  const activityId=choice.activityId??(usable.length===1?usable[0].id:'');
+  if(activityId&&!usable.some(a=>a.id===activityId))throw Error('Escolha uma atividade da característica original.');
+  const c={enabled:!!choice.enabled,level:Number(choice.level)||0,sourceItemId:source.id,activityId,weaponIds:list(choice.weaponIds,'weapon'),techniqueIds:list(choice.techniqueIds,'spell'),ability:choice.ability??'',form:choice.form??''};
   if(p.formChoice&&!['wide','large'].includes(c.form))throw Error('Escolha Corpo Largo ou Corpo Grande.');
   if(p.abilityChoice&&!Object.hasOwn(actor.system.abilities??{},c.ability))throw Error('Escolha uma salvaguarda válida.');
   catalogueChanges(id,actor,c);
   return queueActor(actor,async()=>{await actor.setFlag(MODULE_ID,'catalogue.'+id,c);const effects=Array.from(actor.effects??[]).filter(e=>e.flags?.[MODULE_ID]?.catalogue===id);if(effects.length)await actor.deleteEmbeddedDocuments('ActiveEffect',effects.map(e=>e.id));return c;});
 }
-export async function toggleCatalogue(actor,id,{desired,hybridConfirmed=false}={}){
+export async function toggleCatalogue(actor,id,{desired,hybridConfirmed=false,nativeMessageUuid=null}={}){
   if(!actor?.isOwner)throw Error('Você precisa controlar esta ficha.');
-  if(!game.user.isGM)return requestCatalogueActivation(actor,id);
+  if(!game.user.isGM)return requestCatalogueActivation(actor,id,{desired,hybridConfirmed,nativeMessageUuid});
   const key=actor.uuid+':'+id;
   if(activations.has(key))return activations.get(key);
   const operation=queueActor(actor,async()=>{
@@ -68,8 +72,12 @@ export async function toggleCatalogue(actor,id,{desired,hybridConfirmed=false}={
     if(id==='diable-jambe'&&game.modules?.get('oprpg-diable-jambe')?.active)throw Error('Desative o módulo Diable Jambe antigo para evitar duplicação.');
     if(id==='ifrit-jambe'&&!catalogueEffect(actor,'diable-jambe'))throw Error('Ative Diable Jambe primeiro.');
     const source=catalogueSource(actor,p),config=settings(actor)[id],changes=catalogueChanges(id,actor);
+    const nativeMessage=nativeMessageUuid?await fromUuid(nativeMessageUuid):null;
+    if(nativeMessageUuid&&!validNativeActivation(nativeMessage,actor,id))throw Error('O cartão de ativação não corresponde à característica configurada.');
+    if(nativeMessageUuid&&(actor.getFlag(MODULE_ID,'catalogueActivations')??[]).includes(nativeMessageUuid))throw Error('Esta ativação já foi utilizada. Ative a característica novamente.');
+    const paid=nativeActivationDeltas(nativeMessage)?.item?.[source.id]?.some(row=>row.keyPath==='system.uses.spent'&&row.delta>=1);
     let spent=null;
-    if(p.uses){
+    if(p.uses&&!paid){
       const uses=source.system?.uses,max=Number(uses?.max),current=Number(uses?.spent);
       if(!Number.isInteger(max)||max<1||!Number.isInteger(current)||current<0)throw Error('Configure os usos e a recuperação na característica original antes de ativar.');
       if(current>=max)throw Error('A característica não tem usos restantes.');
@@ -92,8 +100,11 @@ export async function toggleCatalogue(actor,id,{desired,hybridConfirmed=false}={
       }
       created=await actor.createEmbeddedDocuments('ActiveEffect',[effect]);
       if(!created?.length)throw Error('O efeito não foi criado.');
-      if(p.formChoice&&config.form==='large')await actor.update({'system.attributes.hp.temp':Math.max(Number(actor.system.attributes.hp.temp)||0,20)});
       if(effects.length)await actor.deleteEmbeddedDocuments('ActiveEffect',effects.map(e=>e.id));
+      const actorChanges={};
+      if(p.formChoice&&config.form==='large')actorChanges['system.attributes.hp.temp']=Math.max(Number(actor.system.attributes.hp.temp)||0,20);
+      if(nativeMessageUuid)actorChanges[`flags.${MODULE_ID}.catalogueActivations`]=[...(actor.getFlag(MODULE_ID,'catalogueActivations')??[]),nativeMessageUuid].slice(-200);
+      if(Object.keys(actorChanges).length)await actor.update(actorChanges);
       return true;
     }catch(error){
       if(created?.length)await actor.deleteEmbeddedDocuments('ActiveEffect',created.map(e=>e.id));
@@ -105,16 +116,16 @@ export async function toggleCatalogue(actor,id,{desired,hybridConfirmed=false}={
   try{return await operation;}finally{if(activations.get(key)===operation)activations.delete(key);}
 }
 
-export async function requestCatalogueActivation(actor,id){
+export async function requestCatalogueActivation(actor,id,options={}){
   const gm=game.users?.activeGM;
   if(!gm)throw Error('É necessário um mestre conectado para coordenar a ativação.');
   if(!AUTOMATIONS.some(p=>p.id===id))throw Error('Automação desconhecida.');
   const key=actor.uuid+':'+id;if(activations.has(key))return activations.get(key);
   const pending=(async()=>{
-    const desired=!catalogueEffect(actor,id),p=AUTOMATIONS.find(p=>p.id===id),config=settings(actor)[id];
-    let hybridConfirmed=false;
-    if(desired&&p.formChoice){hybridConfirmed=await foundry.applications.api.DialogV2.confirm({window:{title:p.name},content:'<p>Confirma que está na forma híbrida Zoan?</p>'});if(!hybridConfirmed)return false;}
-    const message=await ChatMessage.create({content:'<p>Processando automação da ficha…</p>',whisper:[game.user.id,gm.id],flags:{[MODULE_ID]:{catalogueRequest:{actorUuid:actor.uuid,id,desired,sourceItemId:config?.sourceItemId,form:config?.form,hybridConfirmed,state:'pending'}}}});
+    const desired=options.desired??!catalogueEffect(actor,id),p=AUTOMATIONS.find(p=>p.id===id),config=settings(actor)[id];
+    let hybridConfirmed=options.hybridConfirmed===true;
+    if(desired&&p.formChoice&&!hybridConfirmed){hybridConfirmed=await foundry.applications.api.DialogV2.confirm({window:{title:p.name},content:'<p>Confirma que está na forma híbrida Zoan?</p>'});if(!hybridConfirmed)return false;}
+    const message=await ChatMessage.create({content:'<p>Processando automação da ficha…</p>',whisper:[game.user.id,gm.id],flags:{[MODULE_ID]:{catalogueRequest:{actorUuid:actor.uuid,id,desired,sourceItemId:config?.sourceItemId,form:config?.form,hybridConfirmed,nativeMessageUuid:options.nativeMessageUuid??null,state:'pending'}}}});
     const result=()=>message.getFlag(MODULE_ID,'catalogueRequest');
     if(result()?.state==='resolved')return result().active;
     if(result()?.state==='failed')throw Error(result().error);
@@ -125,7 +136,7 @@ export async function requestCatalogueActivation(actor,id){
         clearTimeout(timer);Hooks.off('updateChatMessage',hook);
         if(request.state==='failed')reject(Error(request.error));else resolve(request.active);
       });
-      timer=setTimeout(()=>{Hooks.off('updateChatMessage',hook);reject(Error('A ativação continua pendente no chat. Confira o resultado antes de tentar novamente.'));},15000);
+      timer=setTimeout(()=>{Hooks.off('updateChatMessage',hook);const error=Error('A ativação continua pendente no chat. Confira o resultado antes de tentar novamente.');error.pending=true;reject(error);},15000);
       // Catch completion between the first read and listener registration.
       const request=result();if(['resolved','failed'].includes(request?.state)){clearTimeout(timer);Hooks.off('updateChatMessage',hook);if(request.state==='failed')reject(Error(request.error));else resolve(request.active);}
     });
@@ -141,9 +152,11 @@ export async function resolveCatalogueRequest(message){
     if(actor?.documentName!=='Actor'||!author||!actor.testUserPermission(author,'OWNER')||typeof request.desired!=='boolean')throw Error('Solicitação de automação inválida.');
     const config=settings(actor)[request.id];
     if(config?.sourceItemId!==request.sourceItemId||config?.form!==request.form)throw Error('As opções mudaram após o pedido. Confira a ficha e tente novamente.');
+    if(request.nativeMessageUuid){const native=await fromUuid(request.nativeMessageUuid);if(native?.author?.id!==author.id||!validNativeActivation(native,actor,request.id))throw Error('Cartão original inválido ou pertencente a outro usuário.');}
     await message.update({[`flags.${MODULE_ID}.catalogueRequest.state`]:'processing'});
-    const active=await toggleCatalogue(actor,request.id,{desired:request.desired,hybridConfirmed:request.hybridConfirmed===true});
-    await message.update({[`flags.${MODULE_ID}.catalogueRequest`]:{...request,state:'resolved',active},content:`<p>${esc(AUTOMATIONS.find(p=>p.id===request.id)?.name)}: ${active?'ativado':'desativado'}.</p>`});
+    const active=await toggleCatalogue(actor,request.id,{desired:request.desired,hybridConfirmed:request.hybridConfirmed===true,nativeMessageUuid:request.nativeMessageUuid});
+    try{await message.update({[`flags.${MODULE_ID}.catalogueRequest`]:{...request,state:'resolved',active},content:`<p>${esc(AUTOMATIONS.find(p=>p.id===request.id)?.name)}: ${active?'ativado':'desativado'}.</p>`});}
+    catch(error){console.error('OPRPG: efeito processado, confirmação pendente no chat',error);}
   }catch(error){await message.update({[`flags.${MODULE_ID}.catalogueRequest`]:{...request,state:'failed',error:String(error.message).slice(0,300)},content:`<p>Automação não aplicada: ${esc(error.message)}</p>`});}
 }
 export function catalogueDamage(activity,config){
@@ -171,13 +184,14 @@ export function catalogueDamage(activity,config){
   }
   return out;
 }
-export function catalogueContent(actor){return `<section class="oprpg-catalogue jujutsu-section op-trainings"><h2 class="divider">Automações</h2><p>Escolha uma característica da ficha e habilite sua automação. Diable Jambe, Overclock e Controle Corporal consomem um uso do item original; desativar não consome. Ações e PP continuam no fluxo da característica.</p>${AUTOMATIONS.filter(p=>Array.from(actor.items??[]).some(i=>['feat','race'].includes(i.type)&&p.aliases.some(n=>normalize(n)===normalize(i.name)))).map(p=>{const owned=!!catalogueCandidates(actor,p).length,c=settings(actor)[p.id],active=!!catalogueEffect(actor,p.id);return `<article class="op-train-card"><header class="op-train-head"><i class="fas fa-bolt" inert></i><strong class="op-train-name">${esc(p.name)}</strong><span class="op-train-counter">${active?'Ativo':c?.enabled?'Habilitado':'Desabilitado'}</span></header><div class="op-train-meta">${esc(p.source)}</div><p>${esc(p.summary)}</p>${p.uses&&catalogueSource(actor,p)?.system.uses?`<p>Usos: ${esc(catalogueSource(actor,p).system.uses.value??Math.max(0,Number(catalogueSource(actor,p).system.uses.max)-Number(catalogueSource(actor,p).system.uses.spent)))} / ${esc(catalogueSource(actor,p).system.uses.max)}</p>`:''}<p class="oprpg-catalogue-note">${esc(p.manual??'')}</p><div class="oprpg-catalogue-controls"><button type="button" data-catalogue-action="setup" data-id="${p.id}" ${owned?'':'disabled'}>Opções</button><button type="button" data-catalogue-action="toggle" data-id="${p.id}" ${active||catalogueReady(actor,p)?'':'disabled'}>${active?'Desativar efeito':'Ativar efeito'}</button>${!owned?'<span>Requer a característica na ficha.</span>':''}</div></article>`}).join('')}</section>`;}
+export function catalogueContent(actor){return `<section class="oprpg-catalogue jujutsu-section op-trainings"><h2 class="divider">Automações</h2><button type="button" data-catalogue-action="review">Revisar ficha</button><p>Habilite a automação e escolha a atividade original nas Opções. Ative pela característica, barra de atalhos ou por esta aba: o diálogo e os custos continuam no sistema. Diable Jambe, Overclock e Controle Corporal consomem um uso; o uso já pago pelo item não é cobrado novamente. Desativar não consome recursos.</p>${AUTOMATIONS.filter(p=>Array.from(actor.items??[]).some(i=>['feat','race'].includes(i.type)&&p.aliases.some(n=>normalize(n)===normalize(i.name)))).map(p=>{const owned=!!catalogueCandidates(actor,p).length,c=settings(actor)[p.id],active=!!catalogueEffect(actor,p.id);return `<article class="op-train-card"><header class="op-train-head"><i class="fas fa-bolt" inert></i><strong class="op-train-name">${esc(p.name)}</strong><span class="op-train-counter">${active?'Ativo':c?.enabled?'Habilitado':'Desabilitado'}</span></header><div class="op-train-meta">${esc(p.source)}</div><p>${esc(p.summary)}</p>${p.uses&&catalogueSource(actor,p)?.system.uses?`<p>Usos: ${esc(catalogueSource(actor,p).system.uses.value??Math.max(0,Number(catalogueSource(actor,p).system.uses.max)-Number(catalogueSource(actor,p).system.uses.spent)))} / ${esc(catalogueSource(actor,p).system.uses.max)}</p>`:''}<p class="oprpg-catalogue-note">${esc(p.manual??'')}</p><div class="oprpg-catalogue-controls"><button type="button" data-catalogue-action="setup" data-id="${p.id}" ${owned?'':'disabled'}>Opções</button><button type="button" data-catalogue-action="toggle" data-id="${p.id}" ${active||catalogueReady(actor,p)?'':'disabled'}>${active?'Desativar efeito':'Ativar efeito'}</button>${!owned?'<span>Requer a característica na ficha.</span>':''}</div></article>`}).join('')}</section>`;}
 export async function catalogueAction(actor,action,id){
-  if(action==='toggle')return toggleCatalogue(actor,id);
+  if(action==='review')return openSheetReview(actor);
+  if(action==='toggle')return useCatalogueCharacteristic(actor,id);
   if(action!=='setup'||!actor?.isOwner)throw Error('Ação indisponível.');
   const p=AUTOMATIONS.find(p=>p.id===id);if(!p)throw Error('Automação desconhecida.');const c=settings(actor)[id]??{};
   const select=(name,type,label)=>`<label>${label}<select name="${name}" multiple size="4">${Array.from(actor.items??[]).filter(i=>i.type===type).map(i=>`<option value="${esc(i.id)}" ${c[name]?.includes(i.id)?'selected':''}>${esc(i.name)}</option>`).join('')}</select></label>`;
-  const choice=await foundry.applications.api.DialogV2.wait({classes:['oprpg-fixes-dialog'],window:{title:p.name},content:`<label>Característica original<select name="sourceItemId">${catalogueCandidates(actor,p).map(i=>`<option value="${esc(i.id)}" ${c.sourceItemId===i.id?'selected':''}>${esc(i.name)} (${esc(i.id)})</option>`).join('')}</select></label><label><input type="checkbox" name="enabled" ${c.enabled?'checked':''}> Habilitar automação</label>${p.style?`<label>Nível de ${esc(p.style)}<input name="level" type="number" min="${p.level}" max="20" value="${catalogueLevel(actor,p)||p.level}"></label>`:''}${p.select?select('techniqueIds','spell',p.id==='diable-jambe'?'Técnicas Black Leg':'Técnicas de combate'):''}${p.id==='diable-jambe'||p.weaponSelect?select('weaponIds','weapon',p.id==='diable-jambe'?'Ataques desarmados (somente corpo a corpo)':'Ataques comuns'):''}${p.abilityChoice?`<label>Salvaguarda<select name="ability">${Object.keys(actor.system.abilities??{}).map(key=>`<option value="${esc(key)}" ${c.ability===key?'selected':''}>${esc(CONFIG.DND5E.abilities[key]?.label??key)}</option>`).join('')}</select></label>`:''}${p.formChoice?`<label>Forma<select name="form"><option value="wide" ${c.form==='wide'?'selected':''}>Corpo Largo</option><option value="large" ${c.form==='large'?'selected':''}>Corpo Grande</option></select></label>`:''}<p>${esc(p.manual??'')}</p><p>Salvar encerra o efeito atual. Ative-o novamente após ajustar estas opções.</p>`,buttons:[{action:'save',label:'Salvar',callback:(_e,_b,d)=>({sourceItemId:d.element.querySelector('[name=sourceItemId]')?.value,ability:d.element.querySelector('[name=ability]')?.value,form:d.element.querySelector('[name=form]')?.value,enabled:d.element.querySelector('[name=enabled]').checked,level:d.element.querySelector('[name=level]')?.value,techniqueIds:Array.from(d.element.querySelector('[name=techniqueIds]')?.selectedOptions??[],o=>o.value),weaponIds:Array.from(d.element.querySelector('[name=weaponIds]')?.selectedOptions??[],o=>o.value)})},{action:'cancel',label:'Cancelar',callback:()=>null}],rejectClose:false});
+  const choice=await foundry.applications.api.DialogV2.wait({classes:['oprpg-fixes-dialog'],window:{title:p.name},content:`<label>Característica original<select name="sourceItemId">${catalogueCandidates(actor,p).map(i=>`<option value="${esc(i.id)}" ${c.sourceItemId===i.id?'selected':''}>${esc(i.name)} (${esc(i.id)})</option>`).join('')}</select></label>${!p.passive?`<label>Atividade que ativa o efeito<select name="activityId"><option value="">Automática, se houver apenas uma</option>${catalogueCandidates(actor,p).flatMap(item=>activitiesOf(item).filter(a=>a.canUse!==false).map(a=>`<option value="${esc(a.id)}" ${c.activityId===a.id?'selected':''}>${esc(item.name)} — ${esc(a.name||a.type)}</option>`)).join('')}</select></label>`:''}<label><input type="checkbox" name="enabled" ${c.enabled?'checked':''}> Habilitar automação</label>${p.style?`<label>Nível de ${esc(p.style)}<input name="level" type="number" min="${p.level}" max="20" value="${catalogueLevel(actor,p)||p.level}"></label>`:''}${p.select?select('techniqueIds','spell',p.id==='diable-jambe'?'Técnicas Black Leg':'Técnicas de combate'):''}${p.id==='diable-jambe'||p.weaponSelect?select('weaponIds','weapon',p.id==='diable-jambe'?'Ataques desarmados (somente corpo a corpo)':'Ataques comuns'):''}${p.abilityChoice?`<label>Salvaguarda<select name="ability">${Object.keys(actor.system.abilities??{}).map(key=>`<option value="${esc(key)}" ${c.ability===key?'selected':''}>${esc(CONFIG.DND5E.abilities[key]?.label??key)}</option>`).join('')}</select></label>`:''}${p.formChoice?`<label>Forma<select name="form"><option value="wide" ${c.form==='wide'?'selected':''}>Corpo Largo</option><option value="large" ${c.form==='large'?'selected':''}>Corpo Grande</option></select></label>`:''}<p>${esc(p.manual??'')}</p><p>Salvar encerra o efeito atual. Ative-o novamente após ajustar estas opções.</p>`,buttons:[{action:'save',label:'Salvar',callback:(_e,_b,d)=>({activityId:d.element.querySelector('[name=activityId]')?.value,sourceItemId:d.element.querySelector('[name=sourceItemId]')?.value,ability:d.element.querySelector('[name=ability]')?.value,form:d.element.querySelector('[name=form]')?.value,enabled:d.element.querySelector('[name=enabled]').checked,level:d.element.querySelector('[name=level]')?.value,techniqueIds:Array.from(d.element.querySelector('[name=techniqueIds]')?.selectedOptions??[],o=>o.value),weaponIds:Array.from(d.element.querySelector('[name=weaponIds]')?.selectedOptions??[],o=>o.value)})},{action:'cancel',label:'Cancelar',callback:()=>null}],rejectClose:false});
   if(choice)return configureCatalogue(actor,id,choice);return null;
 }
 export function renderCatalogueTab(app,root){
@@ -209,6 +223,7 @@ export async function refreshCatalogueActor(actor){
 }
 export function installCatalogueTimers(){
   if(catalogueInstalled)return;catalogueInstalled=true;
+  for(const entry of Object.values(CONFIG.DND5E.activityTypes??{}))wrapCatalogueUse(entry.documentClass?.prototype);
   const report=error=>{console.error(MODULE_ID+' | Automações',error);};
   Hooks.on('createChatMessage',message=>resolveCatalogueRequest(message).catch(report));
   for(const message of game.messages??[])if(message.getFlag?.(MODULE_ID,'catalogueRequest')?.state==='pending')resolveCatalogueRequest(message).catch(report);
@@ -228,4 +243,98 @@ export function installCatalogueTimers(){
       if(expired.length)await actor.deleteEmbeddedDocuments('ActiveEffect',expired.map(e=>e.id));
     });
   });
+}
+
+export function catalogueActivity(actor,id){
+  const p=AUTOMATIONS.find(p=>p.id===id),source=p&&catalogueSource(actor,p);
+  const candidates=activitiesOf(source).filter(a=>a.canUse!==false),selected=settings(actor)[id]?.activityId;
+  return selected?candidates.find(a=>a.id===selected):candidates.length===1?candidates[0]:null;
+}
+export function validNativeActivation(message,actor,id){
+  const activity=catalogueActivity(actor,id);
+  if(!activity||message?.documentName!=='ChatMessage'||message.flags?.[MODULE_ID]?.nativeActivation?.refunded)return false;
+  if(message.flags?.dnd5e?.activity?.uuid===activity.uuid&&message.flags?.dnd5e?.item?.uuid===activity.item?.uuid)return true;
+  const binding=message.flags?.[MODULE_ID]?.nativeActivation,card=message.flags?.['oprpg-system']?.cardData;
+  return binding?.actorUuid===actor.uuid&&binding.activityUuid===activity.uuid&&binding.itemUuid===activity.item?.uuid&&card?.actorId===actor.id&&card.itemId===activity.item?.id&&card.activityId===activity.id&&String(card.tokenId??'')===String(actor.token?.id??'');
+}
+export function nativeActivationDeltas(message){return message?.system?.deltas??message?.flags?.[MODULE_ID]?.nativeActivation?.consumed;}
+export function watchCatalogueCard(activity){
+  const actor=activity.actor??activity.item?.actor,item=activity.item,authorId=game.user.id;
+  const before={spent:Number(item.system?.uses?.spent),total:Number(actor.system?.energy?.total),generated:Number(actor.system?.energy?.generated)};
+  let hook,timer,done;
+  const promise=new Promise(resolve=>{
+    done=resolve;
+    hook=Hooks.on('createChatMessage',message=>{
+      const card=message.flags?.['oprpg-system']?.cardData;
+      if(message.author?.id!==authorId||card?.actorId!==actor.id||card?.itemId!==item.id||card?.activityId!==activity.id||String(card.tokenId??'')!==String(actor.token?.id??''))return;
+      clearTimeout(timer);Hooks.off('createChatMessage',hook);resolve(message);
+    });
+    timer=setTimeout(()=>{Hooks.off('createChatMessage',hook);resolve(null);},3000);
+  });
+  return {promise,cancel(){clearTimeout(timer);Hooks.off('createChatMessage',hook);done(null);},async record(message){
+    const consumed={actor:[],item:{}};
+    const spent=Number(item.system?.uses?.spent),delta=spent-before.spent;
+    if(Number.isFinite(delta)&&delta>0)consumed.item[item.id]=[{keyPath:'system.uses.spent',delta}];
+    for(const pool of ['total','generated']){
+      if(!Array.from(activity.consumption?.targets??[]).some(t=>t.type==='attribute'&&t.target==='energy.'+pool))continue;
+      const delta=Number(actor.system?.energy?.[pool])-before[pool];
+      if(Number.isFinite(delta)&&delta<0)consumed.actor.push({keyPath:'system.energy.'+pool,delta});
+    }
+    await message.update({[`flags.${MODULE_ID}.nativeActivation`]:{actorUuid:actor.uuid,activityUuid:activity.uuid,itemUuid:item.uuid,consumed,refunded:false}});
+    return {message,updates:{},effects:[],templates:[]};
+  }};
+}
+export async function useCatalogueCharacteristic(actor,id){
+  const preset=AUTOMATIONS.find(p=>p.id===id);
+  if(!preset||!actor?.isOwner)throw Error('Característica indisponível.');
+  if(catalogueEffect(actor,id))return toggleCatalogue(actor,id,{desired:false});
+  if(preset.passive)return toggleCatalogue(actor,id,{desired:true});
+  const activity=catalogueActivity(actor,id);
+  if(!activity)throw Error('Nas Opções, escolha a atividade de ativação do item original. Se o item não tiver atividade, configure-a na ficha.');
+  return activity.use();
+}
+const nativeActivations=new Map(),nativeActorActivations=new Set(),nativeMark=Symbol('oprpgCatalogueUse');
+export function wrapCatalogueUse(proto){
+  const original=proto?.use;if(typeof original!=='function'||original[nativeMark])return false;
+  const wrapped=async function(...args){
+    const actor=this.actor??this.item?.actor;
+    const matches=AUTOMATIONS.filter(p=>!p.passive&&catalogueReady(actor,p)&&catalogueActivity(actor,p.id)?.uuid===this.uuid);
+    if(!matches.length)return original.apply(this,args);
+    if(matches.length>1)throw Error('Mais de uma automação usa esta atividade. Escolha atividades distintas nas Opções.');
+    const preset=matches[0],key=actor.uuid+':'+preset.id;
+    if(nativeActivations.has(key))return nativeActivations.get(key);
+    if(nativeActorActivations.has(actor.uuid))throw Error('Conclua a ativação atual desta ficha antes de ativar outra característica.');
+    nativeActorActivations.add(actor.uuid);
+    const operation=(async()=>{
+      if(Array.from(game.messages??[]).some(m=>{const r=m.getFlag?.(MODULE_ID,'catalogueRequest');return r?.actorUuid===actor.uuid&&r.id===preset.id&&['pending','processing'].includes(r.state);})){const error=Error('Há uma ativação pendente desta característica no chat. Confira o resultado antes de repetir.');error.pending=true;throw error;}
+      if(catalogueEffect(actor,preset.id))return {oprpgCatalogue:false,effects:[],templates:[],updates:{},active:await toggleCatalogue(actor,preset.id,{desired:false})};
+      if(!game.user.isGM&&!game.users?.activeGM)throw Error('É necessário um mestre conectado para coordenar a ativação.');
+      if(preset.id==='diable-jambe'&&game.modules?.get('oprpg-diable-jambe')?.active)throw Error('Desative o Diable Jambe antigo para evitar duplicação.');
+      if(preset.id==='ifrit-jambe'&&!catalogueEffect(actor,'diable-jambe'))throw Error('Ative Diable Jambe primeiro.');
+      let hybridConfirmed=false;
+      if(preset.formChoice){hybridConfirmed=await foundry.applications.api.DialogV2.confirm({window:{title:preset.name},content:'<p>Confirma que está na forma híbrida Zoan?</p>'});if(!hybridConfirmed)return;}
+      const watcher=watchCatalogueCard(this);let results;
+      try{
+        results=await original.apply(this,args);
+        if(!results){const card=await watcher.promise;if(!card)return results;results=await watcher.record(card);}
+      }finally{watcher.cancel();}
+      if(!results.message?.uuid)throw Error('A ativação precisa gerar o cartão original no chat. Confira os recursos consumidos antes de tentar novamente.');
+      try{
+        await toggleCatalogue(actor,preset.id,{desired:true,hybridConfirmed,nativeMessageUuid:results.message.uuid});
+        return results;
+      }catch(error){
+        if(catalogueEffect(actor,preset.id))error.pending=true;
+        // Pending GM requests must not be refunded: the effect can still be applied.
+        const deltas=nativeActivationDeltas(results.message);
+        if(!error.pending&&deltas&&typeof this.refund==='function'){
+          try{await this.refund(deltas);if(results.message.flags?.[MODULE_ID]?.nativeActivation)await results.message.update({[`flags.${MODULE_ID}.nativeActivation.refunded`]:true});else await results.message.update({'system.deltas':null});}
+          catch(refundError){console.error('OPRPG: devolução dos recursos da característica',refundError);ui.notifications.warn('Não foi possível devolver os recursos. Confira o cartão e a ficha antes de repetir.');}
+        }
+        throw error;
+      }
+    })();
+    nativeActivations.set(key,operation);
+    try{return await operation;}finally{nativeActorActivations.delete(actor.uuid);if(nativeActivations.get(key)===operation)nativeActivations.delete(key);}
+  };
+  wrapped[nativeMark]=true;proto.use=wrapped;return true;
 }

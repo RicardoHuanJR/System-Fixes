@@ -1,4 +1,6 @@
 import { openEffectsWindow } from './effect-automations.js';
+import { inspectSheet, openSheetReview } from './sheet-review.js';
+import { useCatalogueCharacteristic, configureCatalogue } from './automation-catalogue.js';
 import { STATE, activitiesOf, applyTempHP } from "./shared.js";
 import { rawHealLimit } from "./healing-fix.js";
 import { repairLoadedCompendium, normalizeFormulaReferences } from "./formula-fix.js";
@@ -49,6 +51,8 @@ export function installPublicAPI() {
   globalThis.OPRPG_FIXES_NPC_SHEET_STATUS = npcSheetRepairStatus;
 
   game.oprpgFixes = {
+    automations:{use:useCatalogueCharacteristic,configure:configureCatalogue},
+    sheetReview:{inspect:inspectSheet,open:openSheetReview},
     characteristics:{open:openEffectsWindow,toggle:toggleCharacteristic,configure:saveProfiles},
     techniqueAutomation:{configure:configureTechniqueAutomation,applyEffects:applyTechniqueEffects},
     periodic:{configure:configurePeriodic,resolve:resolvePeriodic},
