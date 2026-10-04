@@ -26,7 +26,7 @@
   },
   {
     "id": "oprpg-system-fixes",
-    "version": "1.24.2",
-    "manifestSHA256": "81c9b7fc56091a0d8804c234c480a532e4aa2993a93d584f00ce7e0db7cef971"
+    "version": "1.25.0",
+    "manifestSHA256": "4e8e954c606f8f7cf2679a67c26312e03fc1c9ee655aab6a62a92b1d06462a8c"
   }
 ]

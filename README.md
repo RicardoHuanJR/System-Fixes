@@ -1,3 +1,7 @@
+# System Fixes 1.25.0
+
+Primeira etapa das automações de personagens: usos nativos na aba, coordenação pelo mestre e novos efeitos. 680 verificações simuladas aprovadas. As demais automações e testes em Foundry real continuam pendentes. Veja [revisão 1.25.0](modules/oprpg-system-fixes/REVISAO-1.25.0.md).
+
 # System Fixes — módulos da mesa OPRPG
 
 Repositório público da mesa: [RicardoHuanJR/System-Fixes](https://github.com/RicardoHuanJR/System-Fixes). Os módulos são distribuídos individualmente nos arquivos das releases.

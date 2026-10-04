@@ -1,0 +1,16 @@
+{
+  "version": "1.25.0",
+  "method": "Browser DOM and code simulations, mocked Foundry documents; no real Foundry session",
+  "suites": {
+    "audit": 104,
+    "regression": 18,
+    "sustained": 26,
+    "targets": 392,
+    "book-rules": 53,
+    "external-compatibility": 48,
+    "catalogue": 39
+  },
+  "passed": 680,
+  "total": 680,
+  "foundryReal": false
+}

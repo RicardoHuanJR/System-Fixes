@@ -1,3 +1,7 @@
+# Atualização 1.25.0
+
+Primeira etapa das automações de personagens, com usos nativos na aba, coordenação pelo mestre, novos efeitos e correção dos bônus de PV máximos manuais. 680 verificações simuladas aprovadas; testes no Foundry real e as demais etapas continuam pendentes. Veja [REVISAO-1.25.0.md](REVISAO-1.25.0.md) para o escopo exato.
+
 # Atualização 1.23.0
 
 Remove aura/Vitalidade do dano OPRPG, solicita salvaguardas individualmente, configura Controle Cirúrgico por atividade e adiciona a janela Efeitos OPRPG na ficha, baseada em Automações de Efeitos 0.6.0. 610 verificações simuladas aprovadas. Veja [REVISAO-1.23.0.md](REVISAO-1.23.0.md).

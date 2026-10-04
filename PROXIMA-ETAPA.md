@@ -1,3 +1,7 @@
+# Automações de personagens 1.25.0
+
+Primeira etapa das automações de personagens: usos nativos na aba, coordenação pelo mestre e novos efeitos. 680 verificações simuladas aprovadas. As demais automações e testes em Foundry real continuam pendentes. Veja [revisão 1.25.0](modules/oprpg-system-fixes/REVISAO-1.25.0.md).
+
 # Salvaguardas privadas 1.24.2
 
 Pedido individual independente da audiência do ataque privado. Dono responde sem acesso ao cartão do mestre; resultado restrito aos responsáveis. Correção de pedidos antigos ao solicitar novamente. 641 verificações simuladas; teste funcional real pendente.
