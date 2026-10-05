@@ -1,0 +1,57 @@
+{
+  "version": "1.26.2",
+  "chatModifiersVersion": "1.2.0",
+  "passed": 733,
+  "total": 733,
+  "suites": [
+    {
+      "suite": "audit",
+      "passed": 104,
+      "total": 104
+    },
+    {
+      "suite": "regression",
+      "passed": 18,
+      "total": 18
+    },
+    {
+      "suite": "sustained",
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "suite": "targets",
+      "passed": 417,
+      "total": 417
+    },
+    {
+      "suite": "book-rules",
+      "passed": 53,
+      "total": 53
+    },
+    {
+      "suite": "external-compatibility",
+      "passed": 48,
+      "total": 48
+    },
+    {
+      "suite": "catalogue-126",
+      "passed": 67,
+      "total": 67
+    }
+  ],
+  "foundryRealTests": true,
+  "allMechanicsTestedInFoundry": false,
+  "installed": true,
+  "foundryRealCoverage": [
+    "copy attack 15+9+2=26",
+    "reload preserves attack 26",
+    "damage 11+2=13",
+    "replace modifier with 5 gives 16",
+    "half 8 and quarter 4",
+    "remove modifier restores damage 11",
+    "cancel leaves attack unchanged",
+    "antifraude patch active in test client"
+  ],
+  "originalActorUnchanged": true
+}

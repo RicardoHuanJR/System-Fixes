@@ -1,27 +1,9 @@
-# OPRPG — Modificadores de Acerto e Dano
+# Modificadores de Chat 1.2.0
 
-Módulo para Foundry VTT 14 que adiciona o botão **Modificador** abaixo de
-**Acerto** e de **Dano** nos cards de ataque do sistema OPRPG.
+Modificador manual de acerto e dano dos cartões OPRPG. Pode ser escolhido antes ou depois da rolagem. Campo vazio remove o bônus. Cancelar preserva a escolha anterior. Fórmulas aceitam números e dados.
 
-## Instalação
+Testado em conjunto com System Fixes 1.26.2. Usa flags para persistência; bônus de dano integra o estado tipado do Fixes, preservando ½ e ¼. Trocar bônus não acumula o anterior. Animações seguem os destinatários da mensagem. Dados continuam no Roll.evaluate nativo para respeitar anti-fraude.
 
-1. Copie a pasta `oprpg-chat-modifiers` para a pasta `Data/modules` da sua
-   instalação do Foundry VTT.
-2. Reinicie o Foundry ou pressione `F5`.
-3. No mundo, abra **Gerenciar Módulos** e ative
-   **OPRPG — Modificadores de Acerto e Dano**.
+16 casos simulados de compatibilidade e teste real de acerto, dano, substituição, remoção e recarga. A integração real com Argon/DAE não foi exercitada nesta rodada.
 
-## Uso
-
-Antes de rolar Acerto ou Dano, clique no botão **Modificador** e informe uma
-fórmula, por exemplo `1d10`, `2` ou `1d4 + 2`. Quando a rolagem correspondente
-for feita, o módulo rola e soma automaticamente o modificador; ele fica
-destacado no detalhamento. O modificador de dano também entra no botão
-**Aplicar**.
-
-## Observação
-
-O módulo identifica cards com a classe `jujutsu-card` e os botões nativos
-`jj-attack` e `jj-damage`. Ele não depende de editar `character-sheet.mjs`.
-Se você usar este módulo, pode desfazer a alteração direta feita anteriormente
-nesse arquivo para evitar botões duplicados.
+Recarregue as páginas do mestre e jogadores após atualizar e use cartões novos. Cartões antigos já aplicados são preservados; não se inventa o valor original ausente.

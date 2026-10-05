@@ -1,3 +1,7 @@
+# AutomaÃ§Ãµes de personagens 1.26.2
+
+Compatibilidade com Modificadores de Chat 1.2.0: acerto e dano persistentes, troca e remoção sem duplicação, sigilo das animações. 733 verificações simuladas aprovadas e testes reais na cópia da ficha. Veja [revisão](modules/oprpg-system-fixes/REVISAO-1.26.2.md) e [checklist de compatibilidade](COMPATIBILIDADE.md).
+
 # AutomaÃ§Ãµes de personagens 1.26.1
 
 Correção do dano das automações nos cartões com uma única atividade e do conflito com o preparo legado de Haki. 717 verificações simuladas aprovadas. Diable Jambe testado em Foundry real na cópia da ficha: dado de fogo separado no cartão. Veja [revisão 1.26.1](modules/oprpg-system-fixes/REVISAO-1.26.1.md).

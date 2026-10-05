@@ -2,9 +2,11 @@
   "id": "oprpg-chat-modifiers",
   "title": "OPRPG — Modificadores de Acerto e Dano",
   "description": "Adiciona campos de modificador manual aos cards de ataque do OPRPG no chat.",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "authors": [
-    { "name": "Mesa OPRPG" }
+    {
+      "name": "Mesa OPRPG"
+    }
   ],
   "compatibility": {
     "minimum": "14",
@@ -12,9 +14,19 @@
   },
   "relationships": {
     "systems": [
-      { "id": "oprpg-system", "type": "system", "compatibility": { "minimum": "1.0.0" } }
+      {
+        "id": "oprpg-system",
+        "type": "system",
+        "compatibility": {
+          "minimum": "1.0.0"
+        }
+      }
     ]
   },
-  "esmodules": ["scripts/chat-modifiers.js"],
-  "styles": ["styles/chat-modifiers.css"]
+  "esmodules": [
+    "scripts/chat-modifiers.js"
+  ],
+  "styles": [
+    "styles/chat-modifiers.css"
+  ]
 }

@@ -11,8 +11,8 @@
   },
   {
     "id": "oprpg-chat-modifiers",
-    "version": "1.1.1",
-    "manifestSHA256": "828785741fd1b65852d4e83add14b8c7a87247a62766ca6580efc3972dfe992b"
+    "version": "1.2.0",
+    "manifestSHA256": "e06456393772a476e497b7db7d5ae73df445623cf1c08c01b9e89e1da7f059b6"
   },
   {
     "id": "oprpg-detector-fraude",
@@ -26,7 +26,7 @@
   },
   {
     "id": "oprpg-system-fixes",
-    "version": "1.26.1",
-    "manifestSHA256": "f8aaa9db5e19b5f93b5bffb2d8fdb66b573d1eb84a962072eee91e7505c01b69"
+    "version": "1.26.2",
+    "manifestSHA256": "5272f1247f60724530203efc256a44106e81bd5981edc550d169e5ea19a3dab7"
   }
 ]

@@ -1,3 +1,7 @@
+# System Fixes 1.26.2
+
+Compatibilidade com Modificadores de Chat 1.2.0. Veja REVISAO-1.26.2.md e VALIDACAO-1.26.2.json.
+
 # System Fixes 1.26.1
 
 Correção dos bônus de dano em cartões com uma atividade. Veja REVISAO-1.26.1.md e VALIDACAO-1.26.1.json.
