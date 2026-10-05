@@ -84,7 +84,7 @@ async function chooseModifier(card, message, type) {
 }
 
 async function promptModifier(label, currentFormula) {
-  return foundry.applications.api.DialogV2.wait({
+  const result = await foundry.applications.api.DialogV2.wait({
     window: { title: `Modificador de ${label}` },
     content: `<div class="oprpg-modifier-dialog">
       <label for="oprpg-modifier-formula">Fórmula do modificador</label>
@@ -109,6 +109,8 @@ async function promptModifier(label, currentFormula) {
     rejectClose: false,
     close: () => null
   });
+  // Foundry may return the button action when its callback returns null.
+  return result === 'cancel' || result === 'apply' ? null : result;
 }
 
 async function applyPendingModifier(card, message, type, replace=false) {

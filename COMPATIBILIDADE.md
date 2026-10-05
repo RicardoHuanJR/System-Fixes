@@ -10,4 +10,4 @@ A pedido do mestre, todas as futuras atualizações e novos módulos desta mesa 
 - Conferir atividades lançadas pela ficha e Argon quando o caminho mudar; módulos externos permanecem separados.
 - Registrar testes simulados, testes reais e pendências. Não declarar todos os módulos compatíveis com base apenas em arquivos instalados.
 
-Última revisão: System Fixes 1.26.2 / Modificadores 1.2.0. Ver módulos/oprpg-system-fixes/REVISAO-1.26.2.md (caminho real: modules/oprpg-system-fixes/REVISAO-1.26.2.md).
+Última revisão: System Fixes 1.26.3 / Modificadores 1.2.1. Ver módulos/oprpg-system-fixes/REVISAO-1.26.3.md (caminho real: modules/oprpg-system-fixes/REVISAO-1.26.3.md).

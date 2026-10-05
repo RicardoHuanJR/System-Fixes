@@ -1,3 +1,7 @@
+# AutomaÃ§Ãµes de personagens 1.26.3
+
+Compatibilidade com Modificadores de Chat 1.2.1: acerto e dano persistentes, troca e remoção sem duplicação, sigilo das animações. 734 verificações simuladas aprovadas e testes reais na cópia da ficha. Veja [revisão](modules/oprpg-system-fixes/REVISAO-1.26.3.md) e [checklist de compatibilidade](COMPATIBILIDADE.md).
+
 # AutomaÃ§Ãµes de personagens 1.26.2
 
 Compatibilidade com Modificadores de Chat 1.2.0: acerto e dano persistentes, troca e remoção sem duplicação, sigilo das animações. 733 verificações simuladas aprovadas e testes reais na cópia da ficha. Veja [revisão](modules/oprpg-system-fixes/REVISAO-1.26.2.md) e [checklist de compatibilidade](COMPATIBILIDADE.md).

@@ -1,3 +1,7 @@
+# System Fixes 1.26.3
+
+Compatibilidade com Modificadores de Chat 1.2.1 e correção de cancelamento. Veja REVISAO-1.26.3.md e VALIDACAO-1.26.3.json.
+
 # System Fixes 1.26.2
 
 Compatibilidade com Modificadores de Chat 1.2.0. Veja REVISAO-1.26.2.md e VALIDACAO-1.26.2.json.
