@@ -1,0 +1,54 @@
+{
+  "version": "1.26.1",
+  "passed": 717,
+  "total": 717,
+  "suites": [
+    {
+      "suite": "audit",
+      "passed": 104,
+      "total": 104
+    },
+    {
+      "suite": "regression",
+      "passed": 18,
+      "total": 18
+    },
+    {
+      "suite": "sustained",
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "suite": "targets",
+      "passed": 401,
+      "total": 401
+    },
+    {
+      "suite": "book-rules",
+      "passed": 53,
+      "total": 53
+    },
+    {
+      "suite": "external-compatibility",
+      "passed": 48,
+      "total": 48
+    },
+    {
+      "suite": "catalogue-126",
+      "passed": 67,
+      "total": 67
+    }
+  ],
+  "foundryRealTests": true,
+  "allMechanicsTestedInFoundry": false,
+  "installed": true,
+  "originalActorUnchanged": true,
+  "foundryRealCoverage": [
+    "Diable via native item on copy: uses 2 to 1",
+    "Bica single activity: 1d8+5 plus 1d4 fire, total 14, typed fire 3",
+    "half 14 to 7",
+    "quarter 14 to 3",
+    "free deactivation leaves one use",
+    "attack then damage with effect off: only 1d8+5"
+  ]
+}

@@ -47,7 +47,7 @@ function applyActivityDamageLabels(card, state) {
   // O OPRPG já possui o espaço de fórmula/label no card. As versões do sistema
   // mudaram o seletor algumas vezes; somente atualizamos um alvo que realmente
   // exista, nunca criamos um segundo painel paralelo.
-  const target = card.querySelector?.("#jj-dmg-formula, #jj-dmg-label, .jj-dmg-formula, .jj-damage-label, [data-role='damage-label']");
+  const target = card.querySelector?.("#jj-dmg-formula, #jj-dmg-label, .jj-dmg-formula, .jj-damage-label, [data-role='damage-label'], #jj-dmg-panel .jj-panel-label");
   if (target) target.textContent = labels.join(" + ");
 
   try {
@@ -66,7 +66,7 @@ function syncSelectedActivityDamagePreview(card, activity, actor=null) {
   const labelsData = freshActivityDamageLabels(activity, actor);
   if (!labelsData.length) return false;
   const labels = labelsData.map(x => x.label).filter(Boolean);
-  const target = card.querySelector?.("#jj-dmg-formula, #jj-dmg-label, .jj-dmg-formula, .jj-damage-label, [data-role='damage-label']");
+  const target = card.querySelector?.("#jj-dmg-formula, #jj-dmg-label, .jj-dmg-formula, .jj-damage-label, [data-role='damage-label'], #jj-dmg-panel .jj-panel-label");
   if (target) target.textContent = labels.join(" + ");
   try {
     const allTypes = [...new Set(labelsData.flatMap(x => normalizeTypes(x.types)))];
@@ -192,8 +192,9 @@ export function applyDamageState(card, state) {
 function shouldPatch(card, item, activity) {
   if (!card || !item || !activity) return false;
   if (!card.matches?.(".jujutsu-card")) return false;
-  const activities = activitiesOf(item);
-  if (activities.length < 2) return false;
+  // Native OPRPG cards bypass the damage hooks even with a single activity.
+  // Use the same typed pipeline for every damaging attack/save/damage card.
+  if (!['attack', 'save', 'damage'].includes(activity.type)) return false;
   const parts = damageParts(activity);
   return parts.length > 0 || activity.damage?.includeBase === true;
 }

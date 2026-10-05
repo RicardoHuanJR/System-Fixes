@@ -1,3 +1,7 @@
+# System Fixes 1.26.1
+
+Correção do dano das automações nos cartões com uma única atividade e do conflito com o preparo legado de Haki. 717 verificações simuladas aprovadas. Diable Jambe testado em Foundry real na cópia da ficha: dado de fogo separado no cartão. Veja [revisão 1.26.1](modules/oprpg-system-fixes/REVISAO-1.26.1.md).
+
 # System Fixes 1.26.0
 
 Ativação pelo item original e atalhos, explicação de dano por alvo e revisão da ficha. 712 verificações simuladas aprovadas. Testes reais de ativação, consumo, desativação, revisão e dano realizados em uma cópia da ficha, com jogador e mestre conectados. A cobertura real é parcial; as demais automações dos livros continuam pendentes. Veja [revisão 1.26.0](modules/oprpg-system-fixes/REVISAO-1.26.0.md).

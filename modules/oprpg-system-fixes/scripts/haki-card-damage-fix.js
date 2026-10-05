@@ -48,6 +48,9 @@ export function installCardDamageRefresh() {
       card.addEventListener("click", event => {
         const button = event.target.closest?.("[data-action='jj-damage']");
         if (!button || button.disabled || !card.contains(button) || card.dataset.userId !== game.user.id) return;
+        // The typed Fixes pipeline reads the current damage configuration itself.
+        // Extra automation rolls need not match the number of native parts.
+        if (button.dataset.oprpgFixesHandler === '1') return;
         try { prepareCardDamage(card); }
         catch (error) {
           event.preventDefault();

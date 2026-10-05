@@ -1,3 +1,7 @@
+# System Fixes 1.26.1
+
+Correção dos bônus de dano em cartões com uma atividade. Veja REVISAO-1.26.1.md e VALIDACAO-1.26.1.json.
+
 # Atualização 1.26.0
 
 Ativação pelo item original e atalhos, resumo do dano por alvo e botão Revisar ficha na aba Automações. Veja [revisão 1.26.0](REVISAO-1.26.0.md) para uso, limites e validação. 712 verificações simuladas aprovadas; ativação e revisão testadas em Foundry real; demais testes reais pendentes.
