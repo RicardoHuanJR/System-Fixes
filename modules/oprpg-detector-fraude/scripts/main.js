@@ -3,6 +3,13 @@
  * v1.3.1: exibe o ID da mensagem no alerta (clique para copiar).
  */
 const MOD = "oprpg-detector-fraude";
+const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const inspected=new Set();
+function detectorAuthority(){
+  if(!game.user.isGM)return false;
+  const leader=game.users.activeGM??game.users.find(u=>u.active&&u.isGM);
+  return !leader||leader.id===game.user.id;
+}
 
 Hooks.once("init", () => {
   game.settings.register(MOD, "sensibilidade", {
@@ -37,11 +44,12 @@ function recalcular(rollJSON) {
   let expr = "";
   for (const t of rollJSON.terms ?? []) {
     if (ehTermoDado(t)) expr += somaDoTermo(t);
-    else if (t.operator !== undefined) expr += t.operator;
-    else if (t.number !== undefined) expr += t.number;
+    else if (["+","-","*","/","%","**"].includes(t.operator)) expr += t.operator;
+    else if (typeof t.number === "number" && Number.isFinite(t.number)) expr += t.number;
     else return null;
   }
-  try { const v = Function(`"use strict"; return (${expr});`)(); return Number.isFinite(v) ? v : null; }
+  if(!expr || !/^[0-9.eE+*/%() -]+$/.test(expr))return null;
+  try { const v = Roll.safeEval(expr); return Number.isFinite(v) ? v : null; }
   catch { return null; }
 }
 
@@ -63,7 +71,7 @@ function analisar(msg, roll) {
 
   const real = recalcular(j);
   if (real !== null && real !== roll.total)
-    motivos.push(`Total declarado (${roll.total}) nao confere com a soma dos termos (${real})`);
+    motivos.push(`Total declarado (${esc(roll.total)}) nao confere com a soma dos termos (${real})`);
 
   for (const t of dados) {
     const f = facesDe(t);
@@ -81,10 +89,12 @@ function analisar(msg, roll) {
 }
 
 Hooks.on("createChatMessage", async (msg) => {
-  if (!game.user.isGM) return;
+  if (!detectorAuthority() || inspected.has(msg.id)) return;
   const autor = msg.author ?? msg.user;
-  const roll = msg.rolls?.[0];
-  if (!roll) return;
+  const rolls = Array.from(msg.rolls??[]);
+  if (!rolls.length) return;
+  inspected.add(msg.id);if(inspected.size>500)inspected.delete(inspected.values().next().value);
+  for(const roll of rolls){
 
   if (game.settings.get(MOD, "debug")) {
     const j = roll.toJSON?.() ?? {};
@@ -96,22 +106,22 @@ Hooks.on("createChatMessage", async (msg) => {
   if (game.settings.get(MOD, "ignorarGM") && autor?.isGM) return;
 
   const motivos = analisar(msg, roll);
-  if (!motivos.length) return;
+  if (!motivos.length) continue;
 
   const autoritativa = roll.options?.oprpgAutoritativa === true;
   const conteudo = `
     <div class="oprpg-alerta">
       <p><strong>&#9888; Rolagem suspeita detectada</strong></p>
-      <p><b>Personagem:</b> ${msg.speaker?.alias ?? "-"}<br>
-         <b>Rolagem:</b> ${msg.flavor ?? "-"}<br>
-         <b>Formula:</b> ${roll.formula} = ${roll.total}<br>
-         <b>Autor real:</b> ${autor?.name ?? "?"} (nao-GM)<br>
-         <b>Classe:</b> ${roll.toJSON?.()?.class ?? "?"}<br>
+      <p><b>Personagem:</b> ${esc(msg.speaker?.alias ?? "-")}<br>
+         <b>Rolagem:</b> ${esc(msg.flavor ?? "-")}<br>
+         <b>Formula:</b> ${esc(roll.formula)} = ${esc(roll.total)}<br>
+         <b>Autor real:</b> ${esc(autor?.name ?? "?")} (nao-GM)<br>
+         <b>Classe:</b> ${esc(roll.toJSON?.()?.class ?? "?")}<br>
          <b>Dados sorteados no GM:</b> ${autoritativa ? "sim" : "nao"}<br>
-         <b>ID da mensagem:</b> <code class="oprpg-id" title="Clique para copiar">${msg.id}</code></p>
+         <b>ID da mensagem:</b> <code class="oprpg-id" title="Clique para copiar">${esc(msg.id)}</code></p>
       <p><b>Motivos:</b></p>
-      <ul>${motivos.map(m => `<li>${m}</li>`).join("")}</ul>
-      <button type="button" class="oprpg-ir-msg" data-msg-id="${msg.id}">
+      <ul>${motivos.map(m => `<li>${esc(m)}</li>`).join("")}</ul>
+      <button type="button" class="oprpg-ir-msg" data-msg-id="${esc(msg.id)}">
         <i class="fas fa-search"></i> Ver mensagem original no chat
       </button>
     </div>`;
@@ -121,11 +131,14 @@ Hooks.on("createChatMessage", async (msg) => {
     whisper: ChatMessage.getWhisperRecipients("GM").map(u => u.id),
     speaker: { alias: "Detector de Fraude" }
   });
-  console.warn(`${MOD} | suspeita em ${msg.id}:`, motivos);
+  console.warn(`${MOD} | suspeita em ${esc(msg.id)}:`, motivos);
+  }
 });
 
+const bound=new WeakSet();
 function ligarBotao(html) {
   const el = html instanceof HTMLElement ? html : html?.[0];
+  if(!el||bound.has(el))return;bound.add(el);
   el?.querySelector(".oprpg-ir-msg")?.addEventListener("click", ev => {
     const id = ev.currentTarget.dataset.msgId;
     const alvo = document.querySelector(`.chat-message[data-message-id="${id}"]`);

@@ -2,7 +2,7 @@
   "id": "oprpg-system-fixes",
   "title": "OPRPG System Fixes & Compatibility",
   "description": "Correções OPRPG para Foundry v14: automações de personagens, usos nativos na aba, coordenação pelo mestre, salvaguardas individuais e Controle Cirúrgico por atividade.",
-  "version": "1.26.3",
+  "version": "1.27.0",
   "authors": [
     {
       "name": "Adaptação OPRPG — módulo de compatibilidade local"

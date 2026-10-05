@@ -35,9 +35,11 @@ Hooks.once("init", () => {
 
 /* ---------- lado do GM: sorteia de verdade ---------- */
 async function sortearNoGM({ quantidade, faces, userId }) {
+  if(!game.user.isGM)throw Error("Sorteio requer mestre.");
+  if(!Number.isSafeInteger(quantidade)||quantidade<1||quantidade>1000||!Number.isSafeInteger(faces)||faces<2||faces>1000000)throw Error("Pedido de dados inválido.");
   const res = [];
   for (let i = 0; i < quantidade; i++) {
-    res.push(Math.ceil(CONFIG.Dice.randomUniform() * faces));
+    res.push(Math.floor(CONFIG.Dice.randomUniform() * faces) + 1);
   }
   if (game.settings.get(MOD, "log"))
     console.log(`${MOD} | ${quantidade}d${faces} para ${game.users.get(userId)?.name}: [${res.join(", ")}]`);
@@ -94,6 +96,7 @@ function aplicarPatch() {
     const original = C.prototype._evaluate;
 
     C.prototype._evaluate = async function (options = {}) {
+      if(options.minimize || options.maximize)return original.call(this,options);
       const podeInterceptar =
         !game.user.isGM &&
         game.settings.get(MOD, "ativo") &&
@@ -110,9 +113,11 @@ function aplicarPatch() {
       }
 
       try {
-        const { resultados, gmUserId } = await socket.executeAsGM("sortearNoGM", {
-          quantidade: this.number, faces: this.faces, userId: game.user.id
-        });
+        const request=socket.executeAsGM("sortearNoGM", {quantidade:this.number,faces:this.faces,userId:game.user.id});
+        let timeout;
+        const reply=await Promise.race([request,new Promise((_resolve,reject)=>{timeout=setTimeout(()=>reject(Error("O mestre não respondeu ao sorteio em 15 segundos.")),15000);})]).finally(()=>clearTimeout(timeout));
+        const {resultados,gmUserId}=reply??{};
+        if(!Array.isArray(resultados)||resultados.length!==this.number||!resultados.every(n=>Number.isSafeInteger(n)&&n>=1&&n<=this.faces))throw Error("Resposta de dados inválida.");
         // Ainda NÃO congela aqui — _evaluateModifiers() precisa poder
         // marcar dados como descartados (vantagem/desvantagem, kh/kl,
         // exploding dice, etc.), e isso falharia num objeto congelado.

@@ -6,7 +6,8 @@ const PRESETS = {
   large:   { width: 176, height: 202, title: 13, gap: 10 }
 };
 
-const observed = new WeakSet();
+const observed = new Set();
+let layoutPending=false;
 let resizeObserver = null;
 
 function setting(key, fallback) {
@@ -60,8 +61,13 @@ export function alignUtilityControls(root = document.querySelector(".extended-co
   return true;
 }
 
-function scheduleLayout() {
-  requestAnimationFrame(() => requestAnimationFrame(() => applyLayout()));
+export function scheduleLayout() {
+  if(layoutPending)return;layoutPending=true;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    layoutPending=false;
+    for(const node of observed)if(!node.isConnected){resizeObserver?.unobserve(node);observed.delete(node);}
+    applyLayout();
+  }));
 }
 
 function watch(root) {
@@ -71,8 +77,8 @@ function watch(root) {
   resizeObserver.observe(root);
   const portrait = root.querySelector(".portrait-hud");
   const sets = root.querySelector(".weapon-sets");
-  if (portrait) resizeObserver.observe(portrait);
-  if (sets) resizeObserver.observe(sets);
+  if (portrait) {observed.add(portrait);resizeObserver.observe(portrait);}
+  if (sets) {observed.add(sets);resizeObserver.observe(sets);}
 }
 
 export function installLayoutManager() {

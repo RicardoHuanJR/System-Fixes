@@ -1,3 +1,7 @@
+# 1.27.0
+
+Compatibilidade conjunta, redução de trabalho repetido, cancelamento seguro, diagnóstico e avaliação de encontros para o mestre. Veja REVISAO-1.27.0.md.
+
 # 1.23.0
 
 - Dano em PV/camadas sem campos legados de aura.

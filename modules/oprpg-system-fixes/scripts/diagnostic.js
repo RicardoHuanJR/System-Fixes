@@ -1,3 +1,4 @@
+import { moduleCompatibility, compatibilityHTML } from './module-compatibility.js';
 import { MODULE_ID, VERIFIED_SYSTEM, STATE, healMode } from "./shared.js";
 import { shieldPointsStatus, damageTypePipelineStatus } from "./shield-points-fix.js";
 import { multiActivityAttackStatus } from "./multi-activity-attack-fix.js";
@@ -84,6 +85,7 @@ export function compatibilityReport() {
   const tests = selfTest({log:false, deep:false});
   const systemVersion = game.system?.version ?? "—";
   return {
+    moduleInteractions: moduleCompatibility(),
     foundry: game.version,
     system: {id: game.system?.id, version: systemVersion, verified: systemVersion === VERIFIED_SYSTEM},
     module: {version: mod?.version ?? "—", active: !!mod?.active},
@@ -160,7 +162,7 @@ export async function openCompatibilityPanel() {
   const warnings = report.warnings.length ? `<h3>Avisos</h3><ul>${report.warnings.map(w=>`<li>${foundry.utils.escapeHTML(String(w))}</li>`).join("")}</ul>` : `<p>Nenhum aviso registrado.</p>`;
   return foundry.applications.api.DialogV2.wait({classes:['oprpg-fixes-dialog'],
     window:{title:"OPRPG System Fixes — Compatibilidade"},
-    content:`<div><table style="width:100%;border-collapse:collapse">${rows}</table>${warnings}<p class="hint">Depois de qualquer atualização oficial do OPRPG, abra este painel e confirme que os patches continuam reconhecidos.</p></div>`,
+    content:`<div><table style="width:100%;border-collapse:collapse">${rows}</table>${compatibilityHTML(report.moduleInteractions)}${warnings}<p class="hint">Depois de qualquer atualização oficial do OPRPG, abra este painel e confirme que os patches continuam reconhecidos.</p></div>`,
     buttons:[{label:"Fechar",action:"close",default:true,callback:()=>null}],rejectClose:false,close:()=>null
   });
 }

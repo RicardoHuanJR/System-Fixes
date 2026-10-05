@@ -10,4 +10,4 @@ A pedido do mestre, todas as futuras atualizações e novos módulos desta mesa 
 - Conferir atividades lançadas pela ficha e Argon quando o caminho mudar; módulos externos permanecem separados.
 - Registrar testes simulados, testes reais e pendências. Não declarar todos os módulos compatíveis com base apenas em arquivos instalados.
 
-Última revisão: System Fixes 1.26.3 / Modificadores 1.2.1. Ver módulos/oprpg-system-fixes/REVISAO-1.26.3.md (caminho real: modules/oprpg-system-fixes/REVISAO-1.26.3.md).
+Última revisão: Fixes 1.27.0, Modificadores 1.2.1, Argon OPRPG 6.4.1, Anti-Fraude 1.4.1, Detector 1.3.2. Veja modules/oprpg-system-fixes/REVISAO-1.27.0.md.

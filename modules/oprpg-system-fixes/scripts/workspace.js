@@ -1,3 +1,4 @@
+import { moduleCompatibility, compatibilityHTML } from './module-compatibility.js';
 import { openEffectsWindow } from './effect-automations.js';
 import { readHakiFlag } from './haki-unified-rules.js';
 import { MODULE_ID, STATE } from './shared.js';
@@ -111,7 +112,7 @@ export async function openWorkspace(actor=null) {
   <h3>Concentração pendente</h3><label>Teste <select name="concentration">${pending.map(m=>`<option value="${esc(m.id)}">CD ${esc(readHakiFlag(m,'check')?.dc)}</option>`).join('')}</select></label><p>${pending.length} teste(s) pendente(s). Cada dano mantém sua própria CD.</p>
   <h3>Perito — Haki</h3><label>Teste que falhou <select name="hakiCheck">${checks.map(m=>`<option value="${esc(m.id)}">${esc(m.rolls?.[0]?.total??'?')} — ${esc(m.flavor??m.id)}</option>`).join('')}</select></label><p>Uma repetição por dia do mundo; o segundo resultado é obrigatório. A falha será confirmada antes de rolar.</p>
   <h3>Histórico recente</h3><ol>${history.slice(-15).reverse().map(e=>`<li>${esc(new Date(e.at).toLocaleString())} — ${esc(e.label)}${e.kind==='training'?` — ${Number(e.paid)||0} PT; ${esc(e.origin)} ${esc(e.note)}`:''}</li>`).join('')}</ol><p>A reversão de recursos exige os valores registrados e restaura apenas recursos; não reativa efeitos ou concentração encerrados. Não é possível desfazer novamente o mesmo registro.</p><p>Automação: ${runtime.passes} verificações do relógio, ${runtime.visited} fichas visitadas; ${runtime.queues} operação(ões) na fila. Índices ativos: ${esc(JSON.stringify(runtime.timers))}.</p>
-  <details><summary>Diagnóstico e correções</summary><p>Privacidade: ${privacy.installed?'instalada':'inativa'}; dados 3D: ${privacy.dice?'protegidos':'não detectados'}; exibições protegidas nesta sessão: ${privacy.protected}.</p><p>${Object.entries(FEATURES).map(([key,label])=>`${esc(label)}: ${featureEnabled(key)?'habilitado':'desabilitado'}`).join('<br>')}</p><p>${(STATE.warnings??[]).map(esc).join('<br>')||'Sem avisos registrados.'}</p><p>Os grupos podem ser ligados ou desligados em Configurações de Jogo → OPRPG System Fixes.</p></details>`;
+  <details><summary>Diagnóstico e correções</summary>${compatibilityHTML(moduleCompatibility())}<p>Privacidade: ${privacy.installed?'instalada':'inativa'}; dados 3D: ${privacy.dice?'protegidos':'não detectados'}; exibições protegidas nesta sessão: ${privacy.protected}.</p><p>${Object.entries(FEATURES).map(([key,label])=>`${esc(label)}: ${featureEnabled(key)?'habilitado':'desabilitado'}`).join('<br>')}</p><p>${(STATE.warnings??[]).map(esc).join('<br>')||'Sem avisos registrados.'}</p><p>Os grupos podem ser ligados ou desligados em Configurações de Jogo → OPRPG System Fixes.</p></details>`;
   const field=(b,n)=>b.form.elements.namedItem(n)?.value;
   const choice=await foundry.applications.api.DialogV2.wait({classes:['oprpg-fixes-dialog','oprpg-fixes-workspace'],window:{title:`Painel Fixes — ${actor.name}`},position:{width:650},content,buttons:[
     ...(featureEnabled('characteristics')?[{action:'characteristics',label:'Efeitos OPRPG',callback:()=>({action:'characteristics'})}]:[]),
@@ -129,7 +130,7 @@ export async function openWorkspace(actor=null) {
     {action:'perito',label:'Perito: repetir Haki',callback:(_,b)=>({action:'perito',id:field(b,'hakiCheck')})},
     ...(game.user.isGM?[{action:'backup',label:'Backup desta ficha',callback:()=>({action:'backup'})}]:[]),
     {action:'close',label:'Fechar',callback:()=>null}],rejectClose:false});
-  if(!choice||!actor.isOwner)return;
+  if(!choice||typeof choice!=='object'||!actor.isOwner)return;
   if(choice.action==='characteristics')return openEffectsWindow(actor);
   if(choice.action==='areaEnd')return endPersistentArea(actor,choice.id);
   if(choice.action==='periodic')return configurePeriodic(actor.effects.get(choice.id));

@@ -182,8 +182,10 @@ function patchTextEditorHolder(holder, key = "enrichHTML") {
 
 function installScopedTextEditorGuard() {
   let installed = false;
-  try { installed = patchTextEditorHolder(globalThis.TextEditor) || installed; } catch (_) {}
-  try { installed = patchTextEditorHolder(foundry?.applications?.ux?.TextEditor?.implementation) || installed; } catch (_) {}
+  try {
+    const modern=foundry?.applications?.ux?.TextEditor?.implementation;
+    installed=patchTextEditorHolder(modern ?? globalThis.TextEditor) || installed;
+  } catch (_) {}
   return installed;
 }
 

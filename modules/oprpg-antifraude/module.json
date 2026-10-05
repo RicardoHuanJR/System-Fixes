@@ -2,13 +2,32 @@
   "id": "oprpg-antifraude",
   "title": "OPRPG Anti-Fraude de Rolagens",
   "description": "Substitui a fonte de aleatoriedade dos dados no cliente dos jogadores: os resultados passam a ser sorteados no cliente do GM via socketlib. Funciona para rolagens da ficha, de macros e do console, sem depender de hooks do sistema.",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "socket": true,
-  "compatibility": { "minimum": "13", "verified": "14" },
-  "relationships": {
-    "systems": [ { "id": "oprpg-system", "type": "system" } ],
-    "requires": [ { "id": "socketlib", "type": "module" } ]
+  "compatibility": {
+    "minimum": "13",
+    "verified": "14"
   },
-  "esmodules": ["scripts/main.js"],
-  "authors": [{ "name": "GM" }]
+  "relationships": {
+    "systems": [
+      {
+        "id": "oprpg-system",
+        "type": "system"
+      }
+    ],
+    "requires": [
+      {
+        "id": "socketlib",
+        "type": "module"
+      }
+    ]
+  },
+  "esmodules": [
+    "scripts/main.js"
+  ],
+  "authors": [
+    {
+      "name": "GM"
+    }
+  ]
 }

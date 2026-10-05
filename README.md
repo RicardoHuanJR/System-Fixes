@@ -1,3 +1,7 @@
+# System Fixes 1.27.0
+
+Revisão conjunta: Fixes 1.27.0, Argon OPRPG 6.4.1, Anti-Fraude 1.4.1, Detector 1.3.2 e Modificadores 1.2.1. 771 verificações simuladas aprovadas. Diagnóstico de módulos, menos trabalho repetido e ferramenta de encontros para o mestre. Veja [revisão e limites dos testes](modules/oprpg-system-fixes/REVISAO-1.27.0.md) e [checklist](COMPATIBILIDADE.md).
+
 # System Fixes 1.26.3
 
 Compatibilidade com Modificadores de Chat 1.2.1: acerto e dano persistentes, troca e remoção sem duplicação, sigilo das animações. 734 verificações simuladas aprovadas e testes reais na cópia da ficha. Veja [revisão](modules/oprpg-system-fixes/REVISAO-1.26.3.md) e [checklist de compatibilidade](COMPATIBILIDADE.md).

@@ -1,0 +1,58 @@
+{
+  "simulatedPassed": 771,
+  "simulatedTotal": 771,
+  "suites": [
+    {
+      "suite": "audit",
+      "passed": 104,
+      "total": 104
+    },
+    {
+      "suite": "regression",
+      "passed": 18,
+      "total": 18
+    },
+    {
+      "suite": "sustained",
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "suite": "targets",
+      "passed": 418,
+      "total": 418
+    },
+    {
+      "suite": "book-rules",
+      "passed": 53,
+      "total": 53
+    },
+    {
+      "suite": "external-compatibility",
+      "passed": 48,
+      "total": 48
+    },
+    {
+      "suite": "catalogue-126",
+      "passed": 67,
+      "total": 67
+    },
+    {
+      "suite": "support",
+      "passed": 37,
+      "total": 37
+    }
+  ],
+  "allMechanicsTestedInFoundry": false,
+  "fpsComparison": false,
+  "realFoundry": {
+    "playerSession": true,
+    "activeModulesUI": true,
+    "chatModifierChangeAndCancel": true,
+    "damageBonusAddAndRemove": true,
+    "halfAndQuarter": true,
+    "actorResourcesChanged": false,
+    "gmNewVersionReloadConfirmed": false,
+    "allMechanics": false
+  }
+}

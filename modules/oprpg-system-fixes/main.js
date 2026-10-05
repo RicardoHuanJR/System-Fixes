@@ -1,3 +1,4 @@
+import { installNarratorTools } from './scripts/narrator-tools.js';
 import { installEffectAutomations } from './scripts/effect-automations.js';
 import { registerFeatureSettings, featureEnabled } from './scripts/feature-settings.js';
 import { registerBookSettings, installBookRules } from './scripts/book-rules.js';
@@ -193,6 +194,7 @@ Hooks.once("ready", async () => {
   }
 
   if(featureEnabled("workspace"))safeInstall("Painel Fixes",installWorkspace);
+  safeInstall("Ferramentas do mestre",installNarratorTools);
   installResourceHistory();
   try { selfTest({ log: false, deep: false }); }
   catch (error) { console.error(`${MODULE_ID} | Self test automático falhou`, error); }

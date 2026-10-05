@@ -1,6 +1,6 @@
 import { STATE } from './shared.js';
 
-const queues = new Map(), timers = new Map();
+const queues = new Map(), timers = new Map(), preparations = new WeakSet();
 let installed = false, running = null, dirty = false;
 const metrics = {passes:0,visited:0,executed:0,errors:0,queued:0,lastMs:0,maxMs:0};
 const keyOf = actor => actor?.uuid ?? actor?.id;
@@ -86,4 +86,16 @@ export function installAutomationRuntime() {
   for(const event of ['createCombat','updateCombat','deleteCombat'])Hooks.on(event,combat=>{for(const entry of combat.combatants??[])refreshTimedActor(entry.actor)});
   for(const event of ['createCombatant','updateCombatant','deleteCombatant'])Hooks.on(event,entry=>refreshTimedActor(entry.actor));
   STATE.automationRuntime=true;
+}
+
+// Batch embedded-effect hooks without sharing state between synthetic actors.
+export function scheduleActorPreparation(actor) {
+  if(!actor?.prepareData || preparations.has(actor))return false;
+  preparations.add(actor);
+  queueMicrotask(()=>{
+    try{actor.prepareData();}
+    catch(error){STATE.warnings.push(`Recalcular ficha: ${error.message}`);console.warn(error);}
+    finally{preparations.delete(actor);}
+  });
+  return true;
 }

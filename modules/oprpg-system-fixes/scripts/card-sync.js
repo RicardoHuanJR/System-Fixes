@@ -20,7 +20,7 @@ export async function persistNativeCard(message,card) {
 }
 function forget(id) {
   const watcher=watchers.get(id);if(!watcher)return;
-  watcher.observer.disconnect();clearTimeout(watcher.timer);watchers.delete(id);
+  watcher.observer.disconnect();clearTimeout(watcher.timer);clearTimeout(watcher.deadline);watchers.delete(id);
 }
 export function installCardSync() {
   if(installed)return;installed=true;
@@ -34,14 +34,15 @@ export function installCardSync() {
     forget(message.id);
     // Observe only this active roll's card, never the document or token canvas.
     if(watchers.size>=20)forget(watchers.keys().next().value);
-    const watcher={timer:null,observer:null};
+    const watcher={timer:null,deadline:null,observer:null};
     watcher.observer=new MutationObserver(()=>{
       clearTimeout(watcher.timer);
       watcher.timer=setTimeout(async()=>{
-        try{if(await persistNativeCard(message,card))forget(message.id);}
+        try{await persistNativeCard(message,card);forget(message.id);}
         catch(error){forget(message.id);STATE.warnings.push(`Resultado do dano não compartilhado: ${error.message}`);ui.notifications.error('Não foi possível compartilhar o resultado do dano. Tente novamente.');}
       },150);
     });
+    watcher.deadline=setTimeout(()=>forget(message.id),30000);
     watchers.set(message.id,watcher);watcher.observer.observe(card,{subtree:true,childList:true,characterData:true,attributes:true});
   },true);
   Hooks.on('deleteChatMessage',m=>forget(m.id));

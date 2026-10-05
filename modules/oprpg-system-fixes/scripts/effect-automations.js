@@ -1,3 +1,4 @@
+import { scheduleActorPreparation } from './automation-runtime.js';
 import { MODULE_ID, STATE } from './shared.js';
 import { featureEnabled } from './feature-settings.js';
 import { bonuses, paMaxBonus, applicableEffects } from './effect-automation-rules.js';
@@ -13,7 +14,7 @@ export function automationDamageSpecs(actor,activity){
   const b=automationBonuses(actor,activity);if(!b?.damageFormula)return [];
   const types=Array.from(activity.damage?.parts??[])[0]?.types;
   const type=(typeof types==='string'?types:Array.from(types??[])[0])??'';
-  return [{parts:[b.damageFormula],data:activity.getRollData?.()??actor.getRollData?.()??{},options:{type,types:type?[type]:[],oprpgEffectAutomation:true,flavor:'AutomaÃ§Ãµes de efeitos'}}];
+  return [{parts:[b.damageFormula],data:activity.getRollData?.()??actor.getRollData?.()??{},options:{type,types:type?[type]:[],oprpgEffectAutomation:true,flavor:'Automações de efeitos'}}];
 }
 export function wrapEffectDamage(proto){
   const original=proto?.getDamageConfig;if(typeof original!=='function'||original[mark])return false;
@@ -26,8 +27,8 @@ export function installAutomationCapacity(Data){
 export function effectsWindowContent(actor){return catalogueContent(actor);}
 export async function handleEffectsWindowAction(actor,action,id){return catalogueAction(actor,action,id);}
 export async function openEffectsWindow(actor){
-  if(!actor?.isOwner)throw Error('VocÃª precisa controlar esta ficha.');
-  const dialog=new foundry.applications.api.DialogV2({classes:['oprpg-fixes-dialog','oprpg-effects-dialog'],window:{title:`Efeitos OPRPG â€” ${actor.name}`},position:{width:660},content:effectsWindowContent(actor),modal:false,buttons:[{action:'close',label:'Fechar',callback:()=>null}]});
+  if(!actor?.isOwner)throw Error('Você precisa controlar esta ficha.');
+  const dialog=new foundry.applications.api.DialogV2({classes:['oprpg-fixes-dialog','oprpg-effects-dialog'],window:{title:`Efeitos OPRPG — ${actor.name}`},position:{width:660},content:effectsWindowContent(actor),modal:false,buttons:[{action:'close',label:'Fechar',callback:()=>null}]});
   await dialog.render({force:true});const root=dialog.element instanceof HTMLElement?dialog.element:dialog.element?.[0];
   root.addEventListener('click',async event=>{const button=event.target.closest?.('[data-catalogue-action]');if(!button)return;event.preventDefault();if(button.disabled)return;button.disabled=true;try{await handleEffectsWindowAction(actor,button.dataset.catalogueAction,button.dataset.id);const section=root.querySelector('.oprpg-catalogue');if(section){const box=document.createElement('div');box.innerHTML=effectsWindowContent(actor);section.replaceWith(box.firstElementChild);}}catch(error){ui.notifications.error(error.message);}finally{button.disabled=false;}});return dialog;
 }
@@ -40,7 +41,7 @@ export function installEffectAutomations(){
     const root=app.element instanceof HTMLElement?app.element:app.element?.[0];if(!root)return;
     renderCatalogueTab(app,root);
   });
-  for(const name of ['createActiveEffect','updateActiveEffect','deleteActiveEffect','updateItem'])Hooks.on(name,doc=>{const actor=doc.documentName==='Item'?doc.actor:doc.parent?.documentName==='Actor'?doc.parent:doc.parent?.actor;if(actor)queueMicrotask(()=>{try{actor.prepareData();}catch(error){console.warn('OPRPG: recÃ¡lculo de automaÃ§Ã£o',error);}});});
-  if(game.modules?.get(OLD)?.active)ui.notifications.warn('AutomaÃ§Ãµes de Efeitos antigo estÃ¡ ativo: desative-o e recarregue para usar a integraÃ§Ã£o do Fixes.');
+  for(const name of ['createActiveEffect','updateActiveEffect','deleteActiveEffect','updateItem'])Hooks.on(name,doc=>{const actor=doc.documentName==='Item'?doc.actor:doc.parent?.documentName==='Actor'?doc.parent:doc.parent?.actor;if(actor)scheduleActorPreparation(actor);});
+  if(game.modules?.get(OLD)?.active)ui.notifications.warn('Automações de Efeitos antigo está ativo: desative-o e recarregue para usar a integração do Fixes.');
   STATE.effectAutomations=true;
 }

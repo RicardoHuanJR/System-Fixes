@@ -75,7 +75,7 @@ export async function configureTechniqueAutomation(item){
       if(data.seconds<0||data.top<data.bottom)throw Error('Intervalo de altura ou duração inválido.');
       data.effects=Object.fromEntries(effects.map(e=>[e.id,{when:value('when-'+e.id).value,beneficial:value('beneficial-'+e.id).checked,removeOnExit:value('exit-'+e.id).checked}]));return data;
     }},{action:'cancel',label:'Cancelar',callback:()=>null}]});
-  if(result)await item.setFlag(MODULE_ID,'techniqueAutomation',result);return result;
+  if(!result||typeof result!=='object')return null;await item.setFlag(MODULE_ID,'techniqueAutomation',result);return result;
 }
 export function installTechniqueEffects(){
   if(installed)return;installed=true;
