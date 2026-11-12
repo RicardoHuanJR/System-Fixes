@@ -16,12 +16,17 @@ export async function refundCancelledArea(activity,message){
     const receipts=actor.getFlag(MODULE_ID,'cancelledAreaRefunds')??[];
     if(receipts.includes(message.id))return {refunded:false,reason:'already-refunded'};
     const changes={[`flags.${MODULE_ID}.cancelledAreaRefunds`]:[...receipts,message.id].slice(-200)};
+    // An activity can log multiple consumption entries for the SAME pool.
+    // Aggregate them before computing the next value, otherwise the last row
+    // silently overwrites previous refunds in the same actor.update call.
+    const totals=new Map();
+    for(const row of deltas)totals.set(row.keyPath,(totals.get(row.keyPath)??0)-row.delta);
     let restored=0;
-    for(const row of deltas){
-      const current=Number(foundry.utils.getProperty(actor,row.keyPath));
+    for(const [path,refund] of totals){
+      const current=Number(foundry.utils.getProperty(actor,path));
       const cap=Number(actor.system.energy.max);
       if(!Number.isFinite(current)||!Number.isFinite(cap)||cap<0)throw Error('Recursos de PP inválidos; confira a ficha antes de devolver.');
-      const next=Math.max(current,Math.min(cap,current-row.delta));changes[row.keyPath]=next;restored+=Math.max(0,next-current);
+      const next=Math.max(current,Math.min(cap,current+refund));changes[path]=next;restored+=Math.max(0,next-current);
     }
     await actor.update(changes,{oprpgFixesRefund:true});return {refunded:true,restored};
   });

@@ -1,0 +1,4 @@
+/* Scoped styling; does not change OP RPG item sheets or Argon Core rules. */
+.extended-combat-hud .argon-oprpg-disabled { filter: grayscale(1); opacity: .48; cursor: not-allowed; }
+.extended-combat-hud .argon-oprpg-activity { outline-offset: -2px; }
+.extended-combat-hud .argon-oprpg-activity:focus-visible { outline: 2px solid #e8c66a; }

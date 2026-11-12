@@ -1,17 +1,22 @@
 import { MODULE_ID, STATE, getCardActivity } from './shared.js';
 import { messageAudience, showPrivateDice } from './roll-privacy.js';
-import { rollSelectedActivityDamage, applyDamageState, prepareSaveDamageCard } from './multi-activity-damage-fix.js';
+import { rollSelectedActivityDamage, applyDamageState, damageStateForCard, prepareSaveDamageCard } from './multi-activity-damage-fix.js';
 import { targetActors } from './target-damage.js';
 import { styleSaveDamageButton } from './presentation.js';
 import { areaExecution, areaProtected, executionActors } from './area-state.js';
+import { isCasterActor } from './area-caster.js';
 import { runItemMacros } from './external-compatibility.js';
 
 const busy=new Set();
 let installed=false;
 const esc=value=>foundry.utils.escapeHTML(String(value??''));
-function sourceCard(message) {
+export function sourceCard(message, activityId=null) {
   const root=document.createElement('div');root.innerHTML=message?.content??'';
-  return root.querySelector('.jujutsu-card[data-card-type="save"]');
+  const cards=Array.from(root.querySelectorAll('.jujutsu-card[data-card-type="save"]'));
+  // A request for activity B must never silently roll activity A's ability/DC.
+  // When B is absent, let the independently authorized request supply its
+  // recorded configuration, or fail closed if no such request exists.
+  return activityId ? cards.find(card=>card.dataset.activityId===activityId)??null : cards[0]??null;
 }
 export function hasCompletedSave(message,card,extra=null) {
   if(!message?.id || !card?.dataset.activityId)return false;
@@ -37,8 +42,11 @@ function refreshSourceForResult(result,includeResult=true) {
   if(!source || source.isContentVisible===false)return;
   for(const element of document.querySelectorAll('[data-message-id]')){
     if(element.dataset.messageId!==source.id)continue;
-    const card=element.querySelector('.jujutsu-card[data-card-type="save"]');
-    if(card)refreshSaveDamageButton(source,card,includeResult?result:null);
+    const activityId=String(info.key??'').slice(`${source.id}:`.length).split(':')[0];
+    for(const card of element.querySelectorAll('.jujutsu-card[data-card-type="save"]')){
+      if(card.dataset.activityId===activityId)
+        refreshSaveDamageButton(source,card,includeResult?result:null);
+    }
   }
 }
 export function saveConfiguration(card) {
@@ -52,8 +60,10 @@ export function saveConfiguration(card) {
 export async function rollSaveForActor(actor,source,requestInfo=null) {
   if(!actor?.isOwner || source?.isContentVisible===false&&!requestInfo?.authorizedRequest)throw Error('Você precisa controlar a ficha e poder ver o cartão da técnica.');
   const execution=areaExecution(source);
-  if(execution&&(execution.status!=='ready'||!execution.targets.includes(actor.uuid)||areaProtected(source,actor)))throw Error('Este alvo não precisa rolar a salvaguarda desta execução.');
-  const card=source?.isContentVisible===false?null:sourceCard(source);
+  if(execution&&(execution.status!=='ready'||!execution.targets.includes(actor.uuid)||areaProtected(source,actor)||isCasterActor(actor,execution)))throw Error('Este alvo não precisa rolar a salvaguarda desta execução.');
+  const card=source?.isContentVisible===false?null:sourceCard(source,requestInfo?.activityId??null);
+  if(!card&&source?.isContentVisible!==false&&requestInfo?.activityId)
+    throw Error('A atividade solicitada não está mais presente no cartão visível; peça uma nova solicitação.');
   let spec;try{spec=saveConfiguration(card);}catch(error){if(!requestInfo?.ability||!CONFIG.DND5E.abilities[requestInfo.ability]||!Number.isFinite(requestInfo.dc)||requestInfo.dc<=0)throw error;spec=requestInfo;}
   const {ability,dc}=spec,activityId=requestInfo?.activityId??card?.dataset.activityId;
   if(!activityId)throw Error('Atividade da salvaguarda indisponível.');
@@ -162,11 +172,17 @@ export async function rollSaveDamage(card,message,{scalePrompt=null}={}) {
 export function installSaveWorkflow() {
   if(installed)return;installed=true;
   Hooks.on('renderChatMessageHTML',(message,html)=>{
-    const root=html instanceof HTMLElement?html:html?.[0],card=root?.querySelector('.jujutsu-card[data-card-type="save"]');
-    if(!card || message.isContentVisible===false)return;
-    refreshSaveDamageButton(message,card);
-    const state=message.getFlag(MODULE_ID,'multiActivityDamage');
-    if(state){prepareSaveDamageCard(card);applyDamageState(card,state);card.querySelector('[data-fixes-save-footer]')?.classList.add('visible');}
+    const root=html instanceof HTMLElement?html:html?.[0];
+    if(!root || message.isContentVisible===false)return;
+    // A single message may contain multiple save cards. Hydrate each one
+    // separately instead of silently updating only the first card.
+    const cards = [...(root.matches?.('.jujutsu-card[data-card-type="save"]') ? [root] : []),
+      ...(root.querySelectorAll?.('.jujutsu-card[data-card-type="save"]') ?? [])];
+    for (const card of cards) {
+      refreshSaveDamageButton(message,card);
+      const state=damageStateForCard(message,card);
+      if(state){prepareSaveDamageCard(card);applyDamageState(card,state);card.querySelector('[data-fixes-save-footer]')?.classList.add('visible');}
+    }
   });
   // A target owner may finish the save on a different client. Unlock the source
   // card when that result reaches this client, without changing its document.

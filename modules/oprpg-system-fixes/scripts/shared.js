@@ -212,24 +212,31 @@ export function getCardActivity(card) {
   const actor = getActivityActor(card);
   const item = actor?.items?.get(card?.dataset?.itemId);
   const datasetId = card?.dataset?.activityId ?? null;
+  const explicitSelectionId = card?.dataset?.oprpgFixesSelectedActivityId ?? null;
   const rememberedId = rememberedCardActivityId(card);
-  const ids = [rememberedId, datasetId].filter(Boolean);
+  // The live card is authoritative. A cached selection may describe a previous
+  // activity if the same message/card was re-used for a new action.
+  // The preUpdateChatMessage bridge already writes the correct ID to the card.
+  const ids = [datasetId, explicitSelectionId, rememberedId].filter(Boolean);
   let activity = null;
   let resolvedId = null;
   for (const id of ids) {
     activity = item?.system?.activities?.get?.(id) ?? activitiesOf(item).find(a => a.id === id);
     if (activity) { resolvedId = id; break; }
   }
-  if (!rememberedId && activity && datasetId) rememberCardActivitySelection(card, activity);
-  if (rememberedId && resolvedId === rememberedId && datasetId && datasetId !== rememberedId) {
-    STATE.multiActivityAttackSelectionRecoveries = Number(STATE.multiActivityAttackSelectionRecoveries ?? 0) + 1;
-    try { card.dataset.oprpgFixesSelectedActivityId = rememberedId; } catch (_) {}
-  }
+  if (activity && resolvedId === datasetId) {
+    if (rememberedId !== resolvedId) rememberCardActivitySelection(card, activity);
+    // A stale marker from a previous action must not override the live ID.
+    if (explicitSelectionId && explicitSelectionId !== resolvedId) {
+      try { delete card.dataset.oprpgFixesSelectedActivityId; } catch (_) {}
+    }
+  } else if (activity && !rememberedId) rememberCardActivitySelection(card, activity);
   return { actor, item, activity, activityId: resolvedId, datasetActivityId: datasetId, rememberedActivityId: rememberedId };
 }
 
 export async function applyTempHP(actor, amount) {
-  amount = Math.max(0, Number(amount) || 0);
+  amount = Number(amount);
+  if (!Number.isFinite(amount) || amount <= 0) return false;
   if (!actor || !amount) return false;
   const hp = actor.system?.attributes?.hp;
   if (!hp) return false;

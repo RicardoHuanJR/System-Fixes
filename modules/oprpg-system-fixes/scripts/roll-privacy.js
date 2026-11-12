@@ -16,6 +16,26 @@ export function currentRollMode() {
   return legacyMode()??'publicroll';
 }
 const coreMode=currentRollMode;
+// Foundry V14 uses message modes (public/gm/blind/self) instead of legacy
+// roll modes (publicroll/gmroll/blindroll/selfroll).
+export function toMessageMode(mode=currentRollMode()) {
+  return ({publicroll:'public',gmroll:'gm',blindroll:'blind',selfroll:'self'})[normalizeRollMode(mode)]??'public';
+}
+export function applyMessageVisibility(data,mode=currentRollMode()) {
+  const next=toMessageMode(mode);
+  if(typeof ChatMessage.applyMode==='function'){
+    const applied=ChatMessage.applyMode(data,next);
+    if(applied&&applied!==data)Object.assign(data,applied);
+    return data;
+  }
+  // Compatibility fallback: never accidentally publish secret results if a
+  // custom ChatMessage class does not implement the native V14 helper.
+  const audience=rollAudience(mode);
+  data.whisper=audience.whisper;
+  data.blind=audience.blind;
+  return data;
+}
+
 export function rollAudience(mode=coreMode(),user=game.user) {
   if(mode==='roll')mode=coreMode();
   mode=normalizeRollMode(mode)??mode;
@@ -127,7 +147,7 @@ export function installRollPrivacy() {
     const message=game.messages?.get(card.closest('[data-message-id]')?.dataset.messageId);
     captureCardAudience(message,getActivityActor(card));
   },{capture:true});
-  Hooks.on('updateChatMessage',(message,changes)=>{if(typeof changes.content==='string'||changes.flags?.[MODULE_ID]?.multiActivityDamage||changes[`flags.${MODULE_ID}.multiActivityDamage`])releaseCardAudience(message.id);});
+  Hooks.on('updateChatMessage',(message,changes)=>{if (typeof changes.content === 'string' || changes.flags?.[MODULE_ID]?.multiActivityDamage || changes.flags?.[MODULE_ID]?.multiActivityDamageCards || changes[`flags.${MODULE_ID}.multiActivityDamage`] || Object.keys(changes).some(key => key.startsWith(`flags.${MODULE_ID}.multiActivityDamageCards.`))) releaseCardAudience(message.id);});
   Hooks.on('deleteChatMessage',message=>releaseCardAudience(message.id));
   STATE.rollPrivacyPatch=true;return true;
 }

@@ -1,4 +1,5 @@
 import { STATE, getCardActivity } from './shared.js';
+import { createNativeEmanation, finalizeAreaExecution, isNativeEmanation } from './area-workflow.js';
 
 const wrapped=Symbol('oprpgFixesTargetPrompt');
 const busy=new Set();
@@ -67,6 +68,12 @@ export async function placeCardArea(message, {force=false}={}) {
   if(!activity?.target?.template?.type)return [];
   const run=async()=>{
     validateTechniqueArea(activity);
+    if(isNativeEmanation(activity)){
+      const region=await createNativeEmanation(activity);
+      try{await finalizeAreaExecution(activity,[{document:region}],message);}
+      catch(error){if(region.isOwner!==false)await region.delete();throw error;}
+      return [region];
+    }
     const {default:AbilityTemplate}=await import('/systems/oprpg-system/module/canvas/ability-template.mjs');
     const templates=AbilityTemplate.fromActivity(activity)??[];
     if(!templates.length)throw Error('O sistema não reconheceu o formato da área desta técnica.');

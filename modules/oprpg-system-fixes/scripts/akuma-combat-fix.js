@@ -790,7 +790,10 @@ export async function installAkumaCombatFixes() {
   });
   updateCombatHookId = Hooks.on("updateCombat", (combat, changed) => {
     if (!("turn" in (changed ?? {}) || "round" in (changed ?? {}))) return;
-    void expireIntangibilityAtTurn(combat);
+    void expireIntangibilityAtTurn(combat).catch(error=>{
+      STATE.warnings.push(`Intangibilidade/turno: ${error?.message??error}`);
+      console.error(`${MODULE_ID} | Intangibilidade/turno`,error);
+    });
   });
   renderHookId = Hooks.on("renderChatMessageHTML", (message, html) => {
     const root = html instanceof HTMLElement ? html : html?.[0];
@@ -800,7 +803,12 @@ export async function installAkumaCombatFixes() {
   });
   saveHookId = Hooks.on("dnd5e.preRollSavingThrow", (...args) => onModernPreSave(...args));
   saveLegacyHookId = Hooks.on("dnd5e.preRollAbilitySave", (actor, config, abilityId) => onLegacyPreSave(actor, config, abilityId));
-  restHookId = Hooks.on("dnd5e.restCompleted", (actor, result, config) => { void resetPredatorOnRest(actor, result, config); });
+  restHookId = Hooks.on("dnd5e.restCompleted", (actor, result, config) => {
+    void resetPredatorOnRest(actor, result, config).catch(error=>{
+      STATE.warnings.push(`Predador/descanso: ${error?.message??error}`);
+      console.error(`${MODULE_ID} | Predador/descanso`,error);
+    });
+  });
   await patchCharacterSheetPredator();
   requestAnimationFrame?.(() => {
     try {

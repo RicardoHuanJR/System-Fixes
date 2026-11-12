@@ -37,11 +37,13 @@ import { installPersistentAreas } from './scripts/persistent-areas.js';
 import { installPeriodicEffects } from './scripts/periodic-effects.js';
 import { installAreaRefund } from './scripts/area-refund.js';
 import { installCompatibilityMacros } from './scripts/compatibility-macros.js';
+import { installEmbeddedArgonHUD, registerArgonHUDSettings } from './scripts/argon-hud/integration.js';
 
 // Register diagnostics as soon as the ES module is evaluated. This intentionally
 // happens before Foundry's init hook so an unrelated patch failure cannot hide
 // OPRPG_FIXES_STATUS / OPRPG_FIXES_SELF_TEST from the console.
 installDiagnostics();
+installEmbeddedArgonHUD(); // Install hook before Argon CORE fires argonInit.
 globalThis.OPRPG_FIXES_LOADED = true;
 
 function safeInstall(label, installer) {
@@ -64,6 +66,7 @@ Hooks.once("init", () => {
   }
 
   registerFeatureSettings();
+  registerArgonHUDSettings();
   game.settings.register(MODULE_ID,'refundCancelledAreas',{name:'Devolver PP de áreas canceladas',hint:'Devolve apenas PP com consumo registrado pelo sistema, uma única vez por cartão.',scope:'world',config:true,type:Boolean,default:true});
   safeInstall('Registro de consumo das áreas',installAreaRefund);
   // game.system is available at init; DAE builds specs during document

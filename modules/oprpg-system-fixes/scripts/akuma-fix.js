@@ -449,10 +449,16 @@ export function installAkumaNativeFixes() {
     try { patchItemActivities(item); } catch (_) {}
   });
   createEffectHookId = Hooks.on("createActiveEffect", effect => {
-    void trackPowerUpEffect(effect);
+    void trackPowerUpEffect(effect).catch(error=>{
+      STATE.warnings.push(`Akuma/novo efeito: ${error?.message??error}`);
+      console.error(`${MODULE_ID} | Akuma/novo efeito`,error);
+    });
   });
   deleteEffectHookId = Hooks.on("deleteActiveEffect", effect => {
-    void endPowerUpFromEffect(effect);
+    void endPowerUpFromEffect(effect).catch(error=>{
+      STATE.warnings.push(`Akuma/remoção de efeito: ${error?.message??error}`);
+      console.error(`${MODULE_ID} | Akuma/remoção de efeito`,error);
+    });
   });
 
   STATE.akumaAlternativePatch = !!preUpdateActorHookId;

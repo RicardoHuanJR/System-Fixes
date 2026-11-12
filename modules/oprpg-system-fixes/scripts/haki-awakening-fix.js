@@ -635,21 +635,30 @@ export async function installHakiAwakeningFixes() {
 
   registerActorTimer('shield-recharge',actor=>actor.type==='character'&&hasEndurecimento(actor)&&shieldValue(actor)<shieldMax(actor),actor=>queueActor(actor,()=>recoverShieldIfReady(actor,{source:'world-time'})));
   updateWorldTimeHookId = 'indexed-runtime';
-  updateActorHookId = Hooks.on("updateActor", (actor, changes) => { void onActorUpdated(actor, changes); });
-  updateCombatHookId = Hooks.on("updateCombat", (combat, changed) => { void onCombatAdvanced(combat, changed); });
-  deleteCombatHookId = Hooks.on("deleteCombat", combat => { void onCombatDeleted(combat); });
+  // Foundry does not await these event callbacks. Report asynchronous
+  // failures instead of producing unhandled promise rejections.
+  const background=(label,work)=>{
+    try{Promise.resolve(work()).catch(error=>{
+      STATE.warnings.push(`Haki/${label}: ${error?.message??error}`);
+      console.error(`${MODULE_ID} | Haki/${label}`,error);
+    });}
+    catch(error){STATE.warnings.push(`Haki/${label}: ${error?.message??error}`);console.error(`${MODULE_ID} | Haki/${label}`,error);}
+  };
+  updateActorHookId = Hooks.on("updateActor", (actor, changes) => background('updateActor',()=>onActorUpdated(actor, changes)));
+  updateCombatHookId = Hooks.on("updateCombat", (combat, changed) => background('updateCombat',()=>onCombatAdvanced(combat, changed)));
+  deleteCombatHookId = Hooks.on("deleteCombat", combat => background('deleteCombat',()=>onCombatDeleted(combat)));
   deleteCombatantHookId = Hooks.on("deleteCombatant", combatant => {
     const actor = combatant?.actor;
-    if (actor && hasEndurecimento(actor) && shieldValue(actor) < shieldMax(actor)) void setShieldRecharge(actor, worldNow(), "left-combat");
+    if (actor && hasEndurecimento(actor) && shieldValue(actor) < shieldMax(actor)) background('deleteCombatant',()=>setShieldRecharge(actor, worldNow(), "left-combat"));
   });
   createCombatantHookId = Hooks.on("createCombatant", combatant => {
     const actor = combatant?.actor;
-    if (actor && hasEndurecimento(actor)) void clearShieldRecharge(actor);
+    if (actor && hasEndurecimento(actor)) background('createCombatant',()=>clearShieldRecharge(actor));
   });
-  restHookId = Hooks.on("dnd5e.restCompleted", (actor, result, config) => { void onRestCompleted(actor, result, config); });
+  restHookId = Hooks.on("dnd5e.restCompleted", (actor, result, config) => background('rest',()=>onRestCompleted(actor, result, config)));
   const refreshAwakening = effect => {
     const actor = effect?.parent;
-    if (actor?.documentName === "Actor") void onActorUpdated(actor, {});
+    if (actor?.documentName === "Actor") background('effect',()=>onActorUpdated(actor, {}));
   };
   createEffectHookId = Hooks.on("createActiveEffect", refreshAwakening);
   updateEffectHookId = Hooks.on("updateActiveEffect", refreshAwakening);

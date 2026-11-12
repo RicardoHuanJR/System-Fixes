@@ -6,5 +6,17 @@
   "OPRPGFIXES.TempNoChange": "Nenhum PV temporário foi alterado: os alvos já possuíam valor igual ou maior que {amount}.",
   "OPRPGFIXES.SelectToken": "Selecione um token para aplicar o efeito.",
   "OPRPGFIXES.HealLimitExhausted": "Limite de cura esgotado.",
-  "OPRPGFIXES.HealApplied": "{amount} de cura aplicada."
+  "OPRPGFIXES.HealApplied": "{amount} de cura aplicada.",
+  "ARGON-OPRPG": {
+    "Weapons": "Armas",
+    "Techniques": "Técnicas",
+    "Features": "Habilidades",
+    "Items": "Itens",
+    "Other": "Outras ações",
+    "Macros": "Atalhos",
+    "Empty": "Nenhum atalho disponível",
+    "HP": "PV",
+    "PP": "PP",
+    "AC": "Defesa"
+  }
 }

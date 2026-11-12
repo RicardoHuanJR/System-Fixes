@@ -1,7 +1,7 @@
 import { MODULE_ID, STATE } from './shared.js';
 import { queueActor } from './automation-runtime.js';
 import { responsibleExecutor } from './technique-effects.js';
-import { messageAudience, showPrivateDice } from './roll-privacy.js';
+import { messageAudience, showPrivateDice, applyMessageVisibility } from './roll-privacy.js';
 import { featureEnabled } from './feature-settings.js';
 
 const inflight=new Set();let installed=false;
@@ -31,15 +31,22 @@ export function periodicSpecs(effect){
   if(game.modules?.get('midi-qol')?.active&&globalThis.MidiQOL?.Workflow)return [];
   return Array.from(effect.changes??[]).filter(c=>c.key==='flags.midi-qol.OverTime').map(c=>parseOverTime(c.value)).filter(Boolean);
 }
-export async function requestPeriodic(actor,effect,spec,key){
+export async function requestPeriodic(actor,effect,spec,key,existingRequests=null){
   if(!responsibleExecutor(actor))return null;
-  const previous=Array.from(game.messages??[]).find(m=>m.getFlag?.(MODULE_ID,'periodicRequest')?.key===key);if(previous)return previous;
+  // The combat turn runner provides an index built once for all periodic
+  // effects. Direct requests still verify the chat history independently.
+  const previous=existingRequests
+    ?existingRequests.get(key)
+    :Array.from(game.messages??[]).find(m=>m.getFlag?.(MODULE_ID,'periodicRequest')?.key===key);
+  if(previous)return previous;
   const source=game.messages.get(effect.flags?.[MODULE_ID]?.areaSource),audience=source?messageAudience(source):null;
   let whisper=Array.from(game.users??[]).filter(u=>u.isGM||actor.testUserPermission?.(u,'OWNER')).map(u=>u.id);
   if(audience?.whisper.length)whisper=whisper.filter(id=>audience.whisper.includes(id));
   if(!whisper.length)return null;
   const resolver=Array.from(game.users??[]).find(u=>u.active&&!u.isGM&&whisper.includes(u.id)&&actor.testUserPermission?.(u,'OWNER'))??game.users?.activeGM??game.user;
-  return ChatMessage.create({whisper,blind:false,content:`<div class="jujutsu-card oprpg-fixes-notice"><div class="jj-top"><strong class="jj-top-name">${esc(actor.name)} — ${esc(spec.name??effect.name)}</strong></div><div class="jj-description"><p>${spec.dc?`${esc(CONFIG.DND5E.abilities[spec.ability].label??spec.ability)} · CD ${spec.dc}`:'Dano periódico'}${spec.formula?` · ${esc(spec.formula)}`:''}</p></div><button type="button" class="oprpg-fixes-notice-action" data-fixes-periodic="1">Resolver efeito</button></div>`,flags:{[MODULE_ID]:{periodicRequest:{key,resolver:resolver.id,actor:actor.uuid,effect:effect.id,spec,source:source?.id??null}}}});
+  const created=await ChatMessage.create({whisper,blind:false,content:`<div class="jujutsu-card oprpg-fixes-notice"><div class="jj-top"><strong class="jj-top-name">${esc(actor.name)} — ${esc(spec.name??effect.name)}</strong></div><div class="jj-description"><p>${spec.dc?`${esc(CONFIG.DND5E.abilities[spec.ability].label??spec.ability)} · CD ${spec.dc}`:'Dano periódico'}${spec.formula?` · ${esc(spec.formula)}`:''}</p></div><button type="button" class="oprpg-fixes-notice-action" data-fixes-periodic="1">Resolver efeito</button></div>`,flags:{[MODULE_ID]:{periodicRequest:{key,resolver:resolver.id,actor:actor.uuid,effect:effect.id,spec,source:source?.id??null}}}});
+  existingRequests?.set(key,created);
+  return created;
 }
 export async function resolvePeriodic(request){
   const info=request?.getFlag(MODULE_ID,'periodicRequest');if(!info||request.isContentVisible===false)throw Error('Pedido periódico indisponível.');
@@ -64,19 +71,34 @@ export async function resolvePeriodic(request){
       if(!committed)return null;
     }else await actor.update(changes);
     const audience=source?messageAudience(source):{whisper:[],blind:false};
-    const data={speaker:ChatMessage.getSpeaker({actor}),rolls,whisper:audience.whisper,blind:audience.blind,flavor:`${actor.name} — ${effect.name}${actual.dc?success?' — sucesso':' — falha':''} — ${damage} de dano`,flags:{[MODULE_ID]:{periodicResult:{key:info.key,damage,success}}}};
-    if(!source)ChatMessage.applyRollMode?.(data,game.settings.get('core','rollMode'));
+    const data={speaker:ChatMessage.getSpeaker({actor}),rolls,whisper:audience.whisper,blind:audience.blind,flavor:`${esc(actor.name)} — ${esc(effect.name)}${actual.dc?success?' — sucesso':' — falha':''} — ${damage} de dano`,flags:{[MODULE_ID]:{periodicResult:{key:info.key,damage,success}}}};
+    if(!source)applyMessageVisibility(data);
     const result=await ChatMessage.create(data);for(const roll of rolls)await showPrivateDice(roll,{actor,message:result});
     if(success&&actual.removeOnSuccess)await actor.deleteEmbeddedDocuments('ActiveEffect',[effect.id]);return result;
   },'periodic');}finally{inflight.delete(info.key);}
 }
 export async function periodicCombatTurn(combat,prior,current){
   if(!prior||!current||current.round<prior.round||current.round===prior.round&&current.turn<=prior.turn)return;
+  // On a busy table, one actor may have dozens of effects and thousands of
+  // older chat messages. Avoid scanning all messages once per effect.
+  let existingRequests=null;
   for(const [turn,actor] of [['start',combat.turns?.[current.turn]?.actor],['end',combat.turns?.[prior.turn]?.actor]]){
     if(!actor||!responsibleExecutor(actor))continue;
     for(const effect of actor.effects??[]){
+      // Disabled or suppressed effects cannot tick. Resolve-time checks alone
+      // are not enough: otherwise the GM sends unresolvable requests each turn.
+      if(effect.disabled||effect.isSuppressed)continue;
       let specs;try{specs=periodicSpecs(effect);}catch(e){ui.notifications.warn(`${effect.name}: ${e.message}`);continue;}
-      for(const [i,spec] of specs.entries())if(spec.turn===turn)await requestPeriodic(actor,effect,spec,`${combat.id}:${current.round}:${current.turn}:${actor.uuid}:${effect.id}:${i}:${turn}`);
+      for(const [i,spec] of specs.entries())if(spec.turn===turn){
+        if(!existingRequests){
+          existingRequests=new Map();
+          for(const message of game.messages??[]){
+            const request=message.getFlag?.(MODULE_ID,'periodicRequest');
+            if(request?.key&&!existingRequests.has(request.key))existingRequests.set(request.key,message);
+          }
+        }
+        await requestPeriodic(actor,effect,spec,`${combat.id}:${current.round}:${current.turn}:${actor.uuid}:${effect.id}:${i}:${turn}`,existingRequests);
+      }
     }
   }
 }

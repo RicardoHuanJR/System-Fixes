@@ -31,7 +31,7 @@ export async function rerollPerito(actor,message){
     const audience=messageAudience(message);
     const ability=roll.options?.ability??roll.data?.abilityId;
     const config={skill:'haki',...(ability?{ability}:{}),...(Number.isFinite(roll.options?.target)?{target:roll.options.target}:{}),...(Number.isFinite(roll.options?.advantageMode)?{rolls:[{options:{advantageMode:roll.options.advantageMode}}]}:{})};
-    const result=await actor.rollSkill(config,{options:{window:{title:'Perito — segundo resultado obrigatório'}}},{create:false,rollMode:'selfroll'});
+    const result=await actor.rollSkill(config,{options:{window:{title:'Perito — segundo resultado obrigatório'}}},{create:false,messageMode:'self'});
     const second=Array.isArray(result)?result[0]:result;
     if(!second||!Number.isFinite(second.total))return null;
     // Store the charge before touching the source message: a chat permission failure

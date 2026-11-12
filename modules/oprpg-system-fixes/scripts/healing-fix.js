@@ -49,8 +49,10 @@ function getRawLimit(activity) {
 
 async function consumeHealLimit(activity, amount) {
   const lim = getRawLimit(activity);
-  if (!lim.enabled) return Math.max(0, Number(amount) || 0);
-  const applied = Math.max(0, Math.min(Number(amount) || 0, lim.remaining));
+  if (!lim.enabled) return Number.isFinite(Number(amount)) ? Math.max(0, Number(amount)) : 0;
+  const value = Number(amount);
+  if(!Number.isFinite(value)||value<=0)return 0;
+  const applied = Math.max(0, Math.min(value, Number(lim.remaining) || 0));
   if (applied < amount) ui.notifications.info(`Cura limitada a ${applied} (saldo do Limite de Cura).`);
   if (applied > 0) await activity.update({ "healLimit.spent": Math.min(lim.max, lim.spent + applied) });
   return applied;
@@ -61,38 +63,55 @@ function getTargets() {
   return targets.length ? targets : (canvas.tokens?.controlled ?? []);
 }
 
-async function applyHealingToTargets(activity, amount) {
-  const tokens = getTargets();
-  if (!tokens.length) {
-    ui.notifications.warn(game.i18n.localize("OPRPGFIXES.SelectToken"));
+// Linked tokens can represent the same Actor. A healing card must never
+// apply its rolled amount twice to one sheet because two tokens were targeted.
+export function uniqueHealingActors(tokens=getTargets()) {
+  return [...new Map(Array.from(tokens ?? []).map(token=>token?.actor??token)
+    .filter(actor=>actor?.uuid??actor?.id)
+    .map(actor=>[actor.uuid??actor.id,actor])).values()];
+}
+
+export async function applyHealingToTargets(activity, amount) {
+  const actors=uniqueHealingActors();
+  if(!actors.length){
+    ui.notifications.warn(game.i18n.localize('OPRPGFIXES.SelectToken'));
     return false;
   }
-  const applied = await consumeHealLimit(activity, amount);
-  if (applied <= 0) {
-    ui.notifications.warn(game.i18n.localize("OPRPGFIXES.HealLimitExhausted"));
+  // Never consume a limited healing resource before validating permissions and
+  // whether at least one target can actually receive hit points.
+  if(actors.some(actor=>!actor.isOwner))throw Error('Peça ao mestre para aplicar cura a alvos que você não controla.');
+  const eligible=actors.filter(actor=>{
+    const hp=actor.system?.attributes?.hp;
+    const current=Number(hp?.value),max=Number(hp?.effectiveMax??hp?.max);
+    return hp&&Number.isFinite(current)&&Number.isFinite(max)&&max>=0&&current<max;
+  });
+  if(!eligible.length){ui.notifications.info('Nenhum alvo selecionado precisa recuperar PV.');return false;}
+  const applied=await consumeHealLimit(activity,amount);
+  if(applied<=0){
+    ui.notifications.warn(game.i18n.localize('OPRPGFIXES.HealLimitExhausted'));
     return false;
   }
-  for (const token of tokens) {
-    const actor = token.actor ?? token;
-    const hp = actor?.system?.attributes?.hp;
-    if (!hp) continue;
-    const max = hp.effectiveMax ?? hp.max ?? Infinity;
-    await actor.update({ "system.attributes.hp.value": Math.min(max, Number(hp.value ?? 0) + applied) });
+  for(const actor of eligible){
+    const hp=actor.system.attributes.hp,current=Number(hp.value);
+    const max=Number(hp.effectiveMax??hp.max);
+    const next=Math.min(max,current+applied);
+    if(next>current)await actor.update({'system.attributes.hp.value':next});
   }
-  ui.notifications.info(game.i18n.format("OPRPGFIXES.HealApplied", { amount: applied }));
+  ui.notifications.info(game.i18n.format('OPRPGFIXES.HealApplied',{amount:applied}));
   return applied;
 }
 
-async function applyTempToTargets(amount) {
-  const tokens = getTargets();
-  if (!tokens.length) {
-    ui.notifications.warn(game.i18n.localize("OPRPGFIXES.SelectToken"));
+export async function applyTempToTargets(amount) {
+  const actors=uniqueHealingActors();
+  if(!actors.length){
+    ui.notifications.warn(game.i18n.localize('OPRPGFIXES.SelectToken'));
     return false;
   }
-  let changed = 0;
-  for (const token of tokens) if (await applyTempHP(token.actor ?? token, amount)) changed++;
-  ui.notifications.info(game.i18n.format(changed ? "OPRPGFIXES.TempApply" : "OPRPGFIXES.TempNoChange", { amount }));
-  return true;
+  if(actors.some(actor=>!actor.isOwner))throw Error('Peça ao mestre para aplicar PV temporários a alvos que você não controla.');
+  let changed=0;
+  for(const actor of actors)if(await applyTempHP(actor,amount))changed++;
+  ui.notifications.info(game.i18n.format(changed?'OPRPGFIXES.TempApply':'OPRPGFIXES.TempNoChange',{amount}));
+  return changed>0;
 }
 
 function finishFooter(footer, label) {
@@ -254,23 +273,31 @@ export async function replacementAutoHeal(actor, activity) {
   try { roll = await new Roll(expr, rollData).evaluate(); }
   catch (error) { console.error(`${MODULE_ID} | auto-heal: fórmula inválida`, formula, error); return; }
   await showPrivateDice(roll, {actor});
-  const amount = lim.enabled ? Math.max(0, Math.min(roll.total, lim.remaining)) : Math.max(0, roll.total);
-  if (amount <= 0) return;
+  const amount = lim.enabled ? Math.max(0, Math.min(Number(roll.total), lim.remaining)) : Math.max(0, Number(roll.total));
+  if (!Number.isFinite(amount) || amount <= 0) return;
 
-  if (mode === "temphp") await applyTempHP(actor, amount);
-  else {
-    const hp = actor.system?.attributes?.hp ?? {};
-    await actor.update({ "system.attributes.hp.value": Math.min(hp.effectiveMax ?? hp.max ?? Infinity, Number(hp.value ?? 0) + amount) });
+  let gained=amount;
+  if(mode==='temphp'){
+    if(!await applyTempHP(actor,amount))return;
+  }else{
+    const hp=actor.system?.attributes?.hp??{},before=Number(hp.value??0);
+    const maximum=Number(hp.effectiveMax??hp.max);
+    if(!Number.isFinite(before)||!Number.isFinite(maximum)||maximum<0)return;
+    const next=Math.min(maximum,before+amount);
+    gained=next-before;
+    // At full HP there is no healing to record or consume from Heal Limit.
+    if(!Number.isFinite(gained)||gained<=0)return;
+    await actor.update({'system.attributes.hp.value':next});
   }
-  if (lim.enabled) await activity.update({ "healLimit.spent": Math.min(lim.max, lim.spent + amount) });
+  if(lim.enabled)await activity.update({'healLimit.spent':Math.min(lim.max,lim.spent+gained)});
 
-  const remaining = lim.enabled ? Math.max(0, lim.max - Math.min(lim.max, lim.spent + amount)) : null;
+  const remaining=lim.enabled?Math.max(0,lim.max-Math.min(lim.max,lim.spent+gained)):null;
   await ChatMessage.create({
     ...rollAudience(),
     speaker: ChatMessage.getSpeaker({ actor }),
     content: mode === "temphp"
-      ? `💙 <b>${activity.item.name}</b> concedeu automaticamente <b>${amount} PV temporários</b> no início do turno.`
-      : `💚 <b>${activity.item.name}</b> curou automaticamente <b>${amount}</b> no início do turno.`
+      ? `💙 <b>${foundry.utils.escapeHTML(activity.item.name)}</b> concedeu automaticamente <b>${gained} PV temporários</b> no início do turno.`
+      : `💚 <b>${foundry.utils.escapeHTML(activity.item.name)}</b> curou automaticamente <b>${gained}</b> no início do turno.`
         + (remaining !== null ? ` (limite: ${remaining} restante)` : "")
   });
 }

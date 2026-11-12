@@ -1,3 +1,4 @@
+import { isCasterActor } from './area-caster.js';
 import { MODULE_ID } from './shared.js';
 
 export function areaExecution(message) {
@@ -10,13 +11,15 @@ export async function executionActors(message,fallback) {
   const state=areaExecution(message);
   if(!state)return fallback;
   if(state.status!=='ready')throw Error('Conclua a escolha dos alvos da área antes de resolver esta técnica.');
-  const actors=await Promise.all(state.targets.map(uuid=>fromUuid(uuid)));
+  const actors=await Promise.all(state.targets.filter(uuid=>uuid!==state.casterUuid&&uuid!==state.casterTokenActorUuid).map(uuid=>fromUuid(uuid)));
   if(actors.some(a=>!a||a.documentName!=='Actor'))throw Error('Um alvo da execução não existe mais. Confira o cartão antes de aplicar.');
-  return actors.filter(a=>!areaProtected(message,a));
+  return actors.filter(a=>!areaProtected(message,a)&&!isCasterActor(a,state));
 }
 export function areaSaveMultiplier(message,actor,activity,messages=game.messages) {
   if(areaProtected(message,actor))return 0;
-  const state=areaExecution(message);
+  const execution=areaExecution(message);
+  if(execution&&isCasterActor(actor,execution))return 0;
+  const state=execution;
   if(!state)return 1;
   if(state.status!=='ready'||!state.targets.includes(actor.uuid))throw Error('Alvo não pertence a esta execução da área.');
   if(activity?.type!=='save')return 1;

@@ -1,5 +1,5 @@
 // Installation diagnostics only: matching versions is not a functional test.
-export const OWN_MODULES = ['oprpg-system-fixes','oprpg-chat-modifiers','oprpg-antifraude','oprpg-detector-fraude','enhancedcombathud-oprpg-system'];
+export const OWN_MODULES = ['oprpg-system-fixes','oprpg-chat-modifiers','oprpg-antifraude','oprpg-detector-fraude','enhancedcombathud'];
 export function moduleCompatibility(gameState=game) {
   const modules=gameState.modules;
   const active=id=>!!modules?.get(id)?.active;
@@ -7,11 +7,13 @@ export function moduleCompatibility(gameState=game) {
   const issues=[];
   const add=(id,detail,category='attention')=>issues.push({id,detail,category});
   if(active('oprpg-antifraude')&&!active('socketlib'))add('socketlib','Anti-fraude precisa do socketlib ativo.','dependency');
+  if(active('enhancedcombathud-oprpg-system')&&active('oprpg-system-fixes'))add('enhancedcombathud-oprpg-system','Adaptador Argon antigo também ativo. O System Fixes não registra seus painéis para evitar duplicações; desative o adaptador antigo para usar a integração embutida.','duplicate');
   if(active('enhancedcombathud-oprpg-system')&&!active('enhancedcombathud'))add('enhancedcombathud','A integração OPRPG precisa do Argon Core.','dependency');
+  if(active('enhancedcombathud-dnd5e')&&active('oprpg-system-fixes')&&active('enhancedcombathud'))add('enhancedcombathud-dnd5e','Há outro adaptador Argon ativo; desative-o no mundo OP RPG para evitar painéis não relacionados.','duplicate');
   if(active('enhancedcombathud-oprpg-system')&&active('enhancedcombathud-dnd5e'))add('enhancedcombathud-dnd5e','Duas integrações para o mesmo HUD: manter a integração OPRPG.','duplicate');
   if(active('oprpg-system-fixes'))for(const id of ['oprpg-diable-jambe','oprpg-automacoes-efeitos','oprpg-haki-automations','oprpg-haki-unificado'])if(active(id))add(id,'Automação antiga sobrepõe funções integradas ao Fixes. Revisar as opções antes de desativar.','duplicate');
   if(active('midi-qol'))add('midi-qol','OPRPG usa integração parcial de flags e macros. O fluxo D&D5e completo não é compatível.','partial');
-  return {functionalValidation:false,own,issues,externalSeparate:true};
+  return {functionalValidation:false,own,issues,externalSeparate:false,argonEmbedded:true};
 }
 export function compatibilityHTML(report) {
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

@@ -1,5 +1,5 @@
 import { MODULE_ID, STATE } from "./shared.js";
-import { currentRollMode } from "./roll-privacy.js";
+import { currentRollMode, toMessageMode, applyMessageVisibility } from "./roll-privacy.js";
 import { HAKI_SCOPE as ID, SYSTEM, RESOURCES, MAJESTY, level, resourceState, remainingUpdate,
   damageDie, resetUpdates, readHakiFlag, migrateHakiFlags } from "./haki-unified-rules.js";
 import { applyContentFix } from "./haki-content-fix.js";
@@ -63,7 +63,7 @@ function report(error) {
 async function chat(actor, text) {
   const data = {speaker: ChatMessage.getSpeaker({actor}),
     content: `<div class="haki-auto-chat">${text}</div>`};
-  ChatMessage.applyRollMode(data, currentRollMode());
+  applyMessageVisibility(data);
   return ChatMessage.create(data);
 }
 
@@ -292,7 +292,7 @@ async function useHud(app, id, event, target, useNative) {
           await actor.setFlag(ID, "videnteResults", [...stored, roll.total]);
           await roll.toMessage({speaker: ChatMessage.getSpeaker({actor}),
             flavor: `Vidente — resultado guardado: ${roll.total}. Para consumi-lo, use o botão correspondente no HUD antes de saber o sucesso do teste.`},
-          {rollMode: currentRollMode()});
+          {messageMode: toMessageMode()});
         } else {
           const t = talents.HAKI_TALENTOS_BY_ID[spec.id];
           const text = spec.min === 3 ? t?.avancada : spec.min === 2 ? t?.dominada : t?.base;
@@ -526,7 +526,7 @@ async function resolveConcentration(actor, message) {
   // Native method preserves bonuses, advantage, ability, proficiency and roll mode.
   const rolls = await actor.rollConcentration({target: info.dc},
     {options: {window: {title: `${name} — Concentração (CD ${info.dc})`}}},
-    {rollMode:actor.type==="npc"?"gmroll":currentRollMode()});
+    {messageMode:toMessageMode(actor.type==="npc"?"gmroll":currentRollMode())});
   const roll = Array.isArray(rolls) ? rolls[0] : rolls;
   if (!roll || !Number.isFinite(roll.total)) return; // Cancellation leaves the pending chat button.
   const success = roll.isSuccess ?? roll.total >= info.dc;

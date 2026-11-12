@@ -1,8 +1,8 @@
 {
   "id": "oprpg-system-fixes",
   "title": "OPRPG System Fixes & Compatibility",
-  "description": "Correções OPRPG para Foundry v14: automações de personagens, usos nativos na aba, coordenação pelo mestre, salvaguardas individuais e Controle Cirúrgico por atividade.",
-  "version": "1.27.0",
+  "description": "Correções OPRPG e integração Argon HUD 5.x para Foundry V14: ataques por grid, emanações, automações e painéis de técnicas/atividades.",
+  "version": "1.27.13",
   "authors": [
     {
       "name": "Adaptação OPRPG — módulo de compatibilidade local"
@@ -34,6 +34,15 @@
           "verified": "1.0.20"
         }
       }
+    ],
+    "recommends": [
+      {
+        "id": "enhancedcombathud",
+        "type": "module",
+        "compatibility": {
+          "minimum": "5.0.0"
+        }
+      }
     ]
   },
   "compatibility": {
@@ -44,6 +53,10 @@
   "styles": [
     "styles/haki-unified.css",
     "styles/workspace.css",
-    "styles/effect-automations.css"
-  ]
+    "styles/effect-automations.css",
+    "styles/argon-oprpg.css"
+  ],
+  "url": "https://github.com/RicardoHuanJR/System-Fixes",
+  "manifest": "https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json",
+  "download": "https://github.com/RicardoHuanJR/System-Fixes/releases/download/v1.27.13/oprpg-system-fixes.zip"
 }

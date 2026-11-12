@@ -8,7 +8,8 @@ import { activityDamageSpecs, freshActivityDamageLabels, normalizeDamageTypes, d
 import { damageMacroBonuses } from './compatibility-macros.js';
 import { runItemMacros } from './external-compatibility.js';
 
-const DAMAGE_FLAG = "multiActivityDamage";
+const DAMAGE_FLAG = "multiActivityDamage"; // Legacy format used up to v1.27.9.
+const DAMAGE_CARDS_FLAG = "multiActivityDamageCards";
 
 let renderHookId = null;
 let installed = false;
@@ -20,6 +21,15 @@ const rollingDamageCards = new WeakSet();
 function damageParts(activity) {
   try { return Array.from(activity?.damage?.parts ?? []); }
   catch (_) { return []; }
+}
+
+/** Some Activities provide their roll data only through getDamageConfig(). */
+export function hasActivityDamageConfig(activity) {
+  if (damageParts(activity).length || activity?.damage?.includeBase === true) return true;
+  try {
+    const config = activity?.getDamageConfig?.();
+    return Array.from(config?.rolls ?? []).some(roll => Array.from(roll?.parts ?? []).some(part => String(part ?? '').trim()));
+  } catch (_) { return false; }
 }
 
 const normalizeTypes = normalizeDamageTypes;
@@ -103,6 +113,47 @@ function diceBreakdown(roll) {
   return groups.join(" ") || String(total);
 }
 
+/**
+ * Stable, dot-free flag key for an individual card within a ChatMessage.
+ * The sibling index distinguishes otherwise identical cards. All segments
+ * are reversibly hexadecimal-encoded (not lossy sanitized or hashed).
+ */
+export function damageCardKey(card) {
+  if (!card?.dataset) return null;
+  const holder = card.closest?.("[data-message-id]");
+  const fields = ["actorId", "tokenId", "itemId", "activityId", "cardType"];
+  const values = fields.map(key => String(card.dataset[key] ?? ""));
+  if (!values[2] || !values[3]) return null;
+  let slot = 0;
+  try {
+    const siblings = Array.from(holder?.querySelectorAll?.(".jujutsu-card") ?? [])
+      .filter(other => fields.every((name, idx) => String(other?.dataset?.[name] ?? "") === values[idx]));
+    const index = siblings.indexOf(card);
+    if (index >= 0) slot = index;
+  } catch (_) { /* detached card: first slot is the only safe default */ }
+  const encode = value => Array.from(String(value), c => c.codePointAt(0).toString(16)).join("-") || "n";
+  return `c_${values.map(encode).join("_")}_${slot}`;
+}
+
+/** Read the result for THIS card; old v2 flags remain readable. */
+export function damageStateForCard(message, card) {
+  if (!message || !card) return null;
+  try {
+    const cards = message.getFlag?.(MODULE_ID, DAMAGE_CARDS_FLAG);
+    if (cards && typeof cards === "object") {
+      const key = damageCardKey(card);
+      if (key && cards[key]) return cards[key];
+    }
+    // An old message may hold v2 state and gain its first v3 card later.
+    // Keep the older card readable instead of hiding the legacy result.
+    const legacy = message.getFlag?.(MODULE_ID, DAMAGE_FLAG) ?? null;
+    if (!legacy) return null;
+    if (legacy.itemId && legacy.itemId !== card.dataset?.itemId) return null;
+    if (legacy.activityId && legacy.activityId !== card.dataset?.activityId) return null;
+    return legacy;
+  } catch (_) { return null; }
+}
+
 function messageForCard(card) {
   const holder = card?.closest?.("[data-message-id]");
   const messageId = holder?.dataset?.messageId;
@@ -137,6 +188,8 @@ export function applyDamageState(card, state) {
   if (!card || !state) return false;
   if (state.itemId && card.dataset.itemId !== state.itemId) return false;
   if (state.activityId && card.dataset.activityId !== state.activityId) return false;
+  if (state.actorId && card.dataset.actorId !== state.actorId) return false;
+  if (state.tokenId && card.dataset.tokenId !== state.tokenId) return false;
 
   if(card.dataset.cardType==='save')prepareSaveDamageCard(card);
   const total = Number(state.total ?? 0);
@@ -195,8 +248,7 @@ function shouldPatch(card, item, activity) {
   // Native OPRPG cards bypass the damage hooks even with a single activity.
   // Use the same typed pipeline for every damaging attack/save/damage card.
   if (!['attack', 'save', 'damage'].includes(activity.type)) return false;
-  const parts = damageParts(activity);
-  return parts.length > 0 || activity.damage?.includeBase === true;
+  return hasActivityDamageConfig(activity);
 }
 
 function setIfDifferent(style, property, value) {
@@ -242,11 +294,6 @@ function unlockDamageButton(card) {
   return true;
 }
 
-function damageStateFromMessage(message) {
-  try { return message?.getFlag?.(MODULE_ID, DAMAGE_FLAG) ?? null; }
-  catch (_) { return null; }
-}
-
 function bindDamageButton(card) {
   const { item, activity } = getCardActivity(card);
   if (!shouldPatch(card, item, activity)) return false;
@@ -269,7 +316,7 @@ function hydrateCard(card, explicitMessage = null) {
   const selected = getCardActivity(card);
   if (selected?.activity) syncSelectedActivityDamagePreview(card, selected.activity, selected.actor);
   const message = explicitMessage ?? messageForCard(card);
-  const state = damageStateFromMessage(message);
+  const state = damageStateForCard(message, card);
   if (!state) return false;
   return applyDamageState(card, state);
 }
@@ -307,10 +354,13 @@ function installDamageAvailabilityPatch() {
   return !!renderHookId;
 }
 
-async function persistDamageState(message, state) {
-  if (!message?.setFlag) return false;
+export async function persistDamageState(message, card, state) {
+  const key = damageCardKey(card);
+  if (!message?.update || !key) return false;
   try {
-    await message.setFlag(MODULE_ID, DAMAGE_FLAG, state);
+    // Document.update supports dotted, incremental paths in Foundry V14.
+    // Writing just the leaf does not replace results saved by another card.
+    await message.update({ [`flags.${MODULE_ID}.${DAMAGE_CARDS_FLAG}.${key}`]: state });
     STATE.multiActivityDamagePersisted = Number(STATE.multiActivityDamagePersisted ?? 0) + 1;
     return true;
   } catch (error) {
@@ -413,9 +463,11 @@ export async function rollSelectedActivityDamage(card, actor, item, activity) {
   const breakdown = rolls.map(entry => diceBreakdown(entry.roll)).join(" + ");
   const message = messageForCard(card);
   const state = {
-    version: 2,
+    version: 3,
     itemId: item?.id ?? card?.dataset?.itemId ?? null,
     activityId: activity?.id ?? card?.dataset?.activityId ?? null,
+    actorId: card?.dataset?.actorId ?? null,
+    tokenId: card?.dataset?.tokenId ?? null,
     total,
     critFormula,
     critBonus,
@@ -434,7 +486,7 @@ export async function rollSelectedActivityDamage(card, actor, item, activity) {
 
   // Persist only compact state in flags. Do NOT rewrite ChatMessage.content:
   // that caused Foundry to rerender the card from a pre-roll presentation state.
-  const persistedToFlag = await persistDamageState(message, state);
+  const persistedToFlag = await persistDamageState(message, card, state);
   if(game.settings.get(MODULE_ID,'compatibilityMacros')===true&&item.flags?.['midi-qol']?.onUseMacroName)await runItemMacros(item,'postDamageRoll',{activity,source:message,rolls:rolls.map(r=>r.roll),total});
 
   // setFlag rerenders the message and renderChatMessageHTML hydrates the new DOM.
@@ -519,6 +571,7 @@ export function multiActivityDamageStatus() {
     typedRolls: Number(STATE.multiActivityDamageTypedRolls ?? 0),
     unlockedCards: Number(STATE.multiActivityDamageUnlocked ?? 0),
     persistedStates: Number(STATE.multiActivityDamagePersisted ?? 0),
+    persistenceFormat: "per-card-incremental-v3-legacy-v2-readable",
     last: STATE.multiActivityDamageLast ?? null
   };
 }

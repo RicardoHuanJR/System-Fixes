@@ -1,6 +1,7 @@
 import { MODULE_ID, SYSTEM_ID, STATE } from './shared.js';
 import { featureEnabled } from './feature-settings.js';
 import { queueActor } from './automation-runtime.js';
+import { isCasterActor } from './area-caster.js';
 
 // This is an OPRPG adapter, not a replacement MidiQOL global or D&D5e workflow.
 const finalFields = new Set(['system.attributes.ac.value', 'system.attributes.hp.max',
@@ -153,7 +154,10 @@ export async function applyCompatibilityEffects(activity,targets,{effectUuids,ac
     const execution=sourceMessage.getFlag?.('oprpg-system-fixes','areaExecution');
     if(execution){
       if(execution.status!=='ready'||execution.activityUuid!==activity.uuid)throw Error('Execução da área inválida para estes efeitos.');
-      actors=actors.filter(actor=>execution.targets.includes(actor.uuid)&&!execution.protected.includes(actor.uuid));
+      // The native target pipeline excludes the caster. The optional DAE path
+      // must honor the same rule, including legacy area cards that list them.
+      actors=actors.filter(actor=>execution.targets.includes(actor.uuid)
+        &&!execution.protected?.includes(actor.uuid)&&!isCasterActor(actor,execution));
       if(!actors.length)return [];
     }
   }

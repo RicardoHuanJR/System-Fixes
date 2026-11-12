@@ -1,3 +1,19 @@
+# OPRPG System Fixes 1.27.13 — Foundry V14
+
+Compilação local após **dez passagens de auditoria** por diferentes funcionalidades. Corrige efeitos da segunda atividade de salvaguarda, CD numérica, manutenção de área com Região indisponível e imunidade do lançador pela integração opcional DAE.
+
+Leia [REVISAO-1.27.12.md](REVISAO-1.27.12.md) para detalhes e limites. Faça backup da campanha e teste em um mundo de cópia antes de utilizar na mesa. As verificações são locais/simuladas e não representam homologação integral no Foundry V14.
+
+# OPRPG System Fixes 1.27.11 — Foundry V14
+
+Compilação local de **integridade em áreas persistentes e salvaguardas por atividade**. Corrige seleção incorreta do primeiro cartão de habilidades com múltiplas atividades, evita perda silenciosa de membros/efeitos quando falham ciclos de área e preserva alvos ocultos para o mestre durante ataques em área.
+
+Leia [REVISAO-1.27.11.md](REVISAO-1.27.11.md) para mudanças, limites, resultados dos testes e instalação. **Faça backup e teste em uma cópia do mundo** antes de usar na campanha. Esta revisão não comprova funcionamento de todas as mecânicas dentro do Foundry real.
+
+# OPRPG System Fixes 1.27.10 — Foundry V14
+
+Atualização local de confiabilidade para múltiplas atividades: bloqueio de ataques concorrentes do mesmo item, resultados de dano isolados por cartão e leitura compatível com os registros antigos. Leia [a revisão 1.27.10](REVISAO-1.27.10.md) para instalação, testes, limitações e recuperação após cancelamento de rolagens. **Teste primeiro em um mundo de cópia.**
+
 # System Fixes 1.26.3
 
 Compatibilidade com Modificadores de Chat 1.2.1 e correção de cancelamento. Veja REVISAO-1.26.3.md e VALIDACAO-1.26.3.json.
@@ -433,3 +449,13 @@ await game.oprpgFixes.markIntangibilityBypass(canvas.tokens.controlled[0].actor,
 ```
 
 
+
+## Argon Combat HUD (integrado na versão 1.27.13)
+
+O adaptador de OP RPG está integrado ao System Fixes. Instale apenas o **Argon CORE 5.x** (opcional) e ative a opção **Argon: integrar HUD de combate**. Não ative simultaneamente o antigo `enhancedcombathud-oprpg-system`: ele causaria painéis duplicados.
+
+Os painéis exibem Armas, Técnicas, Habilidades, Itens e Outras ações, com botão para cada atividade (incluindo a segunda atividade). Usam `activity.use()` nativo: PP, dano e efeitos permanecem controlados pelo sistema. Configurações de macros e deslocamento estão nas opções do System Fixes.
+
+Diagnóstico: `game.oprpgFixes.argon.status()`; atualização: `game.oprpgFixes.argon.refresh()`.
+
+Recomendado: testar em cópia do mundo com OP RPG 1.0.22 e Argon CORE 5.x; não foi validado em uma instância real do Foundry.

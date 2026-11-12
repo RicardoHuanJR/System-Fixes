@@ -5,7 +5,7 @@ import { STATE, activitiesOf, applyTempHP } from "./shared.js";
 import { rawHealLimit } from "./healing-fix.js";
 import { repairLoadedCompendium, normalizeFormulaReferences } from "./formula-fix.js";
 import { multiActivityDamageStatus } from "./multi-activity-damage-fix.js";
-import { multiActivityAttackStatus } from "./multi-activity-attack-fix.js";
+import { multiActivityAttackStatus, resetPendingMultiActivityAttacks } from "./multi-activity-attack-fix.js";
 import { shieldPointsStatus, previewShieldDamage, previewTypedDamage, damageTypePipelineStatus } from "./shield-points-fix.js";
 import { nativeMechanicsAudit } from "./native-audit.js";
 import { akumaFixStatus } from "./akuma-fix.js";
@@ -23,6 +23,7 @@ import { endPersistentArea } from './persistent-areas.js';
 import { configureTechniqueAutomation, applyTechniqueEffects } from './technique-effects.js';
 import { configurePeriodic, resolvePeriodic } from './periodic-effects.js';
 import { refundCancelledArea } from './area-refund.js';
+import { argonHUDStatus, refreshEmbeddedArgonHUD } from './argon-hud/integration.js';
 
 export function installPublicAPI() {
   game.oprpg ??= {};
@@ -61,12 +62,14 @@ export function installPublicAPI() {
       applyEffects:applyCompatibilityEffects,runItemMacros,openEffects:openDAEEffects},
     version: game.modules.get("oprpg-system-fixes")?.version ?? "1.23.0",
     automationStatus,
+    argon: { status: argonHUDStatus, refresh: refreshEmbeddedArgonHUD },
     undoResources,
     get status() { return foundry.utils.deepClone(STATE); },
     rawHealLimit,
     normalizeFormulaReferences,
     multiActivityDamageStatus,
     multiActivityAttackStatus,
+    resetPendingMultiActivityAttacks,
     shieldPointsStatus,
     previewShieldDamage,
     previewTypedDamage,

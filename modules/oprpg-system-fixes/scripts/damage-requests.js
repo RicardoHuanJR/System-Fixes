@@ -1,6 +1,6 @@
 import { MODULE_ID, STATE, getCardActivity } from './shared.js';
 import { captureCardMeta } from './shield-points-fix.js';
-import { applyDamageState } from './multi-activity-damage-fix.js';
+import { applyDamageState, damageCardKey, damageStateForCard } from './multi-activity-damage-fix.js';
 
 const resolving=new Set();
 let installed=false,applyRequest;
@@ -14,7 +14,7 @@ export async function requestTargetDamage(button,card,actors){
   if(!source||source.isContentVisible===false||!actor?.isOwner)throw Error('Solicite dano a partir do cartão de uma ficha que você controla.');
   if(!Number.isFinite(meta.amount)||meta.amount<0)throw Error('Role o dano antes de solicitar.');
   // Persist only identifiers and a proposed amount, never executable data or Document objects.
-  const request={source:source.id,requester:game.user.id,targets:actors.map(a=>a.uuid),itemId:meta.itemId,activityId:meta.activityId,action:meta.action,amount:meta.amount,state:'pending'};
+  const request={source:source.id,requester:game.user.id,targets:actors.map(a=>a.uuid),itemId:meta.itemId,activityId:meta.activityId,sourceActorId:meta.sourceActorId,sourceTokenId:meta.sourceTokenId,cardKey:damageCardKey(card),action:meta.action,amount:meta.amount,state:'pending'};
   const message=await ChatMessage.create({
     content:`<div class="oprpg-damage-request"><strong>Solicitação de dano</strong><p>${esc(game.user.name)} solicita ${meta.amount} de dano em ${actors.map(a=>esc(a.name)).join(', ')}.</p><button type="button" data-fixes-damage-request="approve">Revisar e aplicar (mestre)</button><button type="button" data-fixes-damage-request="reject">Recusar (mestre)</button></div>`,
     whisper:[...new Set([game.user.id,...game.users.filter(u=>u.isGM).map(u=>u.id)])],
@@ -33,15 +33,22 @@ export async function resolveDamageRequest(message,approve=true){
     const requester=game.users.get(request.requester),source=game.messages?.get(request.source);
     if(!source||!requester||message.author?.id!==request.requester)throw Error('Origem ou autor da solicitação inválido.');
     const holder=document.createElement('article');holder.dataset.messageId=source.id;holder.innerHTML=source.content;
-    const card=[...holder.querySelectorAll('.jujutsu-card, .jj-card, [data-item-id]')].find(c=>c.dataset.itemId===request.itemId&&(c.dataset.activityId??null)===(request.activityId??null));
-    const damageState=source.getFlag?.(MODULE_ID,'multiActivityDamage');
+    const cards=[...holder.querySelectorAll('.jujutsu-card, .jj-card, [data-item-id]')];
+    // New requests address the exact card, even when Item and Activity repeat.
+    // Old requests retain the previous lookup for backward compatibility.
+    const card=request.cardKey ? cards.find(c=>damageCardKey(c)===request.cardKey)
+      : cards.find(c=>c.dataset.itemId===request.itemId&&(c.dataset.activityId??null)===(request.activityId??null));
+    const damageState=card ? damageStateForCard(source,card) : null;
     if(card&&damageState)applyDamageState(card,damageState);
     const button=[...(card?.querySelectorAll('[data-action]')??[])].find(b=>b.dataset.action===request.action);
     if(!card||!button)throw Error('O cartão de dano original não está mais disponível.');
     const {actor}=getCardActivity(card);
     if(!actor?.testUserPermission(requester,'OWNER'))throw Error('O solicitante não controla a ficha de origem.');
     const meta=captureCardMeta(button,card);
-    if(meta.activityId!==request.activityId)throw Error('A atividade de origem mudou. Aplique pelo cartão após conferir.');
+    if(meta.activityId!==request.activityId||meta.itemId!==request.itemId)throw Error('O item ou a atividade de origem mudou. Aplique pelo cartão após conferir.');
+    if(request.cardKey && damageCardKey(card)!==request.cardKey)throw Error('A identificação do cartão mudou. Confirme o dano na mensagem original.');
+    if(request.sourceActorId && meta.sourceActorId!==request.sourceActorId)throw Error('A origem do cartão mudou.');
+    if(request.sourceTokenId && meta.sourceTokenId!==request.sourceTokenId)throw Error('O token de origem mudou.');
     // Modified card totals are not silently accepted from another client.
     if(!Number.isFinite(meta.amount)||meta.amount<0||meta.amount!==request.amount)throw Error('O total solicitado difere do cartão original. O mestre deve conferir os modificadores e aplicar pelo cartão.');
     if(!Array.isArray(request.targets)||!request.targets.length||request.targets.length>100)throw Error('Lista de alvos inválida.');

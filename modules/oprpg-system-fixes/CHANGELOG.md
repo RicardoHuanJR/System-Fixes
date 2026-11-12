@@ -1,3 +1,107 @@
+## 1.27.13 — Argon HUD integrado (Foundry V14)
+
+- Reconstrução do adaptador Argon OPRPG 0.1.0 incorporada ao System Fixes: componentes nativos do Argon CORE 5.x, painéis por categoria e atividade, macro drawer e retrato.
+- Integração opcional: System Fixes continua funcional sem Argon. O adaptador separado antigo é detectado e a versão interna evita registro duplo.
+- Novas configurações: habilitar Argon, mostrar macros, mostrar deslocamento. Diagnósticos pela API `game.oprpgFixes.argon`.
+- Os usos de técnicas não aplicam dano, custos ou efeitos por conta própria; chamam a atividade nativa para respeitar o fluxo do OP RPG e as correções existentes.
+- Testes locais; Foundry V14 + Argon real requerem validação dentro do mundo.
+
+## 1.27.12 — Auditoria em dez passagens (compilação local, Foundry V14)
+
+- Corrigida aplicação dos efeitos da segunda ou de outras atividades de salvaguarda em uma mensagem com vários cartões.
+- Corrigida leitura de CD salva em formato numérico direto nesse processador de efeitos.
+- Áreas persistentes não confirmam `lastCombat` durante indisponibilidade da Região nativa.
+- A ponte opcional DAE respeita a exclusão do lançador mesmo em cartões antigos de área.
+- Revisão de periodicidade confirmou proteção existente contra efeitos desativados; antecipado o descarte desses casos durante a varredura.
+- Nova suíte com 12 verificações; 21/21 suítes locais aprovadas. Testes reais no Foundry continuam necessários. Consulte `REVISAO-1.27.12.md`.
+
+## 1.27.11 — Integridade de áreas e atividade correta (compilação local, Foundry V14)
+
+- Em áreas persistentes, a entrada só é gravada após a conclusão da solicitação de ciclo; falhas de criação de mensagens ou salvaguardas deixam o estado pendente de nova tentativa.
+- Ciclos parcialmente criados reutilizam o mesmo cartão e tentam concluir o trabalho idempotente; alteração de alvos durante uma tentativa incompleta é bloqueada, em vez de aplicar efeitos à lista errada.
+- Remoção de efeitos ao sair/encerrar uma área não confirma a saída quando o executor não tem permissão sobre o alvo; o mestre deve resolver.
+- Cartões de origem indisponíveis ou invisíveis não geram confirmação silenciosa de entrada; registro `lastCombat` só avança após o processamento solicitado.
+- Salvaguardas com várias atividades respeitam o identificador exato da atividade, inclusive ao recuperar a origem da área e nos ciclos persistentes. Solicitações para atividades removidas são bloqueadas.
+- Para o mestre, tokens ocultos visualmente ainda contam como alvos se ocuparem as casas realmente atingidas; a filtragem de visibilidade dos jogadores foi preservada.
+- Nova suíte de testes de regressão com **28 verificações**; **20/20 suítes** locais aprovadas. Teste de integração real com OP RPG/Foundry ainda pendente. Detalhes em `REVISAO-1.27.11.md`.
+
+## 1.27.10 — Rolagens concorrentes e dano por cartão (compilação local, Foundry V14)
+
+- Bloqueado no cliente o segundo Ataque do mesmo Item enquanto há uma ponte nativa de acerto pendente; continua permitida rolagem de Itens diferentes.
+- Adicionada recuperação manual das pontes pendentes e contador de bloqueios no diagnóstico.
+- Resultados de dano agora usam flags incrementais por cartão, preservando outros cartões da mensagem e leitura legada dos dados v2.
+- Salvaguardas, privacidade e solicitações de dano ao mestre reconhecem o novo formato; pedidos novos identificam o cartão exato.
+- 35 verificações direcionadas adicionais; detalhes e limitações em `REVISAO-1.27.10.md`.
+
+## 1.27.9 — Integridade de áreas, cartões independentes e desempenho (compilação local, Foundry V14)
+
+- A ponte nativa de acerto de múltiplas atividades mantém vários itens independentes na mesma mensagem e restaura todos ao atualizar/excluir o cartão.
+- Áreas persistentes fazem a limpeza de efeitos **antes** de confirmar saída/encerramento, permitindo nova tentativa após falha, e impedem encerramento simultâneo duplicado.
+- O índice de áreas só é reconstruído ao mudar a flag relevante; atualizações de PV/PP não disparam essa reindexação.
+- Efeitos de saída de vários alvos reutilizam uma única consulta às mensagens-filhas por atualização.
+- Solicitações de efeitos periódicos reutilizam um índice de mensagens por turno, reduzindo buscas repetidas.
+- Adicionadas 27 novas verificações direcionadas; as suítes anteriores continuam aprovadas.
+- Limitações e cenários de validação real: `REVISAO-1.27.9.md`.
+
+## 1.27.8 — Correção e auditoria de múltiplas atividades (compilação local, Foundry V14)
+
+- `getCardActivity` agora prioriza a atividade declarada no cartão atual, evitando seleção anterior presa na memória quando o mesmo cartão muda de atividade.
+- Acerto de Item com Ataque + Salvaguarda/Cura também recebe a ponte de labels da atividade, mesmo com um único tipo `attack`.
+- Atualizações de flags do chat não restauram a ponte de acerto prematuramente enquanto a rolagem nativa está em andamento.
+- Botões de ataque desabilitados e eventos já cancelados não deixam labels temporários instalados.
+- Atividades com dano retornado apenas por `getDamageConfig().rolls` também são reconhecidas pelo patch de Dano.
+- 17 testes direcionados adicionados e todas as 16 suítes de teste do ZIP aprovadas no Node.js; validação no Foundry aberto permanece pendente.
+- Riscos não corrigidos: concorrência de rolagens alterando `item.labels`, apenas um estado persistente de dano por mensagem e diferenças potenciais entre o handler nativo e o roller próprio. Ver `AUDITORIA-MULTI-ATIVIDADE-1.27.8.md`.
+
+## 1.27.7 — Auditoria integral de funcionalidades (compilação local, Foundry V14)
+
+- Auditoria dos 18 grupos configuráveis, 62 arquivos JavaScript (incluindo `main.js`) e recursos auxiliares.
+- Cura em cartão: verifica permissão, PV faltantes e máximo válido antes de consumir Limite de Cura; evita atualizar o mesmo Actor duas vezes por tokens vinculados.
+- Cura automática: não consome limite em PV cheios e registra somente PV efetivamente recuperados; nome do item escapado no chat.
+- PV temporários e cura: rejeita quantias não finitas e reconhece aplicação sem alteração como operação sem efeito.
+- 244 verificações funcionais/simuladas aprovadas, 246 importações locais e 448 símbolos verificados; 77 arquivos JS/MJS com sintaxe válida.
+- Limitações de validação real e inventário de funcionalidades em `AUDITORIA-INTEGRAL-1.27.7.md`.
+
+## 1.27.6 — Cinco revisões adicionais (compilação local, Foundry V14)
+
+- Migrada visibilidade de Haki e efeitos periódicos para `ChatMessage.applyMode`/`messageMode` do Foundry V14, preservando modo cego e privado com fallback explícito.
+- Limpeza reforçada em cancelamentos de colocação múltipla: qualquer resultado tardio do template é removido, incluindo documentos devolvidos como placeables.
+- Proteção adicional em `rollSaveForActor` contra salvaguarda do próprio lançador nos registros antigos/inconsistentes.
+- Preservados o cálculo por quadrados destacados, a emanação nativa V14 e os controles de reembolso.
+- Cinco novas frentes de auditoria, 23 verificações novas e testes de regressão da versão anterior aprovados.
+
+# 1.27.5 (auditoria em dez frentes — correções locais, não publicada)
+
+- Reembolso de PP: agregação de consumos repetidos do mesmo recurso antes de atualizar a ficha; evita sobrescrever devoluções anteriores.
+- Áreas persistentes: atualização de alvos ao criar, mover, redimensionar, elevar ou excluir tokens; não reprocessa mudanças visuais irrelevantes.
+- Altura: limites não nulos iguais agora selecionam a altitude específica; somente 0/0 desativa o filtro.
+- NPCs sem vínculo: identidade do token sintético preservada na seleção, salvaguardas, dano e ciclos de área.
+- Bandeja de dano nativa: não lista o próprio lançador como alvo de área.
+- Efeitos periódicos: usa modo de rolagem atual e escapa nomes inseridos no HTML das mensagens.
+- Haki e Akuma: rejeições assíncronas tratadas e registradas.
+- 129 verificações funcionais/simuladas aprovadas; inspeção estática de 62 JavaScripts, 245 imports locais e 445 símbolos de importação.
+- Persistem dependências das APIs do sistema OPRPG e a necessidade de validação real em Foundry V14.
+- Detalhamento: `AUDITORIA-10-FRENTES-1.27.5.md`.
+
+# 1.27.4 (auditoria e correções locais — não publicada)
+
+- Técnicas em área não afetam o próprio lançador, inclusive emanações nativas, persistência, salvaguardas, dano e efeitos gerenciados pelo módulo.
+- Identificação segura do lançador com tokens sintéticos/NPCs não vinculados e múltiplos tokens ligados à mesma ficha.
+- Evitada remoção silenciosa de membros quando uma Região persistente nativa ainda não está disponível.
+- Retiradas referências de atualização/download desatualizadas do manifesto do ZIP local; versão 1.27.4.
+- 79 verificações simuladas aprovadas; consulte `AUDITORIA-1.27.4.md`. Validação no Foundry real pendente.
+
+# 1.27.2 (correção local — não publicada no repositório)
+
+- Técnicas configuradas como emanação passam a criar Regiões nativas do Foundry V14 vinculadas ao token lançador.
+- Alvos em emanações são calculados pela triangulação nativa, excluindo simples contato com bordas.
+- Áreas persistentes consultam a geometria atual da Região; atualização e remoção de Regiões são acompanhadas.
+- Verificações simuladas: consulte `tests/native-emanation.mjs` e `CORRECAO-1.27.2.md`. Requer teste no Foundry real.
+
+# 1.27.1 (correção local)
+
+- Excluídos tokens que apenas tocam as bordas de áreas.
+
 # 1.27.0
 
 Compatibilidade conjunta, redução de trabalho repetido, cancelamento seguro, diagnóstico e avaliação de encontros para o mestre. Veja REVISAO-1.27.0.md.

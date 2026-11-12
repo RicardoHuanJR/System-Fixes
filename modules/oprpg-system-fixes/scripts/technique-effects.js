@@ -1,3 +1,4 @@
+import { isCasterActor } from './area-caster.js';
 import { MODULE_ID, STATE, getCardActivity } from './shared.js';
 import { queueActor } from './automation-runtime.js';
 import { featureEnabled } from './feature-settings.js';
@@ -25,7 +26,7 @@ export async function applyTechniqueEffects(activity,actor,source,{success=false
   if(!featureEnabled('techniqueEffects')||!actor?.isOwner||!source||source.isContentVisible===false)return [];
   const config=activity?.item?.getFlag(MODULE_ID,'techniqueAutomation');
   if(!config?.effectsEnabled)return [];
-  const execution=areaExecution(source);if(execution&&(!['ready','complete'].includes(execution.status)||!execution.targets.includes(actor.uuid)))return [];
+  const execution=areaExecution(source);if(execution&&(!['ready','complete'].includes(execution.status)||!execution.targets.includes(actor.uuid)||isCasterActor(actor,execution)))return [];
   return queueActor(actor,async()=>{
     const applied=[];
     for(const {entry,effect} of linkedEffects(activity)){
@@ -55,10 +56,18 @@ export async function resolveTechniqueSaveEffects(result){
   const source=game.messages.get(info.source),actor=await fromUuid(info.actor);
   if(!source||!actor||!responsibleExecutor(actor))return [];
   const root=document.createElement('div');root.innerHTML=source.content??'';
-  const {activity}=getCardActivity(root.querySelector('.jujutsu-card[data-card-type="save"]'));
+  // Chat messages can contain several save cards. The result key identifies
+  // the exact activity that was rolled; never silently use the first card.
+  const card=Array.from(root.querySelectorAll('.jujutsu-card[data-card-type="save"]'))
+    .find(candidate=>candidate.dataset.activityId
+      &&info.key?.startsWith(`${source.id}:${candidate.dataset.activityId}:`));
+  if(!card)return [];
+  const {activity}=getCardActivity(card);
   if(!activity||!info.key?.startsWith(`${source.id}:${activity.id}:`))return [];
   // Respect the configured DC rather than trusting an imported success boolean.
-  const dc=Number(activity.save?.dc?.value??activity.save?.dc?.target??info.dc);
+  const configuredDc=activity.save?.dc;
+  const dc=Number(configuredDc?.value??configuredDc?.target
+    ??(typeof configuredDc==='number'||typeof configuredDc==='string'?configuredDc:info.dc));
   if(!Number.isFinite(dc))return [];
   return applyTechniqueEffects(activity,actor,source,{success:info.total>=dc,receipt:info.key});
 }
@@ -67,7 +76,7 @@ export async function configureTechniqueAutomation(item){
   const current=item.getFlag(MODULE_ID,'techniqueAutomation')??{};
   const effects=Array.from(item.effects??[]).filter(e=>!e.transfer);
   const result=await foundry.applications.api.DialogV2.wait({classes:['oprpg-fixes-dialog'],window:{title:'Automação da técnica'},position:{width:600},rejectClose:false,
-    content:`<label><input name="effectsEnabled" type="checkbox" ${current.effectsEnabled?'checked':''}> Aplicar efeitos vinculados automaticamente</label>${effects.map(e=>{const rule=current.effects?.[e.id]??{};return `<fieldset><legend>${esc(e.name)}</legend><label>Aplicação <select name="when-${esc(e.id)}">${[['failure','Na falha da salvaguarda'],['success','No sucesso'],['always','Sempre'],['off','Não automatizar']].map(([v,l])=>`<option value="${v}" ${rule.when===v?'selected':''}>${l}</option>`).join('')}</select></label><label><input type="checkbox" name="beneficial-${esc(e.id)}" ${rule.beneficial?'checked':''}> Benéfico (pode afetar aliados protegidos)</label><label><input type="checkbox" name="exit-${esc(e.id)}" ${rule.removeOnExit?'checked':''}> Remover ao sair da área</label></fieldset>`}).join('')}<label><input type="checkbox" name="persistent" ${current.persistent?'checked':''}> Área persistente</label><label><input type="checkbox" name="enter" ${current.enter?'checked':''}> Testar ao entrar</label><label><input type="checkbox" name="start" ${current.start?'checked':''}> Testar no início do turno</label><label><input type="checkbox" name="end" ${current.end?'checked':''}> Testar no fim do turno</label><label>Duração da área em segundos (zero = até encerrar) <input name="seconds" type="number" min="0" value="${Number(current.seconds)||0}"></label><label><input name="walls" type="checkbox" ${current.walls?'checked':''}> Respeitar paredes que bloqueiam efeitos</label><label>Altura mínima <input type="number" name="bottom" value="${Number(current.bottom)||0}"></label><label>Altura máxima <input type="number" name="top" value="${Number(current.top)||0}"></label><p>Alturas iguais deixam a área sem filtro de altura. Ajuste estas regras à descrição da técnica. Os efeitos precisam estar vinculados à atividade.</p>`,
+    content:`<label><input name="effectsEnabled" type="checkbox" ${current.effectsEnabled?'checked':''}> Aplicar efeitos vinculados automaticamente</label>${effects.map(e=>{const rule=current.effects?.[e.id]??{};return `<fieldset><legend>${esc(e.name)}</legend><label>Aplicação <select name="when-${esc(e.id)}">${[['failure','Na falha da salvaguarda'],['success','No sucesso'],['always','Sempre'],['off','Não automatizar']].map(([v,l])=>`<option value="${v}" ${rule.when===v?'selected':''}>${l}</option>`).join('')}</select></label><label><input type="checkbox" name="beneficial-${esc(e.id)}" ${rule.beneficial?'checked':''}> Benéfico (pode afetar aliados protegidos)</label><label><input type="checkbox" name="exit-${esc(e.id)}" ${rule.removeOnExit?'checked':''}> Remover ao sair da área</label></fieldset>`}).join('')}<label><input type="checkbox" name="persistent" ${current.persistent?'checked':''}> Área persistente</label><label><input type="checkbox" name="enter" ${current.enter?'checked':''}> Testar ao entrar</label><label><input type="checkbox" name="start" ${current.start?'checked':''}> Testar no início do turno</label><label><input type="checkbox" name="end" ${current.end?'checked':''}> Testar no fim do turno</label><label>Duração da área em segundos (zero = até encerrar) <input name="seconds" type="number" min="0" value="${Number(current.seconds)||0}"></label><label><input name="walls" type="checkbox" ${current.walls?'checked':''}> Respeitar paredes que bloqueiam efeitos</label><label>Altura mínima <input type="number" name="bottom" value="${Number(current.bottom)||0}"></label><label>Altura máxima <input type="number" name="top" value="${Number(current.top)||0}"></label><p>Somente altura mínima 0 e máxima 0 desativam o filtro de altura. Valores iguais diferentes de zero selecionam apenas aquela elevação. Ajuste à descrição da técnica. Os efeitos precisam estar vinculados à atividade.</p>`,
     buttons:[{action:'save',label:'Salvar',callback:(_e,_b,d)=>{
       const root=d.element,value=k=>root.querySelector(`[name="${k}"]`),data={...current};
       for(const k of ['effectsEnabled','persistent','enter','start','end','walls'])data[k]=value(k).checked;

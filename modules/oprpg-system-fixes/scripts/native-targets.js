@@ -2,6 +2,7 @@ import { targetActors } from './target-damage.js';
 import { withActorOperation } from './operation-history.js';
 import { STATE, MODULE_ID } from './shared.js';
 import { executionActors, areaExecution, areaSaveMultiplier } from './area-state.js';
+import { isCasterActor } from './area-caster.js';
 
 const patched=Symbol('oprpgFixesNativeTargets');
 const pending=new Set();
@@ -42,17 +43,20 @@ export function patchNativeDamageTray(proto) {
     return originalCalculate.call(this,actor,{...options,multiplier:(options?.multiplier??1)*multiplier});
   };
   proto.buildTargetsList=function(){
-    if(isHealingTray(this))return originalBuild.call(this);
+    if(isHealingTray(this)&&!areaExecution(this.chatMessage))return originalBuild.call(this);
     if(this.shouldBuildTargetList===false||!this.targetList)return;
     if(this.targetSourceControl)this.targetSourceControl.hidden=true;
     const execution=areaExecution(this.chatMessage);
-    const targets=execution?execution.targets.filter(uuid=>!execution.protected.includes(uuid)).map(uuid=>({uuid,name:globalThis.fromUuidSync?.(uuid)?.name??'Alvo da técnica'})):targetActors();
+    const targets=execution?execution.targets.filter(uuid=>!execution.protected.includes(uuid)
+      &&uuid!==execution.casterUuid&&uuid!==execution.casterTokenActorUuid
+      &&!isCasterActor(globalThis.fromUuidSync?.(uuid),execution))
+      .map(uuid=>({uuid,name:globalThis.fromUuidSync?.(uuid)?.name??'Alvo da técnica'})):targetActors();
     const entries=targets.map(actor=>{try{return this.buildTargetListEntry({uuid:actor.uuid,name:actor.name});}catch(_){return null;}}).filter(Boolean);
     if(entries.length)this.targetList.replaceChildren(...entries);
     else{const li=document.createElement('li');li.textContent=execution?'Conclua as salvaguardas dos alvos registrados na técnica.':'Marque os alvos atuais no mapa (T).';this.targetList.replaceChildren(li);}
   };
   proto._onApplyDamage=async function(event){
-    if(isHealingTray(this))return originalApply.call(this,event);
+    if(isHealingTray(this)&&!areaExecution(this.chatMessage))return originalApply.call(this,event);
     event.preventDefault();
     try{await applyNativeTargetDamage(this.chatMessage,this.damages,actor=>this.getTargetOptions(actor.uuid));}
     catch(error){ui.notifications.error(error.message);}
@@ -80,7 +84,7 @@ export async function installNativeTargets() {
   patchNativeDamageTray(tray?.prototype);
   document.addEventListener('click',event=>{
     const button=event.target?.closest?.('[data-action="applyDamage"]'),element=button?.closest('damage-application');
-    if(!element||isHealingTray(element))return;
+    if(!element||(isHealingTray(element)&&!areaExecution(element.chatMessage)))return;
     event.preventDefault();event.stopImmediatePropagation();void element._onApplyDamage(event);
   },true);
   Hooks.on('targetToken',(user)=>{if(user.id!==game.user.id)return;for(const element of document.querySelectorAll('damage-application'))element.buildTargetsList?.();});
