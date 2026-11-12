@@ -5,10 +5,11 @@ on:
     paths:
       - 'modules/oprpg-system-fixes/**'
       - 'scripts/build_release.py'
+      - 'incoming/oprpg-system-fixes-v*.zip'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Etiqueta opcional (v1.27.13); em branco, usa module.json'
+        description: 'Etiqueta opcional; em branco, usa a versão do manifesto'
         required: false
         type: string
 permissions:
@@ -21,9 +22,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Importar versão em espera, se houver
+        id: import
+        run: python scripts/import_staged_system_fixes.py
       - name: Descobrir etiqueta imutável
         id: version
         shell: bash
@@ -44,16 +53,27 @@ jobs:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: |
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "::error::A release $RELEASE_TAG já existe. Atualize a versão em module.json para publicar nova release."
+            echo "::error::A release $RELEASE_TAG já existe. Incremente a versão em module.json."
             exit 1
           fi
-      - name: Validar e compactar módulos
+      - name: Validar e compactar os módulos
         env:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: python scripts/build_release.py --repository "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG"
-      - name: Publicar release com manifest fixo
+      - name: Salvar código-fonte validado no Git
+        if: steps.import.outputs.imported == 'true'
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A modules/oprpg-system-fixes incoming/
+          git commit -m "release: importar System Fixes $RELEASE_TAG"
+          git push origin HEAD:main
+      - name: Publicar release com manifesto estável
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: |
-          gh release create "$RELEASE_TAG" dist/*.zip dist/*.json dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "Módulos OPRPG — $RELEASE_TAG" --notes-file dist/RELEASE-NOTES.md
+          gh release create "$RELEASE_TAG" dist/*.zip dist/*.json dist/SHA256SUMS.txt --target "$(git rev-parse HEAD)" --title "Módulos OPRPG — $RELEASE_TAG" --notes-file dist/RELEASE-NOTES.md
