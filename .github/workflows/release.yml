@@ -1,10 +1,15 @@
 name: Publicar módulos
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'modules/oprpg-system-fixes/**'
+      - 'scripts/build_release.py'
   workflow_dispatch:
     inputs:
       tag:
-        description: Etiqueta de versão do conjunto (exemplo v1.20.1)
-        required: true
+        description: 'Etiqueta opcional (v1.27.13); em branco, usa module.json'
+        required: false
         type: string
 permissions:
   contents: write
@@ -19,13 +24,36 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Validar e compactar módulos
+      - name: Descobrir etiqueta imutável
+        id: version
+        shell: bash
         env:
-          RELEASE_TAG: ${{ inputs.tag }}
-        run: python scripts/build_release.py --repository "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG"
-      - name: Publicar release com arquivos para o Foundry
+          MANUAL_TAG: ${{ inputs.tag }}
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os, re
+          version=json.load(open('modules/oprpg-system-fixes/module.json', encoding='utf-8'))['version']
+          tag=os.environ.get('MANUAL_TAG','').strip() or ('v'+version)
+          if not re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+(?:[-.][A-Za-z0-9.-]+)?',tag):
+              raise SystemExit('Etiqueta inválida')
+          print('tag='+tag)
+          PY
+      - name: Rejeitar etiqueta já publicada
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "::error::A release $RELEASE_TAG já existe. Atualize a versão em module.json para publicar nova release."
+            exit 1
+          fi
+      - name: Validar e compactar módulos
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: python scripts/build_release.py --repository "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG"
+      - name: Publicar release com manifest fixo
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: |
           gh release create "$RELEASE_TAG" dist/*.zip dist/*.json dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "Módulos OPRPG — $RELEASE_TAG" --notes-file dist/RELEASE-NOTES.md
