@@ -1,0 +1,46 @@
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const path=require('node:path');
+const assert=require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({headless:true});
+ try {
+ const page=await browser.newPage();
+ const errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ page.on('console',msg=>{if(msg.type()==='error')console.log('CONSOLE',msg.text());});
+ await page.setViewportSize({width:1440,height:900});
+ await page.goto(process.env.ARGON_FIXTURE_URL || 'http://127.0.0.1:4173');
+ await page.waitForFunction(()=>window.ready===true);
+ await page.screenshot({path:path.resolve('.local-reference/hud-desktop.png')});
+ console.log('collapsed',await page.locator('#hud').boundingBox());
+ assert.ok((await page.locator('#hud').boundingBox()).height < 180);
+ await page.getByRole('button',{name:'Ação: Armas',exact:false}).first().click();
+ await page.getByRole('searchbox').filter({visible:true}).fill('inexistente');
+ await page.getByText('Nenhuma atividade encontrada.').waitFor();
+ await page.getByRole('searchbox').filter({visible:true}).fill('');
+ await page.screenshot({path:path.resolve('.local-reference/hud-open.png')});
+ await page.locator('.argon-oprpg-list.show .argon-oprpg-activity').first().press('Enter');
+ console.log('executed',await page.evaluate(()=>window.executed));
+ assert.deepEqual(await page.evaluate(()=>window.executed),{itemId:'i24',activityId:'a1'});
+ await page.locator('.argon-oprpg-list.show .argon-oprpg-activity').first().press('F2');
+ console.log('sheet',await page.evaluate(()=>window.sheetOpened));
+ assert.equal(await page.evaluate(()=>window.sheetOpened),true);
+ await page.locator('.argon-oprpg-list.show .argon-oprpg-activity').first().press('Escape');
+ await page.getByRole('button',{name:'Ficha e atalhos',exact:true}).press('Enter');
+ await page.getByRole('button',{name:'Furtividade',exact:true}).press('Enter');
+ console.log('skill',await page.evaluate(()=>window.skillRolled));
+ assert.equal(await page.evaluate(()=>window.skillRolled),true);
+ await page.getByRole('button',{name:'Furtividade',exact:true}).press('Escape');
+ assert.equal(await page.getByRole('button',{name:'Ficha e atalhos',exact:true}).getAttribute('aria-expanded'),'false');
+ await page.evaluate(()=>document.querySelector('#hud').classList.add('minimize-hud'));
+ assert.ok((await page.locator('#hud').boundingBox()).height <= 30);
+ assert.equal(await page.getByRole('button',{name:'Minimize',exact:true}).isVisible(),true);
+ await page.evaluate(()=>document.querySelector('#hud').classList.remove('minimize-hud'));
+ await page.setViewportSize({width:390,height:844});
+ await page.screenshot({path:path.resolve('.local-reference/hud-mobile.png')});
+ console.log('mobile bounds',await page.locator('.action-hud').boundingBox());
+ assert.ok((await page.locator('.action-hud').boundingBox()).height <= 174);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth),true);
+ assert.deepEqual(errors,[]);
+ } finally { await browser.close(); }
+})().catch(error=>{console.error(error);process.exit(1);});

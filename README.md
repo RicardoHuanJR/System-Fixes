@@ -1,4 +1,16 @@
-# System Fixes 1.27.0
+# System Fixes 1.27.14 — Argon compacto integrado
+
+Ative **System Fixes + Argon CORE 5.x** no OP RPG/Foundry V14. Deixe **enhancedcombathud-oprpg-system desativado**: a integração está dentro do Fixes e se recusa a registrar duas vezes quando o adaptador antigo está ativo.
+
+Barra inferior compacta, ações comuns/poderosas/bônus/reações, atividades individuais em listas com busca, custos de PP/usos, ações básicas recuperadas do adaptador 6.4.1, favoritos, efeitos e rolagens nativas no painel lateral. O Haki abre seu HUD nativo; Akuma usa os itens e atividades reais da ficha.
+
+[Manifesto permanente de instalação](https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json) · [revisão, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.14.md) · [mapa de arquitetura](docs/CODEBASE_MAP.md).
+
+Esta versão tem testes automatizados e verificação visual **simulada**, sem execução em Foundry real. Não foi inventada uma contagem de ações restantes: o sistema inspecionado não oferece estado universal para ela.
+
+## Histórico
+
+## System Fixes 1.27.0
 
 Revisão conjunta: Fixes 1.27.0, Argon OPRPG 6.4.1, Anti-Fraude 1.4.1, Detector 1.3.2 e Modificadores 1.2.1. 771 verificações simuladas aprovadas. Diagnóstico de módulos, menos trabalho repetido e ferramenta de encontros para o mestre. Veja [revisão e limites dos testes](modules/oprpg-system-fixes/REVISAO-1.27.0.md) e [checklist](COMPATIBILIDADE.md).
 
@@ -36,7 +48,7 @@ Na configuração do Foundry, abra **Módulos adicionais → Instalar módulo �
 | Antifraude | https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-antifraude.json |
 | Detector de rolagens suspeitas | https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-detector-fraude.json |
 | Modificadores de acerto e dano | https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-chat-modifiers.json |
-| Compatibilidade Argon OPRPG | https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/enhancedcombathud-oprpg-system.json |
+| Adaptador Argon OPRPG antigo — alternativa histórica; manter desativado com a integração interna | https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/enhancedcombathud-oprpg-system.json |
 | Diable Jambe | https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-diable-jambe.json |
 
 Usar esses manifests registra a origem para atualizações futuras. Uma instalação local antiga sem campo `manifest` pode precisar de reinstalação pelo link para registrar essa origem; preserve o ID do módulo. Não é necessário apagar fichas ou configurações do mundo.
@@ -47,8 +59,8 @@ A distribuição v1.21.1 adiciona a integração Argon OPRPG 6.4.0. O System Fix
 
 ## Organização
 
-- `modules/enhancedcombathud-oprpg-system`: integração OPRPG do Argon, com licença e avisos de autoria preservados.
-- `modules/oprpg-system-fixes`: correções e automações da mesa, incluindo Haki integrado.
+- `modules/enhancedcombathud-oprpg-system`: referência histórica 6.4.1, com licença e avisos de autoria preservados; não ativar junto da integração interna.
+- `modules/oprpg-system-fixes`: correções e automações da mesa, incluindo Haki e adaptador Argon integrado.
 - `modules/oprpg-antifraude`: permanece separado.
 - `modules/oprpg-detector-fraude`: permanece separado.
 - `modules/oprpg-chat-modifiers`: permanece separado; fonte do ZIP enviado em 02/10/2026.

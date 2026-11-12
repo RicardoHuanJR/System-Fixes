@@ -1,5 +1,6 @@
 /** Pure model utilities. No Foundry or Argon globals required. */
 export const GROUPS = Object.freeze([
+  { key: "akuma", itemTypes: [], label: "Akuma no Mi", icon: "icons/svg/fire.svg" },
   { key: "weapons", itemTypes: ["weapon"], label: "Armas", icon: "icons/svg/sword.svg" },
   { key: "techniques", itemTypes: ["spell"], label: "Técnicas", icon: "icons/svg/lightning.svg" },
   { key: "features", itemTypes: ["feat", "class", "subclass", "race", "background"], label: "Habilidades", icon: "icons/svg/upgrade.svg" },
@@ -8,6 +9,7 @@ export const GROUPS = Object.freeze([
 ]);
 export const ECONOMY = Object.freeze([
   { key: "action", label: "Ação", icon: "icons/svg/sword.svg" },
+  { key: "powerful", label: "Poderosa", icon: "icons/svg/lightning.svg" },
   { key: "bonus", label: "Ação bônus", icon: "icons/svg/clockwork.svg" },
   { key: "reaction", label: "Reação", icon: "icons/svg/shield.svg" },
   { key: "free", label: "Livre / outras", icon: "icons/svg/dice-target.svg" }
@@ -41,6 +43,8 @@ export function activityById(item, activityId) {
 }
 
 export function groupOf(item) {
+  const flags = item?.flags?.["oprpg-system"];
+  if (flags?.akumaTec || flags?.akumaManif || flags?.hatsu?.slot || flags?.hatsu?.parent) return "akuma";
   const type = String(item?.type ?? "").toLowerCase();
   return GROUPS.find(group => group.itemTypes.includes(type))?.key ?? "other";
 }
@@ -50,6 +54,7 @@ export function economyOf(activity) {
   if (["action", "standard", "act", "1", "main"].includes(value)) return "action";
   if (["bonus", "bonusaction", "bonus action", "swift"].includes(value)) return "bonus";
   if (["reaction", "react"].includes(value)) return "reaction";
+  if (value === "powerful") return "powerful";
   return "free";
 }
 
@@ -92,4 +97,26 @@ export function entriesForActor(actor) {
 export function escapeHTML(input) {
   return String(input ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+}
+
+export function finiteValue(value) {
+  return value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value)) ? Number(value) : null;
+}
+
+/** Costs are information only; formulas and scaling are never evaluated by the HUD. */
+export function resourceLabel(activity, item) {
+  const targets = asArray(activity?.consumption?.targets).filter(t =>
+    t.type === "attribute" && ["energy.total", "energy.generated"].includes(t.target));
+  const labels = [];
+  if (targets.length) {
+    const dynamic = targets.some(t => !/^[0-9]+(?:\.[0-9]+)?$/.test(String(t.value)) || t.scaling?.mode || t.scaling?.formula);
+    labels.push(dynamic ? "PP variável" : `${targets.reduce((n, t) => n + Number(t.value), 0)} PP`);
+  }
+  const uses = activity?.uses?.max ? activity.uses : item?.system?.uses;
+  const max = finiteValue(uses?.max);
+  if (max > 0) {
+    const left = finiteValue(uses.value) ?? (finiteValue(uses.spent) !== null ? max - Number(uses.spent) : null);
+    if (left !== null) labels.push(`${Math.max(0, left)}/${max} usos`);
+  }
+  return labels.join(" · ");
 }

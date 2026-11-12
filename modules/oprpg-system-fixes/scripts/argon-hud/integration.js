@@ -1,5 +1,6 @@
 import { registerArgon } from "./argon.js";
 import { diagnostics } from "./execute.js";
+import { installBasicActionAutomation } from "./basic-actions.js";
 
 const MODULE_ID = "oprpg-system-fixes";
 const CORE_ID = "enhancedcombathud";
@@ -59,8 +60,19 @@ export function installEmbeddedArgonHUD() {
     }
     try {
       registerArgon(CoreHUD);
+      installBasicActionAutomation();
       registered = true;
       lastError = null;
+      // CORE tracks ItemButton subclasses; our activity buttons also need structural refreshes.
+      for (const hook of ["updateItem", "createItem", "deleteItem", "updateActiveEffect", "createActiveEffect", "deleteActiveEffect"]) {
+        Hooks.on(hook, document => {
+          const actor = globalThis.ui?.ARGON?._actor;
+          if (actor && (document.parent === actor || document.parent?.parent === actor)) refreshEmbeddedArgonHUD();
+        });
+      }
+      Hooks.on("updateActor", actor => {
+        if (actor === globalThis.ui?.ARGON?._actor) refreshEmbeddedArgonHUD();
+      });
       console.info(`[${MODULE_ID}] Argon OPRPG integrado: painéis registrados no CORE.`);
     } catch (error) {
       lastError = error;

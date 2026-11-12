@@ -1,0 +1,46 @@
+<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Argon OPRPG — teste simulado</title>
+<link rel="stylesheet" href="/modules/enhancedcombathud/styles/module.css">
+<link rel="stylesheet" href="/modules/oprpg-system-fixes/styles/argon-oprpg.css">
+<style>body{margin:0;background:#26332f;color:#eee;font-family:Arial,sans-serif}body>p{margin:24px} .extended-combat-hud{bottom:24px;left:16px;--ech-mainAction-base-background:#1d242d;--ech-mainAction-base-color:#eee;--ech-mainAction-base-border:#7a8697;--ech-mainAction-hover-background:#384554;--ech-mainAction-hover-color:#fff;--ech-mainAction-hover-border:#e8c66a;--ech-blur-amount:none;--ech-movement-baseMovement-background:#77997e} .player-button i:after{content:'•'} .extended-combat-hud .ability-menu{font-size:12px}</style>
+<p>Teste simulado • CORE tag 5.0.2 • dados fictícios • sem Foundry em execução</p>
+<div class="extended-combat-hud" id="hud"></div>
+<script src="/handlebars.js"></script>
+<script type="module">
+import {ActionButton} from '/modules/enhancedcombathud/scripts/app/components/main/buttons/actionButton.js';
+import {ButtonPanelButton} from '/modules/enhancedcombathud/scripts/app/components/main/buttons/buttonPanelButton.js';
+import {ButtonPanel} from '/modules/enhancedcombathud/scripts/app/components/main/buttonPanel/buttonPanel.js';
+import {ActionPanel} from '/modules/enhancedcombathud/scripts/app/components/main/actionPanel.js';
+import {PortraitPanel} from '/modules/enhancedcombathud/scripts/app/components/portrait/portraitPanel.js';
+import {DrawerPanel} from '/modules/enhancedcombathud/scripts/app/components/drawer/drawerPanel.js';
+import {DrawerButton} from '/modules/enhancedcombathud/scripts/app/components/drawer/drawerButton.js';
+import {WeaponSets} from '/modules/enhancedcombathud/scripts/app/components/main/weaponSets.js';
+import {MovementHud} from '/modules/enhancedcombathud/scripts/app/components/main/movementHud.js';
+import {registerArgon} from '/modules/oprpg-system-fixes/scripts/argon-hud/argon.js';
+const lang = await (await fetch('/modules/oprpg-system-fixes/languages/pt-BR.json')).json();
+const get=(o,k)=>k.split('.').reduce((o,k)=>o?.[k],o);
+window.game={i18n:{localize:key=>get(lang,key)??key},settings:{get:(id,key)=>key==='showTooltips'?false:key==='playerDetailsBottom'?false:true},user:{hotbar:{1:'macro',2:'macro'}},macros:new Map([['macro',{name:'Macro de teste',canExecute:true,execute:async()=>{window.lastMacro=true;}}]]),combat:null};
+window.CONFIG={DND5E:{abilities:{dex:{label:'Destreza'}},skills:{ste:{label:'Furtividade'}},movementUnits:{m:{conversion:1}}},Token:{movement:{actions:{walk:{}}}}};
+window.Hooks={callAll:()=>{}};
+window.foundry={utils:{debounce:fn=>fn},applications:{handlebars:{renderTemplate:async(url,data)=>Handlebars.compile(await(await fetch(url)).text())(data)},ux:{TextEditor:{implementation:{enrichHTML:async value=>value??''}}}}};
+Handlebars.registerHelper('localize',key=>game.i18n.localize(key));
+Number.isNumeric=value=>value!==null&&Number.isFinite(Number(value));
+const actor={id:'actor',uuid:'Actor.actor',name:'Personagem de teste com nome longo',type:'character',isOwner:true,img:'/icons/portrait.svg',system:{details:{level:8},energy:{total:17,max:32},attributes:{hp:{value:35,max:48,temp:4},ac:{value:16},movement:{walk:9,units:'m'}},abilities:{dex:{mod:3}},skills:{ste:{total:6}},favorites:[]},effects:[],temporaryEffects:[],getFlag:()=>null,sheet:{render:()=>{window.sheetOpened=true;}},rollSkill:async()=>{window.skillRolled=true;},rollAbilityCheck:async()=>{},rollSavingThrow:async()=>{}};
+actor.items=new Map();
+const types=['weapon','spell','feat','consumable','tool','unknown'];
+const actions=['action','powerful','bonus','reaction','none'];
+for(let i=0;i<60;i++){
+ const item={id:'i'+i,name:(i%2?'Técnica com descrição longa de teste ':'Ação de teste ')+i,type:types[i%types.length],parent:actor,img:'/icons/item.svg',flags:i%7===0?{'oprpg-system':{akumaTec:true}}:{},system:{activities:new Map()},sheet:{render:()=>{window.sheetOpened=true;}}};
+ for(let j=0;j<2;j++){const a={id:'a'+j,item,name:j?'Área de alcance':'Ataque direto',type:j?'save':'attack',activation:{type:actions[(i+j)%actions.length]},consumption:{targets:[{type:'attribute',target:'energy.total',value:j?'@prof':'3'}]},use:async()=>{window.executed={itemId:item.id,activityId:'a'+j};return {};}};item.system.activities.set(a.id,a);}
+ actor.items.set(item.id,item);
+}
+const hud=document.querySelector('#hud');
+window.ui={notifications:{warn:console.warn},ARGON:{_actor:actor,element:hud,_lastExpandedDrawer:null,collapseAllPanels:()=>{for(const el of hud.querySelectorAll('.features-container'))el.classList.remove('show');},setPanelState:()=>{},getPanelState:()=>null,toggleMinimize:()=>{},interceptNextDialog:()=>{}}};
+const core={ARGON:{MAIN:{BUTTONS:{ActionButton,ButtonPanelButton},ActionPanel,BUTTON_PANELS:{ButtonPanel}},PORTRAIT:{PortraitPanel},DRAWER:{DrawerPanel,DrawerButton},WeaponSets,MovementHud}};
+const registry={};for(const key of ['SupportedActorTypes','PortraitPanel','DrawerPanel','WeaponSets','MovementHud','MainPanels'])core['define'+key]=v=>registry[key]=v;
+registerArgon(core);
+const portrait=new registry.PortraitPanel();hud.append(portrait.element);await portrait.render();
+const drawer=new registry.DrawerPanel();hud.append(drawer.element);await drawer.render();
+const bar=document.createElement('div');bar.className='action-hud';hud.append(bar);ui.ARGON.buttonPanelContainer=bar;
+for(const Panel of registry.MainPanels){const panel=new Panel();bar.append(panel.element);await panel.render();}
+window.ready=true;
+</script></html>

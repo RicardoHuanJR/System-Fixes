@@ -1,8 +1,8 @@
 {
   "id": "oprpg-system-fixes",
   "title": "OPRPG System Fixes & Compatibility",
-  "description": "Correções OPRPG e integração Argon HUD 5.x para Foundry V14: ataques por grid, emanações, automações e painéis de técnicas/atividades.",
-  "version": "1.27.13",
+  "description": "Correções OPRPG e Argon HUD compacto 5.x para Foundry V14: atividades individuais, ações básicas, favoritos, Haki e Akuma no Mi.",
+  "version": "1.27.14",
   "authors": [
     {
       "name": "Adaptação OPRPG — módulo de compatibilidade local"
@@ -58,5 +58,5 @@
   ],
   "url": "https://github.com/RicardoHuanJR/System-Fixes",
   "manifest": "https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json",
-  "download": "https://github.com/RicardoHuanJR/System-Fixes/releases/download/v1.27.13/oprpg-system-fixes.zip"
+  "download": "https://github.com/RicardoHuanJR/System-Fixes/releases/download/v1.27.14/oprpg-system-fixes.zip"
 }

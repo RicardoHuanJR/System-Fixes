@@ -5,6 +5,8 @@ on:
     paths:
       - 'modules/oprpg-system-fixes/**'
       - 'scripts/build_release.py'
+      - 'scripts/import_staged_system_fixes.py'
+      - 'tests/**'
       - 'incoming/oprpg-system-fixes-v*.zip'
   workflow_dispatch:
     inputs:
@@ -33,6 +35,10 @@ jobs:
       - name: Importar versão em espera, se houver
         id: import
         run: python scripts/import_staged_system_fixes.py
+      - name: Testar integração Argon e importação
+        run: |
+          node --test tests/argon-integrated.mjs
+          python -m unittest discover -s tests -p 'test_*.py'
       - name: Descobrir etiqueta imutável
         id: version
         shell: bash

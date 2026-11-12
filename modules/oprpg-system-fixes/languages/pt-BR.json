@@ -18,5 +18,54 @@
     "HP": "PV",
     "PP": "PP",
     "AC": "Defesa"
+  },
+  "oprpg-system-fixes": {
+    "argon": {
+      "basic": {
+        "dodge": {
+          "name": "Esquivar",
+          "desc": "<p>Até o começo do seu próximo turno, jogadas de ataque (comum ou Técnicas) contra você são feitas com desvantagem se você puder ver o atacante, e você tem vantagem em Salvaguardas de Destreza. O benefício termina se você ficar incapacitado ou com deslocamento 0.</p>",
+          "active": "Esquivar está ativo até o início do seu próximo turno."
+        },
+        "ready": {
+          "name": "Preparar",
+          "desc": "<p>Defina um gatilho perceptível e escolha uma ação para executar quando ele ocorrer, usando sua Reação. Para preparar uma Técnica, use Preparar em conjunto com a Ação Poderosa; manter a Técnica exige concentração.</p>",
+          "noActivities": "Nenhuma ação utilizável foi encontrada para preparar.",
+          "dialogTitle": "Preparar Ação",
+          "triggerLabel": "Gatilho",
+          "triggerPlaceholder": "Ex.: quando o inimigo atravessar a porta",
+          "activityLabel": "Ação preparada",
+          "hint": "A ação será executada pela sua Reação quando você clicar em Executar no card. Ela expira no início do seu próximo turno.",
+          "confirm": "Preparar",
+          "missingData": "Informe o gatilho e escolha uma ação.",
+          "execute": "Executar",
+          "cancel": "Cancelar",
+          "notFound": "A ação preparada não existe mais.",
+          "activityMissing": "A Activity preparada não pôde ser localizada.",
+          "executeFailed": "Falha ao executar a ação preparada. Veja o console."
+        },
+        "dash": {
+          "name": "Disparada",
+          "desc": "<p>Você recebe deslocamento adicional neste turno igual ao seu deslocamento atual, após aplicar modificadores.</p>",
+          "alreadyActive": "Disparada já está ativa neste turno.",
+          "movementAdded": "de deslocamento adicional neste turno."
+        },
+        "hide": {
+          "name": "Esconder",
+          "desc": "<p>Faça um Teste de Atributo de Destreza (Furtividade) para tentar se esconder.</p>",
+          "skillFallback": "Perícia Furtividade não localizada; usando teste de Destreza.",
+          "noRollApi": "Este ator não possui uma API compatível para rolar Furtividade/Destreza."
+        },
+        "active": "Ativa",
+        "noActor": "Selecione um token/ator para usar esta ação.",
+        "noPermission": "Você não tem permissão para alterar este ator."
+      },
+      "hud": {
+        "action": "Ação",
+        "powerful": "Ação Poderosa",
+        "cancel": "Cancelar",
+        "noEffectPermission": "Você não tem permissão para alterar este efeito."
+      }
+    }
   }
 }

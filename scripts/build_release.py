@@ -50,7 +50,12 @@ def build(repository, tag, output=None):
     assert rows, 'Nenhum módulo encontrado'
     (output/'release-index.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2),encoding='utf-8')
     (output/'SHA256SUMS.txt').write_text(''.join(r['sha256']+'  '+r['id']+'.zip\n' for r in rows),encoding='utf-8')
-    (output/'RELEASE-NOTES.md').write_text('Módulos OPRPG — '+tag+'\n\n'+''.join('- '+r['id']+' '+r['version']+'\n' for r in rows)+'\nCompatibilidade e validação conforme a documentação de cada módulo.\n',encoding='utf-8')
+    notes='Módulos OPRPG — '+tag+'\n\n'+''.join('- '+r['id']+' '+r['version']+'\n' for r in rows)+'\nCompatibilidade e validação conforme a documentação de cada módulo.\n'
+    fixes=next((r for r in rows if r['id']=='oprpg-system-fixes'),None)
+    if fixes:
+        revision=root/'modules'/'oprpg-system-fixes'/('REVISAO-'+fixes['version']+'.md')
+        if revision.is_file():notes+='\n'+revision.read_text(encoding='utf-8')
+    (output/'RELEASE-NOTES.md').write_text(notes,encoding='utf-8')
     return rows
 
 if __name__=='__main__':

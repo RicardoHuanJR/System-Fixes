@@ -28,6 +28,15 @@ def main():
         match = re.fullmatch(r"oprpg-system-fixes-v(\d+\.\d+\.\d+)\.zip", package.name)
         if not match:
             raise ValueError("Nome do pacote inválido.")
+        # Published archives may remain in incoming; never overwrite newer source code.
+        current = json.loads((DEST / "module.json").read_text(encoding="utf-8-sig")) if (DEST / "module.json").exists() else {}
+        version_tuple = lambda value: tuple(map(int, value.split(".")))
+        if re.fullmatch(r"\d+\.\d+\.\d+", current.get("version", "")) and version_tuple(match.group(1)) <= version_tuple(current["version"]):
+            print(f"Ignorado {package.name}: fonte {current['version']} já é igual ou mais recente.")
+            if os.environ.get("GITHUB_OUTPUT"):
+                with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+                    output.write("imported=false\n")
+            return
         with zipfile.ZipFile(package) as archive:
             bad = archive.testzip()
             if bad:

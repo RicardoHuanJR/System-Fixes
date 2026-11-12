@@ -1,20 +1,21 @@
-import { activityById } from "./model.js";
+import { activityById, asArray } from "./model.js";
 
 const pending = new Set();
 
 export function getItem(actor, itemId) {
   if (!actor || !itemId) return null;
   if (typeof actor.items?.get === "function") return actor.items.get(itemId) ?? null;
-  return [...(actor.items ?? [])].find(i => i.id === itemId) ?? null;
+  return asArray(actor.items).find(i => i.id === itemId) ?? null;
 }
 
 export function isAvailable(actor, entry) {
   if (!actor?.isOwner || !entry) return false;
   const item = getItem(actor, entry.itemId);
   if (!item || (item.parent && item.parent !== actor)) return false;
+  if (item.flags?.["oprpg-system"]?.hatsu && actor.sheet?._isHatsuItemBlocked?.(item)) return false;
   if (!entry.activityId) return typeof item.use === "function";
   const activity = activityById(item, entry.activityId);
-  return Boolean(activity && activity.canUse !== false);
+  return Boolean(activity && typeof activity.use === "function" && activity.canUse !== false);
 }
 
 /**
@@ -35,11 +36,13 @@ export async function executeEntry(actor, entry, {notify = () => {}} = {}) {
         notify("A atividade selecionada não oferece execução nativa. Abra a ficha do item.");
         return {ok:false, reason:"no-native-use"};
       }
-      await activity.use();
+      const result = await activity.use();
+      if (!result) return {ok:false, reason:"cancelled"};
       return {ok:true, method:"activity.use", activityId:entry.activityId};
     }
     if (typeof item.use === "function") {
-      await item.use();
+      const result = await item.use();
+      if (!result) return {ok:false, reason:"cancelled"};
       return {ok:true, method:"item.use"};
     }
     return {ok:false, reason:"no-native-use"};
@@ -54,7 +57,7 @@ export async function executeEntry(actor, entry, {notify = () => {}} = {}) {
 
 export function diagnostics({system, core, fixes, hud} = {}) {
   return {
-    adapter: "integrado-1.27.13", systemId: system?.id ?? null, systemVersion: system?.version ?? null,
+    adapter: `integrado-${fixes?.version ?? "unknown"}`, systemId: system?.id ?? null, systemVersion: system?.version ?? null,
     coreVersion: core?.version ?? null, coreActive: !!core?.active,
     fixesVersion: fixes?.version ?? null, fixesActive: !!fixes?.active,
     hudAvailable: !!hud, actorId: hud?.actor?.id ?? hud?._actor?.id ?? null,
