@@ -1,12 +1,28 @@
-import { GROUPS, ECONOMY, entriesForActor, escapeHTML, activityById, asArray, finiteValue, resourceLabel } from "./model.js";
-import { executeEntry, getItem, isAvailable } from "./execute.js";
+import { GROUPS, ECONOMY, entriesForActor, escapeHTML, activityById, asArray, finiteValue, resourceLabel, matchesEntry } from "./model.js";
+import { executeEntry, getItem, isAvailable, unavailableReason, isEntryPending } from "./execute.js";
 import { useBasicAction, dashMovementInfo } from "./basic-actions.js";
+import { weaponSetsForActor, weaponsForActor, setWeaponSlot, selectWeaponSet } from "./weapon-sets.js";
+import { isFavoriteEntry, toggleFavoriteEntry } from "./favorites.js";
 
 const ID = "oprpg-system-fixes";
 const warn = msg => ui.notifications?.warn?.(`Argon OPRPG: ${msg}`);
+const panelStates = new WeakMap();
+const listComponents = new WeakMap();
+
+export function rememberArgonFocus(hud = globalThis.ui?.ARGON) {
+  const active = globalThis.document?.activeElement;
+  const panel = active?.closest?.(".argon-oprpg-list");
+  const state = panelStates.get(hud?._actor)?.get(panel?.id);
+  if (!state) return;
+  if (active.matches("input[type=search]")) state.focus = {search:true, start:active.selectionStart, end:active.selectionEnd};
+  else if (active.dataset.entryKey) state.focus = {key:active.dataset.entryKey};
+  else if (active.classList.contains("argon-oprpg-favorite")) state.focus = {favorite:active.closest(".argon-oprpg-entry")?.querySelector("[data-entry-key]")?.dataset.entryKey};
+  else if (active.matches("select")) state.focus = {control:active.getAttribute("aria-label")};
+  else if (active.dataset.group) state.focus = {group:active.dataset.group};
+  else if (active.matches("summary")) state.focus = {summary:true};
+}
 
 function iconFor(group) { return GROUPS.find(g => g.key === group)?.icon ?? "icons/svg/dice-target.svg"; }
-function groupLabel(group) { return GROUPS.find(g => g.key === group)?.label ?? "Outras ações"; }
 function usableMacro(macro) { return !!macro && macro.canExecute !== false && typeof macro.execute === "function"; }
 
 /** Register all classes during Argon's argonInit, when CoreHUD.ARGON exists. */
@@ -30,38 +46,176 @@ export function registerArgon(CoreHUD) {
     element.tabIndex = 0;
     element.onkeydown = event => {
       if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void click(event); }
-      if (event.key === "Escape") { ui.ARGON.collapseAllPanels(); element.blur(); }
+      if (event.key === "Escape") { closeLists(); ui.ARGON.components?.drawer?._expandPanel(null); }
     };
     if (expanded) element.setAttribute("aria-haspopup", "true");
   }
 
+  function closeLists(except) {
+    for (const element of ui.ARGON.element.querySelectorAll(".argon-oprpg-list.show")) {
+      const list = listComponents.get(element);
+      if (list && list !== except) list.toggle(false);
+    }
+  }
+
   class OPRPGList extends ButtonPanel {
+    constructor(options) {
+      super(options);
+      this.ownerActor = options.actor ?? this.actor;
+      this.title = options.title ?? "Atividades";
+      this.filters = options.filters ?? false;
+      if (!panelStates.has(this.ownerActor)) panelStates.set(this.ownerActor, new Map());
+      const states = panelStates.get(this.ownerActor);
+      if (!states.has(this.id)) states.set(this.id, {query:"", group:"all", scroll:0});
+      this.state = states.get(this.id);
+      listComponents.set(this.element, this);
+    }
     get template() { return partial("ButtonPanel"); }
     get classes() { return [...super.classes, "argon-oprpg-list"]; }
+    saveState() {
+      if (this.ownerActor === ui.ARGON._actor && this.element.isConnected) super.saveState();
+    }
+    restoreState() {
+      if (this.ownerActor === ui.ARGON._actor && this.element.isConnected) super.restoreState();
+    }
     async _renderInner() {
       await super._renderInner();
+      if (this.ownerActor !== ui.ARGON._actor || !this.element.isConnected) return;
+      this.element.id = this.id;
+      this.element.setAttribute("role", "region");
+      this.element.setAttribute("aria-label", this.title);
+      const header = document.createElement("div"); header.className = "argon-oprpg-list-header";
+      const title = document.createElement("strong"); title.textContent = this.title;
+      const close = document.createElement("button"); close.type = "button"; close.textContent = "Fechar";
+      close.onclick = () => this.close(); header.append(title, close);
       const search = document.createElement("input");
-      search.type = "search"; search.placeholder = "Buscar atividade…";
+      search.type = "search"; search.placeholder = "Buscar por nome ou atividade…"; search.value = this.state.query;
       search.setAttribute("aria-label", "Buscar atividade neste painel");
-      search.oninput = () => {
-        const query = search.value.toLocaleLowerCase();
-        let count = 0;
-        for (const button of this._buttons) {
-          const match = button.label.toLocaleLowerCase().includes(query);
-          button.element.hidden = !match;
-          if (match) count++;
-        }
-        status.textContent = count ? "" : "Nenhuma atividade encontrada.";
-      };
-      search.onkeydown = event => {
-        if (event.key === "Escape") { event.stopPropagation(); this.toggle(false); this.parent.element.focus(); }
-      };
+      const filters = document.createElement("div"); filters.className = "argon-oprpg-filters";
+      filters.setAttribute("role", "group"); filters.setAttribute("aria-label", "Filtrar atividades");
+      const groups = this.filters ? [{key:"all",label:"Todas"}, ...[{key:"basic",label:"Básicas"}, ...GROUPS].filter(group => this._buttons.some(button => button.entry?.group === group.key))] : [];
+      if (this.filters && this._buttons.some(button => isFavoriteEntry(this.ownerActor, button.entry))) groups.splice(1,0,{key:"favorites",label:"Favoritos"});
+      if (!groups.some(group => group.key === this.state.group)) this.state.group = "all";
+      const rows = document.createElement("div"); rows.className = "argon-oprpg-rows";
+      for (const button of this._buttons) {
+        const container = document.createElement("div"); container.className = "argon-oprpg-entry";
+        button.entryContainer = container;
+        container.append(button.element);
+        const favorite = button.element.querySelector(".argon-oprpg-favorite");
+        if (favorite) container.append(favorite);
+        rows.append(container);
+      }
       const status = document.createElement("p"); status.setAttribute("role", "status");
       status.className = "argon-oprpg-empty";
-      this.element.prepend(search); this.element.append(status);
+      const weapons = weaponsForActor(this.ownerActor);
+      const loadout = document.createElement("fieldset"); loadout.className = "argon-oprpg-loadout";
+      const legend = document.createElement("legend"); legend.textContent = "Armas do conjunto"; loadout.append(legend);
+      const loadoutSection = document.createElement("details"); loadoutSection.className = "argon-oprpg-loadout-section";
+      const summary = document.createElement("summary"); summary.textContent = "Conjuntos de armas";
+      loadoutSection.open = this.state.loadoutOpen ?? false;
+      loadoutSection.ontoggle = () => {this.state.loadoutOpen = loadoutSection.open;};
+      loadoutSection.append(summary, loadout);
+      const setChoice = document.createElement("select"); setChoice.setAttribute("aria-label", "Conjunto de armas");
+      for (const id of ["1","2","3"]) setChoice.add(new Option(`Conjunto ${id}`,id));
+      setChoice.value = weaponSetsForActor(this.ownerActor).active;
+      const slotControls = [];
+      for (const [slot, label] of [["primary","Principal"],["secondary","Secundária"]]) {
+        const field = document.createElement("label"); field.textContent = label;
+        const select = document.createElement("select"); select.setAttribute("aria-label", `Arma ${label.toLocaleLowerCase()}`);
+        select.add(new Option("Nenhuma", ""));
+        for (const item of weapons) select.add(new Option(item.name, item.id));
+        const slots = weaponSetsForActor(this.ownerActor).sets.find(set => set.id === setChoice.value);
+        select.value = slots?.[slot]?.id ?? "";
+        select.onchange = () => changeLoadout(() => setWeaponSlot(this.ownerActor, setChoice.value, slot, select.value));
+        field.append(select); slotControls.push({slot, select}); loadout.append(field);
+      }
+      const useSetLabel = document.createElement("label");
+      const useSet = document.createElement("input"); useSet.type = "checkbox"; useSet.checked = this.state.useSet ?? false;
+      useSet.onchange = () => {this.state.useSet = useSet.checked; applyFilters();};
+      useSetLabel.append(useSet, document.createTextNode("Só armas deste conjunto"));
+      const note = document.createElement("small"); note.textContent = "Não altera equipamento nem consome ações.";
+      loadout.insertBefore(setChoice,legend.nextSibling); loadout.append(useSetLabel, note);
+      const changeLoadout = async callback => {
+        if (ui.ARGON._actor !== this.ownerActor) return;
+        loadout.disabled = true;
+        try {
+          if (!await callback()) return warn("Não foi possível alterar este conjunto de armas.");
+          const current = weaponSetsForActor(this.ownerActor);
+          const set = current.sets.find(set => set.id === current.active);
+          for (const {slot, select} of slotControls) select.value = set?.[slot]?.id ?? "";
+          applyFilters();
+        } catch (error) { console.error("[System Fixes/Argon] Conjuntos",error); warn("Não foi possível salvar o conjunto. Tente novamente."); }
+        finally {loadout.disabled = !this.ownerActor.isOwner;}
+      };
+      setChoice.onchange = () => changeLoadout(() => selectWeaponSet(this.ownerActor, setChoice.value));
+      loadout.disabled = !this.ownerActor.isOwner;
+      const applyFilters = () => {
+        this.state.query = search.value;
+        loadoutSection.hidden = !weapons.length || this.state.group !== "weapons";
+        const sets = weaponSetsForActor(this.ownerActor);
+        const selected = sets.sets.find(set => set.id === sets.active);
+        const itemIds = new Set([selected?.primary?.id, selected?.secondary?.id]);
+        let count = 0;
+        for (const button of this._buttons) {
+          const group = this.state.group === "favorites" ? "all" : this.state.group;
+          const match = matchesEntry({label:button.label,group:button.entry?.group}, this.state.query, group) &&
+            (this.state.group !== "favorites" || isFavoriteEntry(this.ownerActor, button.entry)) &&
+            !(this.state.useSet && this.state.group === "weapons" && !itemIds.has(button.entry?.itemId));
+          button.element.hidden = !match;
+          button.entryContainer.hidden = !match;
+          if (match) count++;
+        }
+        for (const filter of filters.children) filter.setAttribute("aria-pressed", String(filter.dataset.group === this.state.group));
+        status.textContent = count ? `${count} ${count === 1 ? "atividade" : "atividades"}` : "Nenhuma atividade encontrada.";
+      };
+      for (const group of groups) {
+        const filter = document.createElement("button"); filter.type = "button"; filter.textContent = group.label;
+        filter.dataset.group = group.key;
+        filter.onclick = () => {this.state.group = group.key; this.state.scroll = 0; rows.scrollTop = 0; applyFilters();};
+        filters.append(filter);
+      }
+      search.oninput = () => {this.state.scroll = 0; rows.scrollTop = 0; applyFilters();};
+      rows.onscroll = () => {this.state.scroll = rows.scrollTop;};
+      this.element.prepend(header, search, filters, loadoutSection); this.element.append(rows, status);
+      applyFilters(); rows.scrollTop = this.state.scroll;
+      if (this.visible && this.state.focus) {
+        const focus = this.state.focus; delete this.state.focus;
+        if (focus.search) {search.focus({preventScroll:true}); search.setSelectionRange(focus.start,focus.end);}
+        else if (focus.favorite) this._buttons.find(button => button.element.dataset.entryKey === focus.favorite)?.favoriteElement?.focus({preventScroll:true});
+        else if (focus.control) [...loadout.querySelectorAll("select")].find(control => control.getAttribute("aria-label") === focus.control)?.focus({preventScroll:true});
+        else if (focus.group) [...filters.children].find(filter => filter.dataset.group === focus.group)?.focus({preventScroll:true});
+        else if (focus.summary) summary.focus({preventScroll:true});
+        else this._buttons.find(button => button.element.dataset.entryKey === focus.key && !button.element.hidden)?.element.focus({preventScroll:true});
+      }
+      this.element.onkeydown = event => {
+        if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); this.close(); }
+        if (["ArrowDown","ArrowUp"].includes(event.key) && !event.target.matches("select")) {
+          const buttons = this._buttons.filter(button => !button.element.hidden);
+          if (!buttons.length) return;
+          const current = buttons.findIndex(button => button.element === event.target);
+          const next = current < 0 ? 0 : (current + (event.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length;
+          event.preventDefault(); buttons[next].element.focus();
+        }
+      };
+    }
+    close() { this.toggle(false); this.parent?.element.focus(); }
+    place() {
+      if (!this.visible) return;
+      const hudLeft = ui.ARGON.element.getBoundingClientRect().left;
+      const width = this.element.getBoundingClientRect().width;
+      const left = Math.max(8, Math.min(hudLeft, window.innerWidth - width - 8));
+      this.element.style.left = `${getComputedStyle(this.element).position === "fixed" ? left : left - hudLeft}px`;
     }
     toggle(value, noTransition) {
+      if (this.ownerActor !== ui.ARGON._actor) return;
+      const open = value ?? !this.visible;
+      if (!open) delete this.state.focus;
+      if (open) {
+        closeLists(this);
+        ui.ARGON.components?.drawer?._expandPanel(null);
+      }
       super.toggle(value, noTransition);
+      this.place();
       this.parent?.element.setAttribute("aria-expanded", String(this.visible));
       this.parent?.element.setAttribute("aria-controls", this.id);
       this.element.id = this.id;
@@ -76,39 +230,79 @@ export function registerArgon(CoreHUD) {
       ? this.item.img : (this.entry.activityId ? activityById(this.item, this.entry.activityId)?.img : null)
         || this.item?.img || this.entry.icon || iconFor(this.entry.group); }
     get colorScheme() { return ({bonus:1,free:2,reaction:3})[this.entry.economy] ?? 0; }
-    get disabled() { return !isAvailable(this.ownerActor, this.entry) || ui.ARGON?._actor !== this.ownerActor; }
+    get busy() { return this._busy || isEntryPending(this.ownerActor,this.entry); }
+    set busy(value) { this._busy = value; }
+    get disabled() { return this.busy || !isAvailable(this.ownerActor, this.entry) || ui.ARGON?._actor !== this.ownerActor; }
     get visible() { return !!this.item; }
     async getData() { const data = await super.getData(); return {...data, label: escapeHTML(data.label)}; }
     async _renderInner() {
       await super._renderInner();
       this.element.classList.add("argon-oprpg-activity");
+      this.element.dataset.entryKey = `${this.entry.itemId}:${this.entry.activityId ?? "item"}`;
       this.element.classList.toggle("argon-oprpg-disabled", this.disabled);
-      this.element.title = `${this.entry.label} (${this.entry.economy}) — clique para usar; botão direito: ficha`;
+      this.element.title = `${this.entry.label} — ${ECONOMY.find(e => e.key === this.entry.economy)?.label ?? ""}. F2 ou botão direito: ficha`;
       this.element.setAttribute("aria-label", this.entry.label);
       this.element.setAttribute("aria-disabled", String(this.disabled));
+      this.element.toggleAttribute("aria-busy", !!this.busy);
+      if (this.busy) this.element.setAttribute("aria-busy", "true");
+      this.element.classList.toggle("argon-oprpg-pending", !!this.busy);
       const details = resourceLabel(activityById(this.item, this.entry.activityId), this.item);
-      if (details) {
+      const reason = unavailableReason(this.ownerActor, this.entry);
+      if (details || reason || this.busy) {
         const line = document.createElement("small"); line.textContent = details;
+        if (reason) line.textContent = reason;
+        if (this.busy) line.textContent = "Em execução…";
         line.className = "argon-oprpg-resources"; this.element.append(line);
         this.element.title += ` · ${details}`;
       }
       this.element.tabIndex = 0;
+      if (this.ownerActor.isOwner && typeof this.ownerActor.system?.addFavorite === "function") {
+        this.favoriteElement?.remove();
+        const favorite = document.createElement("button"); favorite.type = "button";
+        favorite.className = "argon-oprpg-favorite";
+        const starred = isFavoriteEntry(this.ownerActor, this.entry);
+        favorite.innerHTML = `<i class="${starred ? "fas" : "far"} fa-star" aria-hidden="true"></i>`;
+        favorite.setAttribute("aria-label", starred ? "Remover dos favoritos" : "Adicionar aos favoritos");
+        favorite.setAttribute("aria-pressed", String(starred));
+        favorite.onmousedown = favorite.onmouseup = event => event.stopPropagation();
+        favorite.onclick = async event => {
+          event.stopPropagation();
+          if (ui.ARGON._actor !== this.ownerActor) return;
+          favorite.disabled = true;
+          try {
+            if (!await toggleFavoriteEntry(this.ownerActor, this.entry)) warn("Edite os favoritos pela ficha.");
+            else {rememberArgonFocus(); ui.ARGON.refresh();}
+          } catch (error) { console.error("[System Fixes/Argon] Favoritos",error); warn("Não foi possível salvar o favorito."); }
+          finally {favorite.disabled = false;}
+        };
+        this.favoriteElement = favorite;
+        (this.entryContainer ?? this.element).append(favorite);
+      }
     }
     async _onLeftClick(event) {
       event?.preventDefault?.(); event?.stopPropagation?.();
-      if (this.disabled) return warn("Você não pode usar esta atividade.");
-      const result = await executeEntry(this.ownerActor, this.entry, {notify: warn});
-      if (result.reason === "no-native-use") this.item?.sheet?.render?.(true);
-      if (result.reason === "pending") warn("Esta atividade já está em execução.");
+      if (this.disabled) return warn(unavailableReason(this.ownerActor, this.entry) ?? "Esta atividade já está em execução ou a ficha foi trocada.");
+      this.busy = true;
+      this.element.setAttribute("aria-busy", "true"); this.element.setAttribute("aria-disabled", "true");
+      this.element.classList.add("argon-oprpg-pending");
+      try {
+        const result = await executeEntry(this.ownerActor, this.entry, {notify: warn});
+        if (result.reason === "no-native-use") this.item?.sheet?.render?.(true);
+        if (result.reason === "pending") warn("Este item já está em execução.");
+      } finally {
+        this.busy = false; this.element.removeAttribute("aria-busy"); this.element.classList.remove("argon-oprpg-pending");
+        this.element.setAttribute("aria-disabled", String(this.disabled));
+        if (ui.ARGON._actor === this.ownerActor) {rememberArgonFocus(); ui.ARGON.refresh?.();}
+      }
     }
     async _onRightClick(event) { event?.preventDefault?.(); event?.stopPropagation?.(); this.item?.sheet?.render?.(true); }
     async activateListeners(element) {
       await super.activateListeners(element);
       keyboard(element, event => this._onLeftClick(event));
       element.onkeydown = event => {
+        if (event.target !== element) return;
         if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void this._onLeftClick(event); }
         if (event.key === "F2") { event.preventDefault(); void this._onRightClick(event); }
-        if (event.key === "Escape") { this.parent.toggle(false); this.parent.parent.element.focus(); }
       };
     }
   }
@@ -116,43 +310,50 @@ export function registerArgon(CoreHUD) {
   class OPRPGCategoryButton extends ButtonPanelButton {
     constructor(group, economy, entries, actor) {
       super(); this.group = group; this.economy = economy; this.entries = entries; this.ownerActor = actor;
+      this.hudContainer = ui.ARGON.buttonPanelContainer;
     }
-    get label() { return `${groupLabel(this.group)} (${this.entries.length})`; }
-    get icon() { return iconFor(this.group); }
+    get buttonPanelContainer() { return this.hudContainer ?? super.buttonPanelContainer; }
+    get label() { return this.economy.label; }
+    get icon() { return this.economy.icon; }
     get colorScheme() { return ({bonus:1,free:2,reaction:3})[this.economy.key] ?? 0; }
     async activateListeners(element) {
       await super.activateListeners(element);
       keyboard(element, event => this._onClick(event), {expanded: true});
-      element.setAttribute("aria-label", `${this.economy.label}: ${this.label}`);
-      element.title = `${this.economy.label}: ${this.label}`;
+      element.setAttribute("aria-label", `${this.economy.label}: ${this.entries.length} atividades`);
+      element.title = `${this.economy.label}: ${this.entries.length} atividades`;
       element.setAttribute("aria-expanded", String(this.panel?.visible ?? false));
     }
     async getData() { const data = await super.getData(); return {...data, label: escapeHTML(data.label)}; }
     async _getPanel() {
       const buttons = this.entries.map(entry => new OPRPGActivityButton(entry, this.ownerActor));
-      return new OPRPGList({id:`argon-oprpg-${this.group}-${this.economy.key}`, buttons});
+      if (this.economy.key === "action") buttons.unshift(...basicButtons());
+      return new OPRPGList({id:`argon-oprpg-${this.economy.key}`, title:this.economy.label, actor:this.ownerActor, filters:true, buttons});
+    }
+    async _onClick(event) {
+      await super._onClick(event);
+      if (this.panel.visible) this.panel.element.querySelector("input[type=search]")?.focus();
     }
   }
 
   class OPRPGBasicButton extends ActionButton {
-    constructor(key, label, icon) { super(); this.key = key; this.name = label; this.image = icon; }
+    constructor(key, label, icon) { super(); this.key = key; this.name = label; this.image = icon; this.entry = {group:"basic"}; this.ownerActor = this.actor; }
     get label() { return this.name; }
     get icon() { return this.image; }
+    async _renderInner() {
+      await super._renderInner();
+      this.element.setAttribute("aria-disabled", String(!this.ownerActor?.isOwner));
+      this.element.classList.toggle("argon-oprpg-disabled", !this.ownerActor?.isOwner);
+    }
     async _onLeftClick(event) {
-      try { return await useBasicAction(this.actor, this.key, this.icon, event); }
+      if (ui.ARGON._actor !== this.ownerActor || !this.ownerActor?.isOwner) return warn("Sem permissão para usar esta ficha.");
+      try { return await useBasicAction(this.ownerActor, this.key, this.icon, event); }
       catch (error) { console.error("[System Fixes/Argon] Ação básica", error); warn("Não foi possível executar a ação básica. Consulte F12."); }
     }
     async activateListeners(element) { await super.activateListeners(element); keyboard(element, event => this._onLeftClick(event)); element.setAttribute("aria-label",this.label); }
   }
-  class OPRPGBasics extends ButtonPanelButton {
-    get label() { return "Básicas"; }
-    get icon() { return "icons/svg/dice-target.svg"; }
-    async activateListeners(element) { await super.activateListeners(element); keyboard(element, event => this._onClick(event), {expanded:true}); element.setAttribute("aria-label","Ações básicas"); }
-    async _getPanel() {
-      const buttons = [["dodge","Esquivar","shield"],["ready","Preparar","clockwork"],["dash","Disparada","wingfoot"],["hide","Esconder","cloak"]]
-        .map(([key,label,icon]) => new OPRPGBasicButton(key,label,`icons/svg/${icon}.svg`));
-      return new OPRPGList({id:"argon-oprpg-basics",buttons});
-    }
+  function basicButtons() {
+    return [["dodge","Esquivar","shield"],["ready","Preparar","clockwork"],["dash","Disparada","wingfoot"],["hide","Esconder","cloak"]]
+      .map(([key,label,icon]) => new OPRPGBasicButton(key,label,`icons/svg/${icon}.svg`));
   }
 
   function makePanel(economy) {
@@ -165,13 +366,7 @@ export function registerArgon(CoreHUD) {
         const actor = this.actor;
         if (!actor) return [];
         const entries = entriesForActor(actor).filter(entry => entry.economy === economy.key);
-        const buttons = [];
-        if (economy.key === "action") buttons.push(new OPRPGBasics());
-        for (const group of GROUPS) {
-          const subset = entries.filter(entry => entry.group === group.key);
-          if (subset.length) buttons.push(new OPRPGCategoryButton(group.key, economy, subset, actor));
-        }
-        return buttons;
+        return entries.length || economy.key === "action" ? [new OPRPGCategoryButton("all", economy, entries, actor)] : [];
       }
     };
   }
@@ -229,11 +424,18 @@ export function registerArgon(CoreHUD) {
     }
     get movementMax() {
       const info = dashMovementInfo(this.actor, this.token, this.movementMode);
-      return info.conversionKnown && info.maxSpaces > 0 ? Math.max(1, Math.round(info.maxSpaces)) : 0;
+      return info.conversionKnown && info.maxSpaces > 0 ? info.maxSpaces : 0;
     }
     updateMovement() {
-      if (!this.movementMax) return;
-      super.updateMovement();
+      const info = dashMovementInfo(this.actor, this.token, this.movementMode);
+      if (!info.conversionKnown || !(info.max > 0)) { this.setVisibility(); return; }
+      const remaining = Math.max(0, info.max - info.used);
+      const text = this.element.querySelector(".movement-text");
+      if (text) text.textContent = `Movimento: ${Number(remaining.toFixed(2))}/${Number(info.max.toFixed(2))} ${info.actorUnits ?? ""}`;
+      this.element.setAttribute("aria-label", text?.textContent ?? "Movimento");
+      this.element.title = `${this.movementMode}: ${Number(info.used.toFixed(2))} ${info.actorUnits ?? ""} percorridos`;
+      this.element.querySelector(".movement-spaces")?.replaceChildren();
+      this.setVisibility();
     }
   }
 
@@ -281,6 +483,7 @@ export function registerArgon(CoreHUD) {
       const toggles = [...this.element.querySelectorAll(".ability-toggle .ability-title")];
       const target = toggles.find(toggle => toggle.dataset.index === String(index));
       const open = !!target && !target.classList.contains("active");
+      if (open) closeLists();
       for (const panel of this.element.querySelectorAll(".collapsible-panel")) {
         panel.style.maxHeight = open && panel.dataset.index === String(index) ? `${Math.max(80, window.innerHeight - 180)}px` : "0px";
       }
@@ -347,4 +550,13 @@ export function registerArgon(CoreHUD) {
   CoreHUD.defineWeaponSets(OPRPGWeaponSets);
   CoreHUD.defineMovementHud(OPRPGMovement);
   CoreHUD.defineMainPanels(ECONOMY.map(makePanel));
+  globalThis.document?.addEventListener("pointerdown", event => {
+    const hud = ui.ARGON?.element;
+    if (hud?.classList.contains("argon-oprpg") && !hud.contains(event.target)) {
+      closeLists(); ui.ARGON.components?.drawer?._expandPanel(null);
+    }
+  });
+  globalThis.window?.addEventListener("resize", () => {
+    for (const element of ui.ARGON?.element?.querySelectorAll(".argon-oprpg-list.show") ?? []) listComponents.get(element)?.place();
+  });
 }

@@ -15,32 +15,54 @@ import {DrawerPanel} from '/modules/enhancedcombathud/scripts/app/components/dra
 import {DrawerButton} from '/modules/enhancedcombathud/scripts/app/components/drawer/drawerButton.js';
 import {WeaponSets} from '/modules/enhancedcombathud/scripts/app/components/main/weaponSets.js';
 import {MovementHud} from '/modules/enhancedcombathud/scripts/app/components/main/movementHud.js';
-import {registerArgon} from '/modules/oprpg-system-fixes/scripts/argon-hud/argon.js';
+import {registerArgon,rememberArgonFocus} from '/modules/oprpg-system-fixes/scripts/argon-hud/argon.js';
 const lang = await (await fetch('/modules/oprpg-system-fixes/languages/pt-BR.json')).json();
 const get=(o,k)=>k.split('.').reduce((o,k)=>o?.[k],o);
 window.game={i18n:{localize:key=>get(lang,key)??key},settings:{get:(id,key)=>key==='showTooltips'?false:key==='playerDetailsBottom'?false:true},user:{hotbar:{1:'macro',2:'macro'}},macros:new Map([['macro',{name:'Macro de teste',canExecute:true,execute:async()=>{window.lastMacro=true;}}]]),combat:null};
 window.CONFIG={DND5E:{abilities:{dex:{label:'Destreza'}},skills:{ste:{label:'Furtividade'}},movementUnits:{m:{conversion:1}}},Token:{movement:{actions:{walk:{}}}}};
+window.canvas={scene:{grid:{units:'m',distance:1.5},dimensions:{distance:1.5}}};
 window.Hooks={callAll:()=>{}};
 window.foundry={utils:{debounce:fn=>fn},applications:{handlebars:{renderTemplate:async(url,data)=>Handlebars.compile(await(await fetch(url)).text())(data)},ux:{TextEditor:{implementation:{enrichHTML:async value=>value??''}}}}};
 Handlebars.registerHelper('localize',key=>game.i18n.localize(key));
 Number.isNumeric=value=>value!==null&&Number.isFinite(Number(value));
-const actor={id:'actor',uuid:'Actor.actor',name:'Personagem de teste com nome longo',type:'character',isOwner:true,img:'/icons/portrait.svg',system:{details:{level:8},energy:{total:17,max:32},attributes:{hp:{value:35,max:48,temp:4},ac:{value:16},movement:{walk:9,units:'m'}},abilities:{dex:{mod:3}},skills:{ste:{total:6}},favorites:[]},effects:[],temporaryEffects:[],getFlag:()=>null,sheet:{render:()=>{window.sheetOpened=true;}},rollSkill:async()=>{window.skillRolled=true;},rollAbilityCheck:async()=>{},rollSavingThrow:async()=>{}};
+const actor={id:'actor',uuid:'Actor.actor',name:'Personagem de teste com nome longo',type:'character',isOwner:true,img:'/icons/portrait.svg',system:{details:{level:8},energy:{total:17,max:32},attributes:{hp:{value:35,max:48,temp:4},ac:{value:16},movement:{walk:9,units:'m'}},abilities:{dex:{mod:3}},skills:{ste:{total:6}},favorites:[]},effects:[],temporaryEffects:[],flags:{},sheet:{render:()=>{window.sheetOpened=true;}},rollSkill:async()=>{window.skillRolled=true;},rollAbilityCheck:async()=>{},rollSavingThrow:async()=>{}};
+const set=(object,key,value)=>{const keys=key.split('.');const last=keys.pop();for(const part of keys)object=object[part]??=( {} );object[last]=value;};
+actor.getFlag=(scope,key)=>get(actor.flags,`${scope}.${key}`);
+actor.setFlag=async(scope,key,value)=>set(actor.flags,`${scope}.${key}`,value);
+actor.update=async update=>{for(const[key,value]of Object.entries(update))set(actor,key,value);};
+actor.system.addFavorite=async favorite=>actor.system.favorites.push(favorite);
+actor.system.removeFavorite=async id=>{actor.system.favorites=actor.system.favorites.filter(f=>f.id!==id);};
 actor.items=new Map();
 const types=['weapon','spell','feat','consumable','tool','unknown'];
 const actions=['action','powerful','bonus','reaction','none'];
 for(let i=0;i<60;i++){
- const item={id:'i'+i,name:(i%2?'Técnica com descrição longa de teste ':'Ação de teste ')+i,type:types[i%types.length],parent:actor,img:'/icons/item.svg',flags:i%7===0?{'oprpg-system':{akumaTec:true}}:{},system:{activities:new Map()},sheet:{render:()=>{window.sheetOpened=true;}}};
+ const item={id:'i'+i,uuid:`Actor.actor.Item.i${i}`,documentName:'Item',name:(i%2?'Técnica com descrição longa de teste ':'Ação de teste ')+i,type:types[i%types.length],parent:actor,img:'/icons/item.svg',flags:i%7===0?{'oprpg-system':{akumaTec:true}}:{},system:{activities:new Map(),equipped:i===0||i===6},sheet:{render:()=>{window.sheetOpened=true;}}};
+ item.getRelativeUUID=()=>`Item.${item.id}`;
  for(let j=0;j<2;j++){const a={id:'a'+j,item,name:j?'Área de alcance':'Ataque direto',type:j?'save':'attack',activation:{type:actions[(i+j)%actions.length]},consumption:{targets:[{type:'attribute',target:'energy.total',value:j?'@prof':'3'}]},use:async()=>{window.executed={itemId:item.id,activityId:'a'+j};return {};}};item.system.activities.set(a.id,a);}
  actor.items.set(item.id,item);
 }
-const hud=document.querySelector('#hud');
-window.ui={notifications:{warn:console.warn},ARGON:{_actor:actor,element:hud,_lastExpandedDrawer:null,collapseAllPanels:()=>{for(const el of hud.querySelectorAll('.features-container'))el.classList.remove('show');},setPanelState:()=>{},getPanelState:()=>null,toggleMinimize:()=>{},interceptNextDialog:()=>{}}};
+window.fromUuidSync=uuid=>{const parts=uuid.split('.');const item=actor.items.get(parts[parts.indexOf('Item')+1]);return parts.includes('Activity')?item?.system.activities.get(parts.at(-1)):item;};
+window.fromUuid=async uuid=>window.fromUuidSync(uuid);
+const hud=document.querySelector('#hud'); const states=new Map();
+window.ui={notifications:{warn:console.warn},ARGON:{_actor:actor,element:hud,_lastExpandedDrawer:null,collapseAllPanels:()=>{for(const el of hud.querySelectorAll('.features-container'))el.classList.remove('show');},setPanelState:(state,panel)=>states.set(panel.id,state),getPanelState:panel=>states.get(panel.id),toggleMinimize:()=>hud.classList.toggle('minimize-hud'),interceptNextDialog:()=>{}}};
 const core={ARGON:{MAIN:{BUTTONS:{ActionButton,ButtonPanelButton},ActionPanel,BUTTON_PANELS:{ButtonPanel}},PORTRAIT:{PortraitPanel},DRAWER:{DrawerPanel,DrawerButton},WeaponSets,MovementHud}};
 const registry={};for(const key of ['SupportedActorTypes','PortraitPanel','DrawerPanel','WeaponSets','MovementHud','MainPanels'])core['define'+key]=v=>registry[key]=v;
 registerArgon(core);
-const portrait=new registry.PortraitPanel();hud.append(portrait.element);await portrait.render();
-const drawer=new registry.DrawerPanel();hud.append(drawer.element);await drawer.render();
-const bar=document.createElement('div');bar.className='action-hud';hud.append(bar);ui.ARGON.buttonPanelContainer=bar;
-for(const Panel of registry.MainPanels){const panel=new Panel();bar.append(panel.element);await panel.render();}
+window.fixtureActor=actor;
+let renderSequence=0;
+window.renderFixture=async()=>{
+ const sequence=++renderSequence;
+ hud.replaceChildren();
+ const portrait=new registry.PortraitPanel();hud.append(portrait.element);await portrait.render();
+ if(sequence!==renderSequence)return;
+ const drawer=new registry.DrawerPanel();hud.append(drawer.element);await drawer.render();
+ if(sequence!==renderSequence)return;
+ ui.ARGON.components={portrait,drawer};
+ if (ui.ARGON._token) {const movement=new registry.MovementHud();hud.append(movement.element);ui.ARGON.components.movement=movement;await movement.render();}
+ const bar=document.createElement('div');bar.className='action-hud';hud.append(bar);ui.ARGON.buttonPanelContainer=bar;
+ for(const Panel of registry.MainPanels){if(sequence!==renderSequence)return;const panel=new Panel();bar.append(panel.element);await panel.render();}
+};
+ui.ARGON.refresh=()=>{rememberArgonFocus();window.renderPromise=window.renderFixture();return window.renderPromise;};
+await window.renderFixture();
 window.ready=true;
 </script></html>

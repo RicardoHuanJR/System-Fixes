@@ -1,6 +1,7 @@
 /** Distances come from actor movement and Foundry V14's movement history. */
 export function convertLength(value, from, to, units = globalThis.CONFIG?.DND5E?.movementUnits ?? {}) {
   if (!Number.isFinite(value)) return null;
+  if (!from || !to) return null;
   if (from === to) return value;
   const source = Number(units[from]?.conversion), target = Number(units[to]?.conversion);
   return source > 0 && target > 0 ? value * source / target : null;

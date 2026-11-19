@@ -7,6 +7,7 @@ on:
       - 'scripts/build_release.py'
       - 'scripts/import_staged_system_fixes.py'
       - 'tests/**'
+      - '.github/workflows/release.yml'
       - 'incoming/oprpg-system-fixes-v*.zip'
   workflow_dispatch:
     inputs:
@@ -20,7 +21,50 @@ concurrency:
   group: publicar-modulos
   cancel-in-progress: false
 jobs:
+  hud-browser:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Importar a mesma versão que será publicada
+        run: python scripts/import_staged_system_fixes.py
+      - name: Obter referência fixa do CORE para a simulação
+        run: |
+          mkdir -p .local-reference
+          git clone --depth 1 --branch 5.0.2 https://github.com/theripper93/enhancedcombathud.git .local-reference/argon-core
+          test "$(git -C .local-reference/argon-core rev-parse HEAD)" = dc0ea6b7bfba4dff5defe1b757104db20ebf5f1a
+      - name: Preparar ferramentas de teste
+        run: |
+          npm install --prefix .local-reference/test-runtime --no-audit --no-fund playwright@1.62.1 handlebars@4.7.8
+          .local-reference/test-runtime/node_modules/.bin/playwright install --with-deps chromium
+      - name: Verificar HUD em Chromium com documentos simulados
+        env:
+          PLAYWRIGHT_MODULE: ${{ github.workspace }}/.local-reference/test-runtime/node_modules/playwright
+        run: |
+          node tests/argon-browser-server.cjs > .local-reference/browser-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:4173/ > /dev/null; then break; fi
+            sleep 1
+          done
+          node tests/argon-browser-check.cjs
+      - name: Guardar capturas da simulação
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: argon-browser-screenshots
+          path: .local-reference/hud-*.png
+          retention-days: 7
   release:
+    needs: hud-browser
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -103,6 +103,14 @@ export function finiteValue(value) {
   return value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value)) ? Number(value) : null;
 }
 
+export function searchText(value) {
+  return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase().trim();
+}
+
+export function matchesEntry(entry, query, group = "all") {
+  return (group === "all" || entry.group === group) && searchText(entry.label).includes(searchText(query));
+}
+
 /** Costs are information only; formulas and scaling are never evaluated by the HUD. */
 export function resourceLabel(activity, item) {
   const targets = asArray(activity?.consumption?.targets).filter(t =>

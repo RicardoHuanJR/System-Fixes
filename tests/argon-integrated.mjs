@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { entriesForActor, economyOf, groupOf, finiteValue, resourceLabel, escapeHTML } from '../modules/oprpg-system-fixes/scripts/argon-hud/model.js';
-import { executeEntry, isAvailable, diagnostics } from '../modules/oprpg-system-fixes/scripts/argon-hud/execute.js';
+import { entriesForActor, economyOf, groupOf, finiteValue, resourceLabel, escapeHTML, matchesEntry } from '../modules/oprpg-system-fixes/scripts/argon-hud/model.js';
+import { executeEntry, isAvailable, diagnostics, unavailableReason } from '../modules/oprpg-system-fixes/scripts/argon-hud/execute.js';
+import { weaponSetsForActor, setWeaponSlot, selectWeaponSet } from '../modules/oprpg-system-fixes/scripts/argon-hud/weapon-sets.js';
+import { isFavoriteEntry, toggleFavoriteEntry } from '../modules/oprpg-system-fixes/scripts/argon-hud/favorites.js';
 import { convertLength, movementInfo } from '../modules/oprpg-system-fixes/scripts/argon-hud/movement.js';
 import { registerArgon } from '../modules/oprpg-system-fixes/scripts/argon-hud/argon.js';
 import { installEmbeddedArgonHUD, argonHUDStatus } from '../modules/oprpg-system-fixes/scripts/argon-hud/integration.js';
@@ -70,6 +72,7 @@ test('movement respects units, mode, absent conversion and zero speed', () => {
   const units = {m:{conversion:1},ft:{conversion:.3048}};
   assert.equal(convertLength(10,'ft','m',units),3.048);
   assert.equal(convertLength(10,'unknown','m',units),null);
+  assert.equal(convertLength(10,undefined,undefined,units),null);
   globalThis.CONFIG = {DND5E:{movementUnits:units}};
   globalThis.canvas = {scene:{grid:{units:'m',distance:1.5}},tokens:{placeables:[]}};
   const actor = {system:{attributes:{movement:{walk:9,fly:0,units:'m'}}}};
@@ -99,7 +102,65 @@ test('Argon classes use CORE templates and native PP; register all supported pan
   const powerful = new registered.MainPanels[1]();
   const buttons = await powerful._getButtons();
   assert.equal(buttons.length,1);
-  assert.match(buttons[0].label,/Técnicas/);
+  assert.equal(buttons[0].label,'Poderosa');
+  assert.equal(buttons[0].entries[0].activityId,'b');
+});
+
+test('search ignores accents without losing category filters', () => {
+  const entry={label:'Técnica — Área de alcance',group:'techniques'};
+  assert.equal(matchesEntry(entry,'  tecnica '),true);
+  assert.equal(matchesEntry(entry,'area','techniques'),true);
+  assert.equal(matchesEntry(entry,'area','weapons'),false);
+  assert.equal(matchesEntry(entry,'x'),false);
+});
+
+test('activities sharing one item cannot open concurrent native usage dialogs', async () => {
+  let finish;
+  const {actor,first}=fixture();
+  const [a,b]=entriesForActor(actor);
+  first.use=()=>new Promise(resolve=>{finish=resolve;});
+  const usage=executeEntry(actor,a);
+  assert.equal((await executeEntry(actor,b)).reason,'pending');
+  finish({}); await usage;
+  assert.equal((await executeEntry(actor,b)).ok,true);
+});
+
+test('availability explains native failures and survives throwing system getters', () => {
+  const {actor,first}=fixture(); const entry=entriesForActor(actor)[0];
+  actor.isOwner=false; assert.match(unavailableReason(actor,entry),/permissão/); actor.isOwner=true;
+  Object.defineProperty(first,'canUse',{get(){throw new Error('unprepared');}});
+  assert.equal(isAvailable(actor,entry),false);
+  assert.match(unavailableReason(actor,entry),/consultar/);
+});
+
+test('weapon sets only write CORE slot flags for owned weapons, never equipment', async () => {
+  const actor={isOwner:true,items:new Map(),getFlag:(_,key)=>key==='weaponSets'?{'2':{primary:'Actor.other.Item.other'}}:'2'};
+  const weapon={id:'w',uuid:'Actor.a.Item.w',parent:actor,type:'weapon',system:{equipped:true}};
+  actor.items.set('w',weapon);
+  const updates=[]; actor.update=async update=>updates.push(update); actor.setFlag=async(...args)=>updates.push(args);
+  assert.equal(weaponSetsForActor(actor).sets[0].primary,weapon);
+  assert.equal(weaponSetsForActor(actor).sets[1].primary,null);
+  assert.equal(await setWeaponSlot(actor,'2','primary','w'),true);
+  assert.deepEqual(updates[0],{'flags.enhancedcombathud.weaponSets.2.primary':weapon.uuid});
+  assert.equal(await setWeaponSlot(actor,'4','primary','w'),false);
+  assert.equal(await setWeaponSlot(actor,'2','secondary','other'),false);
+  assert.equal(await selectWeaponSet(actor,'3'),true);
+  assert.equal(weapon.system.equipped,true);
+  actor.isOwner=false; assert.equal(await setWeaponSlot(actor,'2','primary','w'),false);
+});
+
+test('favorites use exact native relative activity IDs and preserve unrelated favorites', async () => {
+  const {actor,item}=fixture(); const [entry]=entriesForActor(actor);
+  item.getRelativeUUID=()=>`Item.${item.id}`;
+  actor.system={favorites:[{type:'skill',id:'ste'}]};
+  actor.system.addFavorite=async favorite=>actor.system.favorites.push(favorite);
+  actor.system.removeFavorite=async id=>{actor.system.favorites=actor.system.favorites.filter(f=>f.id!==id);};
+  assert.equal(await toggleFavoriteEntry(actor,entry),true);
+  assert.deepEqual(actor.system.favorites[1],{type:'activity',id:'Item.i.Activity.a'});
+  assert.equal(isFavoriteEntry(actor,entry),true);
+  assert.equal(await toggleFavoriteEntry(actor,entry),true);
+  assert.deepEqual(actor.system.favorites,[{type:'skill',id:'ste'}]);
+  actor.isOwner=false; assert.equal(await toggleFavoriteEntry(actor,entry),false);
 });
 
 test('dash ignores disabled effects and other movement modes', () => {

@@ -10,7 +10,7 @@ class StagedImportTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("staged", Path(__file__).parents[1] / "scripts/import_staged_system_fixes.py")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        for version in ("1.27.13", "1.27.14"):
+        for version in ("1.27.13", "1.27.14", "1.27.15"):
             with self.subTest(version=version), tempfile.TemporaryDirectory(dir=Path(__file__).parent) as directory:
                 root = Path(directory)
                 module.INCOMING = root / "incoming"

@@ -1,6 +1,9 @@
 import { activityById, asArray } from "./model.js";
 
 const pending = new Set();
+const pendingKey = (actor, entry) => `${actor?.uuid ?? actor?.id}:${entry?.itemId}`;
+
+export function isEntryPending(actor, entry) { return pending.has(pendingKey(actor,entry)); }
 
 export function getItem(actor, itemId) {
   if (!actor || !itemId) return null;
@@ -8,15 +11,24 @@ export function getItem(actor, itemId) {
   return asArray(actor.items).find(i => i.id === itemId) ?? null;
 }
 
-export function isAvailable(actor, entry) {
-  if (!actor?.isOwner || !entry) return false;
+export function unavailableReason(actor, entry) {
+  if (!actor?.isOwner) return "Sem permissão para usar esta ficha.";
+  if (!entry) return "Atividade não encontrada.";
   const item = getItem(actor, entry.itemId);
-  if (!item || (item.parent && item.parent !== actor)) return false;
-  if (item.flags?.["oprpg-system"]?.hatsu && actor.sheet?._isHatsuItemBlocked?.(item)) return false;
-  if (!entry.activityId) return typeof item.use === "function";
-  const activity = activityById(item, entry.activityId);
-  return Boolean(activity && typeof activity.use === "function" && activity.canUse !== false);
+  if (!item || (item.parent && item.parent !== actor)) return "O item não pertence mais a esta ficha.";
+  try {
+    const blocked = item.flags?.["oprpg-system"]?.hatsu && actor.sheet?._isHatsuItemBlocked?.(item);
+    if (blocked) return String(blocked);
+    if (!entry.activityId) return typeof item.use === "function" ? null : "Abra a ficha para consultar este item.";
+    const activity = activityById(item, entry.activityId);
+    if (!activity) return "A atividade foi removida. Abra a ficha do item.";
+    if (typeof activity.use !== "function") return "A atividade não oferece execução nativa. Abra a ficha do item.";
+    if (activity.canUse === false) return "Atividade indisponível no sistema. Abra a ficha para conferir os requisitos.";
+    return null;
+  } catch (_) { return "Não foi possível consultar a atividade. Abra a ficha do item."; }
 }
+
+export function isAvailable(actor, entry) { return unavailableReason(actor, entry) === null; }
 
 /**
  * The OP RPG native activity remains the only authority for consumption, saves,
@@ -26,7 +38,8 @@ export function isAvailable(actor, entry) {
 export async function executeEntry(actor, entry, {notify = () => {}} = {}) {
   if (!isAvailable(actor, entry)) return {ok:false, reason:"unavailable"};
   const item = getItem(actor, entry.itemId);
-  const key = `${actor.uuid ?? actor.id}:${item.id}:${entry.activityId ?? "single"}`;
+  // Activities of one item can share uses and PP; allow only one native usage dialog at a time.
+  const key = pendingKey(actor,entry);
   if (pending.has(key)) return {ok:false, reason:"pending"};
   pending.add(key);
   try {

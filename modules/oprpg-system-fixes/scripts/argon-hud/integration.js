@@ -1,4 +1,4 @@
-import { registerArgon } from "./argon.js";
+import { registerArgon, rememberArgonFocus } from "./argon.js";
 import { diagnostics } from "./execute.js";
 import { installBasicActionAutomation } from "./basic-actions.js";
 
@@ -82,5 +82,6 @@ export function installEmbeddedArgonHUD() {
 }
 
 export function refreshEmbeddedArgonHUD() {
+  rememberArgonFocus();
   return globalThis.ui?.ARGON?.refresh?.();
 }

@@ -1,10 +1,10 @@
-# System Fixes 1.27.14 — Argon compacto integrado
+# System Fixes 1.27.15 — Argon mais compacto e legível
 
 Ative **System Fixes + Argon CORE 5.x** no OP RPG/Foundry V14. Deixe **enhancedcombathud-oprpg-system desativado**: a integração está dentro do Fixes e se recusa a registrar duas vezes quando o adaptador antigo está ativo.
 
-Barra inferior compacta, ações comuns/poderosas/bônus/reações, atividades individuais em listas com busca, custos de PP/usos, ações básicas recuperadas do adaptador 6.4.1, favoritos, efeitos e rolagens nativas no painel lateral. O Haki abre seu HUD nativo; Akuma usa os itens e atividades reais da ficha.
+Cinco botões de economia na barra, filtros por categoria dentro do painel, busca sem acentos e estado preservado após atualizações. Favoritos por atividade e três conjuntos de armas acessíveis no painel, sem alterar equipamento. Mostra motivos de indisponibilidade, execução em andamento e movimento restante real. Ações básicas, Haki, Akuma, efeitos e rolagens nativas continuam integrados.
 
-[Manifesto permanente de instalação](https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json) · [revisão, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.14.md) · [mapa de arquitetura](docs/CODEBASE_MAP.md).
+[Manifesto permanente de instalação](https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json) · [revisão, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.15.md) · [mapa de arquitetura](docs/CODEBASE_MAP.md).
 
 Esta versão tem testes automatizados e verificação visual **simulada**, sem execução em Foundry real. Não foi inventada uma contagem de ações restantes: o sistema inspecionado não oferece estado universal para ela.
 
