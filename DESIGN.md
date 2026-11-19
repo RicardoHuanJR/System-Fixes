@@ -19,3 +19,5 @@ Nome completo disponível em título/ARIA. Enter/Espaço executam; setas percorr
 Comparação da simulação com 60 itens e 120 atividades: barra passou de 924×166 px para 524×122 px em 1440×900; em 390×844, a área de ações mede 206×116 px, sem movimento. No combate o indicador compacto informa distância restante/máxima em unidades do ator e ocupa uma linha abaixo das ações.
 
 O CSS só atua sob `.extended-combat-hud.argon-oprpg`. O retrato adiciona essa classe apenas quando o adaptador interno está registrado. Dimensões CSS prevalecem sobre os cartões grandes do CORE; o estado minimizar nativo permanece.
+
+Mesmo com `playerDetailsBottom` ativo no CORE, o retrato compacto mantém os detalhes no topo, ordem normal e padding de 6 px, sem máscara; essa configuração foi coberta em 867×453 px na regressão 1.27.16.

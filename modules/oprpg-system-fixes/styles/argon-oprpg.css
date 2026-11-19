@@ -49,6 +49,10 @@
 .extended-combat-hud.argon-oprpg .portrait-hud .portrait-hud-image { opacity:.35; }
 .extended-combat-hud.argon-oprpg .portrait-hud .portrait-stat-block { font-size:11px; padding:3px; }
 .extended-combat-hud.argon-oprpg .portrait-hud .player-details { padding:6px; top:0; bottom:auto; margin:0; font-size:13px; background:transparent; mask-image:none; }
+.extended-combat-hud.argon-oprpg .portrait-hud .portrait-stat-block.player-details.player-details-bottom {
+  top:0; bottom:auto; flex-direction:column; padding:6px;
+  background:transparent; -webkit-mask-image:none; mask-image:none;
+}
 .extended-combat-hud.argon-oprpg .portrait-hud .player-name { max-width:164px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .extended-combat-hud.argon-oprpg .portrait-hud .portrait-stat-block.player-details .player-detail { font-size:10px; }
 .extended-combat-hud.argon-oprpg .portrait-hud .effects-container { max-height:26px; overflow-y:auto; }
