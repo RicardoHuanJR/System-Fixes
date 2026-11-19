@@ -36,7 +36,7 @@
 .argon-oprpg-list input::placeholder { color:#bbc4d0; }
 .extended-combat-hud.argon-oprpg .argon-oprpg-list .action-element { display:block; width:100%; height:auto; min-height:52px; flex:0 0 auto; padding:4px 76px 6px 0; background-size:30px; background-position:8px center; }
 .extended-combat-hud.argon-oprpg .argon-oprpg-list .action-element-title { display:block; position:static; margin-left:48px; width:auto; height:auto; padding:1px 4px 0; line-height:17px; font-size:13px; text-align:left; background:transparent; overflow-wrap:anywhere; }
-.argon-oprpg-resources { display:block; padding:0 4px 0 52px; line-height:15px; font-size:11px; color:#c8d2df; }
+.argon-oprpg-actor-resources { display:block; padding:0 4px 0 52px; line-height:15px; font-size:11px; color:#c8d2df; }
 .extended-combat-hud.argon-oprpg button.argon-oprpg-favorite { position:absolute; right:2px; top:6px; width:32px; height:32px; padding:4px; color:#e8c66a; background:#222a34; border:0; font-size:14px; cursor:pointer; }
 .extended-combat-hud.argon-oprpg button.argon-oprpg-info { position:absolute; right:38px; top:6px; width:32px; height:32px; padding:4px; background:#222a34; color:#f2f4f7; border:0; font-size:14px; cursor:pointer; }
 .extended-combat-hud.argon-oprpg .argon-oprpg-entry:not(:has(.argon-oprpg-favorite)) .argon-oprpg-info { right:2px; }
@@ -64,6 +64,15 @@
 .extended-combat-hud.argon-oprpg .portrait-hud .player-name { max-width:164px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .extended-combat-hud.argon-oprpg .portrait-hud .portrait-stat-block.player-details .player-detail { font-size:10px; }
 .extended-combat-hud.argon-oprpg .portrait-hud .effects-container { max-height:26px; overflow-y:auto; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-actor-resources { width:100%; font-size:10px; }
+.extended-combat-hud.argon-oprpg .portrait-hud .player-details:has(.argon-oprpg-actor-resources) { gap:0; line-height:14px; }
+.extended-combat-hud.argon-oprpg .portrait-hud .player-details:has(.argon-oprpg-actor-resources[open]) { z-index:100; opacity:1; }
+.extended-combat-hud.argon-oprpg .portrait-hud .player-details:has(.argon-oprpg-actor-resources) .effects-container:not(:empty) { position:absolute; top:0; right:0; width:22px; max-height:48px; }
+.extended-combat-hud.argon-oprpg .portrait-hud .player-details:has(.effects-container:not(:empty)):has(.argon-oprpg-actor-resources) { padding-right:28px; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-actor-resources summary { cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#f2f4f7; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-actor-resources summary:focus-visible { outline:2px solid #e8c66a; outline-offset:1px; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-actor-resources dl { position:absolute; bottom:calc(100% + 6px); left:0; z-index:5; width:260px; max-width:calc(100vw - 32px); max-height:40vh; overflow:auto; margin:0; padding:10px; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 10px; background:#14181e; color:#f2f4f7; border:1px solid #e8c66a; font-size:12px; text-align:left; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-actor-resources dd { margin:0; overflow-wrap:anywhere; }
 .extended-combat-hud.argon-oprpg .portrait-hud .effects-container .effect-icon { width:22px; height:22px; }
 .extended-combat-hud.argon-oprpg .portrait-hud .player-buttons { bottom:0; top:auto; right:0; height:28px; width:100%; justify-content:center; }
 .extended-combat-hud.argon-oprpg .portrait-hud .player-button { width:30px; height:28px; font-size:14px; padding:4px; }

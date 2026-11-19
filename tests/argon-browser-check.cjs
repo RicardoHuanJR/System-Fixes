@@ -209,6 +209,27 @@ const assert=require('node:assert/strict');
  assert.equal(await page.getByRole('button',{name:'Ficha e atalhos',exact:true}).getAttribute('aria-expanded'),'true');
  await page.getByRole('button',{name:'Favoritos da ficha',exact:true}).click();
  assert.equal(await page.getByRole('button',{name:'Ficha e atalhos',exact:true}).getAttribute('aria-expanded'),'true');
+ await page.evaluate(()=>{
+   fixtureActor.system.energy.generated=3;fixtureActor.system.shieldPoints={value:7,max:12};
+   fixtureActor.system.akuma={powerUp:{active:true}};
+   return ui.ARGON.refresh();
+ });
+ for (const width of [867,390]) {
+   await page.setViewportSize({width,height:width===867?453:844});
+   const summary=page.locator('.argon-oprpg-actor-resources summary');
+   assert.match(await summary.innerText(),/PPg 3 · Esc 7\/12/);
+   const summaryBounds=await summary.boundingBox();
+   const statsBounds=await page.locator('.portrait-hud > .portrait-stat-block:not(.player-details)').first().boundingBox();
+   assert.ok(summaryBounds.y+summaryBounds.height<=statsBounds.y,'resources must not overlap PV/PP/defense');
+   assert.equal(Math.round((await page.locator('.portrait-hud').boundingBox()).height),122);
+   await summary.focus();await page.keyboard.press('Enter');
+   const panel=page.locator('.argon-oprpg-actor-resources dl');await panel.waitFor({state:'visible'});
+   assert.match(await panel.innerText(),/Power Up/);
+   const bounds=await panel.boundingBox();assert.ok(bounds.x>=0 && bounds.x+bounds.width<=width && bounds.y>=0);
+   assert.equal(await panel.evaluate(el=>el.contains(document.elementFromPoint(el.getBoundingClientRect().x+20,el.getBoundingClientRect().y+20))),true,'resources must remain above other panels');
+   await page.screenshot({path:path.resolve(`.local-reference/hud-resources-${width}.png`)});
+   await page.keyboard.press('Escape');assert.equal(await panel.isVisible(),false);
+ }
  assert.deepEqual(errors,[]);
  } finally { await browser.close(); }
 })().catch(error=>{console.error(error);process.exit(1);});

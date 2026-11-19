@@ -35,7 +35,7 @@ export function isAvailable(actor, entry) { return unavailableReason(actor, entr
  * damage, templates and special effects. Never manually spend PP or apply damage here.
  * Fails closed if a multiple-activity Item no longer exposes the selected activity.
  */
-export async function executeEntry(actor, entry, {notify = () => {}} = {}) {
+export async function executeEntry(actor, entry, {notify = () => {}, usageConfig, messageConfig} = {}) {
   if (!isAvailable(actor, entry)) return {ok:false, reason:"unavailable"};
   const item = getItem(actor, entry.itemId);
   // Activities of one item can share uses and PP; allow only one native usage dialog at a time.
@@ -49,7 +49,7 @@ export async function executeEntry(actor, entry, {notify = () => {}} = {}) {
         notify("A atividade selecionada não oferece execução nativa. Abra a ficha do item.");
         return {ok:false, reason:"no-native-use"};
       }
-      const result = await activity.use();
+      const result = usageConfig ? await activity.use(usageConfig, {}, messageConfig ?? {}) : await activity.use();
       if (!result) return {ok:false, reason:"cancelled"};
       return {ok:true, method:"activity.use", activityId:entry.activityId};
     }

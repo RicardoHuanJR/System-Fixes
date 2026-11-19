@@ -8,7 +8,8 @@ import { activityDetails } from '../modules/oprpg-system-fixes/scripts/argon-hud
 import { convertLength, movementInfo } from '../modules/oprpg-system-fixes/scripts/argon-hud/movement.js';
 import { registerArgon } from '../modules/oprpg-system-fixes/scripts/argon-hud/argon.js';
 import { installEmbeddedArgonHUD, argonHUDStatus } from '../modules/oprpg-system-fixes/scripts/argon-hud/integration.js';
-import { executePrepared, installBasicActionAutomation, isDodging, useBasicAction, dashMovementInfo } from '../modules/oprpg-system-fixes/scripts/argon-hud/basic-actions.js';
+import { executePrepared, installBasicActionAutomation, isDodging, useBasicAction, dashMovementInfo, basicEffectActive, applyDodgeToAttack } from '../modules/oprpg-system-fixes/scripts/argon-hud/basic-actions.js';
+import { resourceIndicators } from '../modules/oprpg-system-fixes/scripts/argon-hud/resource-state.js';
 
 function fixture(use = async () => ({})) {
   const first = {id:'a',name:'Ataque',type:'attack',activation:{type:'action'},use};
@@ -212,6 +213,7 @@ test('dash ignores disabled effects and other movement modes', () => {
 });
 
 test('prepared action survives native cancellation and executes once', async () => {
+  globalThis.foundry = {applications:{api:{DialogV2:{confirm:async()=>true}}}};
   const {actor,first} = fixture(async()=>undefined);
   let deleted = 0;
   const effect = {uuid:'Effect.e',parent:actor,getFlag:()=>({key:'ready',activityUuid:'Activity.a'}),delete:async()=>deleted++};
@@ -250,9 +252,85 @@ test('basic actions are idempotent and time expiry only touches their own effect
   await useBasicAction(actor,'dodge','icon');
   release(); await a;
   assert.equal(created,1);
+  actor.effects=[effect,{id:'foreign',getFlag:()=>null}];actor.statuses.add('incapacitated');
+  await hooks.get('createActiveEffect')({parent:actor});assert.deepEqual(removed,['e']);
+  actor.statuses.clear();actor.system.attributes.movement.walk=0;
+  await hooks.get('updateActor')(actor);assert.deepEqual(removed,['e']);
+});
+
+test('resource indicators omit missing data, keep zero generated PP and read actual states', () => {
+  assert.deepEqual(resourceIndicators({}),[]);
+  const flags={'oprpg-system':{antevisaoModo:'padrao',akuma:{powerUp:{active:true}}},'oprpg-system-fixes':{presenceActive:true}};
+  const actor={system:{energy:{generated:0},shieldPoints:{value:0,max:12}},getFlag:(scope,key)=>flags[scope]?.[key]};
+  const rows=resourceIndicators(actor);
+  assert.deepEqual(rows.map(r=>r.value),['0','0/12','ativa','ativa','ativo']);
+  actor.system.energy.generated='@formula'; actor.system.shieldPoints={value:null,max:12};
+  assert.equal(resourceIndicators(actor).length,3);
+});
+
+test('Dodge uses defender sight, honors explicit targets and never penalizes a mixed attack', () => {
+  game.combat=null; game.time={worldTime:0};
+  const actor={effects:[{getFlag:()=>({key:'dodge'})}],statuses:new Set(),system:{attributes:{movement:{walk:9}}}};
+  const attacker={center:{x:100,y:100},document:{level:'level',parent:{levels:new Map([['level',{id:'level'}]])},getVisibilityTestPoints:()=>[{x:100,y:100,elevation:3}]}};
+  const defender={actor,vision:{id:'defender'},document:{detectionModes:[{id:'sight',enabled:true},{id:'hearing',enabled:true}]}};
+  let visible=true, tests=0;
+  globalThis.foundry={canvas:{perception:{DetectionMode:{DETECTION_TYPES:{SIGHT:1}}}}};
+  globalThis.CONFIG={Canvas:{detectionModes:{sight:{type:1,testVisibility(source,mode,config){tests++;assert.equal(source,defender.vision);assert.equal(config.object,attacker);assert.equal(config.level.id,'level');assert.deepEqual(config.tests[0].point,{x:100,y:100,elevation:3});return visible;}},hearing:{type:2,testVisibility(){throw new Error('hearing is not sight');}}}}};
+  const config=()=>({subject:{actor:{getActiveTokens:()=>[attacker]}},targets:new Set([defender]),rolls:[{}]});
+  let roll=config(); applyDodgeToAttack(roll); assert.equal(roll.rolls[0].options.disadvantage,true);
+  visible=false; roll=config(); applyDodgeToAttack(roll); assert.equal(roll.disadvantage,undefined);
+  visible=true; roll=config(); roll.targets.add({actor:{effects:[]}}); applyDodgeToAttack(roll); assert.equal(roll.disadvantage,undefined);
+  roll=config(); roll.targets=new Set(); applyDodgeToAttack(roll); assert.equal(roll.disadvantage,undefined);
+  attacker.document.hidden=true; roll=config(); applyDodgeToAttack(roll); assert.equal(roll.disadvantage,undefined);
+  assert.ok(tests>=2);
+});
+
+test('turn state expires even before deletion, including actions prepared off turn', () => {
+  const actor={},other={};
+  const effect={parent:actor,getFlag:()=>({key:'ready',activated:{combatId:'c',round:1,turn:0,combatantId:'other'}})};
+  game.combat={id:'c',started:true,round:1,turn:0,combatant:{id:'other',actor:other},turns:[{actor:other},{actor}]};
+  assert.equal(basicEffectActive(effect),true);
+  game.combat.turn=1; game.combat.combatant={id:'owner',actor};
+  assert.equal(basicEffectActive(effect),false);
+  game.combat.round=2; game.combat.turn=0;game.combat.combatant={id:'other',actor:other};
+  assert.equal(basicEffectActive(effect),false);
+  game.combat=null; assert.equal(basicEffectActive(effect),false);
+});
+
+test('Ready cancellation, suppression and concentration transfer never spend or duplicate a use', async () => {
+  game.combat=null;game.time={worldTime:0};
+  const {actor,first}=fixture(); let uses=0,updates=[];
+  let confirm=false;
+  globalThis.foundry={applications:{api:{DialogV2:{confirm:async()=>confirm}}}};
+  const state={key:'ready',activityUuid:'Activity.a',nativeConcentration:true};
+  const effect={uuid:'Effect.ready',parent:actor,getFlag:()=>state,update:async data=>updates.push(data)};
+  first.duration={getEffectData:()=>({seconds:60})};
+  first.use=async config=>{uses++;assert.deepEqual(config,{concentration:{begin:false,end:null}});return {};};
+  globalThis.fromUuid=async()=>first;
+  assert.equal((await executePrepared(effect)).ok,false);assert.equal(uses,0);
+  confirm=true; effect.isSuppressed=true; await executePrepared(effect);assert.equal(uses,0);
+  effect.isSuppressed=false; await executePrepared(effect);assert.equal(uses,1);
+  assert.deepEqual(updates,[{'flags.oprpg-system-fixes.-=basicAction':null,duration:{seconds:60}}]);
+  actor.statuses=new Set(['incapacitated']);await executePrepared(effect);assert.equal(uses,1);
+});
+
+test('preparing a technique creates native concentration status without using it or ending unrelated concentration', async () => {
+  const {actor,first}=fixture();first.uuid='Activity.a';let uses=0,created=[];
+  first.use=async()=>{uses++;};actor.statuses=new Set();actor.effects=[];
+  actor.system={attributes:{concentration:{limit:1}}};actor.concentration={effects:new Set()};
+  actor.createEmbeddedDocuments=async(type,data)=>{created.push(...data);return [{uuid:'Effect.ready'}];};
+  game.combat=null;game.settings={get:()=>false};game.user={id:'gm',isGM:true};
+  globalThis.CONFIG={specialStatusEffects:{CONCENTRATING:'concentrating'}};
+  globalThis.foundry={utils:{escapeHTML:String},applications:{api:{DialogV2:{wait:async config=>config.buttons[0].callback(null,null,{element:{querySelector:selector=>({value:selector.includes('trigger')?'Ao abrir a porta':'Activity.a'})}})}}}};
+  await useBasicAction(actor,'ready','icon');
+  assert.equal(uses,0);assert.equal(created.length,1);assert.deepEqual(created[0].statuses,['concentrating']);
+  assert.equal(created[0].flags['oprpg-system-fixes'].basicAction.activityUuid,'Activity.a');
+  actor.concentration.effects.add({id:'unrelated'});
+  await useBasicAction(actor,'ready','icon');assert.equal(created.length,1);
 });
 
 test('integration is optional, idempotent and refuses the legacy adapter or unsupported CORE', () => {
+  game.settings={get:()=>true};
   const hooks = new Map();
   globalThis.Hooks = {on:(name,fn)=>hooks.set(name,fn)};
   const legacy = {active:true};

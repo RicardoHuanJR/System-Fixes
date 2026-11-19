@@ -4,6 +4,7 @@ import { useBasicAction, dashMovementInfo } from "./basic-actions.js";
 import { weaponSetsForActor, weaponsForActor, setWeaponSlot, selectWeaponSet } from "./weapon-sets.js";
 import { isFavoriteEntry, toggleFavoriteEntry } from "./favorites.js";
 import { activityDetails } from "./activity-details.js";
+import { resourceIndicators } from "./resource-state.js";
 
 const ID = "oprpg-system-fixes";
 const warn = msg => ui.notifications?.warn?.(`Argon OPRPG: ${msg}`);
@@ -263,7 +264,7 @@ export function registerArgon(CoreHUD) {
         const line = document.createElement("small"); line.textContent = details;
         if (reason) line.textContent = reason;
         if (this.busy) line.textContent = "Em execução…";
-        line.className = "argon-oprpg-resources"; this.element.append(line);
+        line.className = "argon-oprpg-actor-resources"; this.element.append(line);
         this.element.title += ` · ${details}`;
       }
       this.element.tabIndex = 0;
@@ -447,6 +448,30 @@ export function registerArgon(CoreHUD) {
       ui.ARGON.element.classList.add("argon-oprpg");
       await super._renderInner(data);
       if (this.actor !== actor || !this.element.isConnected || container !== ui.ARGON.buttonPanelContainer) return;
+      const resources = resourceIndicators(actor, globalThis.OPRPG_FIXES_AKUMA_COMBAT_STATUS?.(actor));
+      if (resources.length) {
+        const details = document.createElement("details");
+        details.className = "argon-oprpg-actor-resources";
+        const summary = document.createElement("summary");
+        summary.textContent = resources.map(row=>`${row.short} ${row.value}`).join(" · ");
+        summary.title = resources.map(row=>`${row.label}: ${row.value}`).join("; ");
+        summary.setAttribute("aria-label", `Recursos e estados: ${summary.title}`);
+        const list = document.createElement("dl");
+        for (const row of resources) {
+          const term = document.createElement("dt"), value = document.createElement("dd");
+          term.textContent = row.label; value.textContent = row.value;
+          list.append(term,value);
+        }
+        details.append(summary,list);
+        details.addEventListener("toggle",()=>{
+          if (!details.open) return;
+          closeLists();
+          const drawer = ui.ARGON.components?.drawer;
+          if (drawer && ui.ARGON._lastExpandedDrawer != null) drawer._expandPanel(ui.ARGON._lastExpandedDrawer);
+        });
+        details.addEventListener("keydown",event=>{if(event.key === "Escape") {details.open=false; summary.focus(); event.stopPropagation();}});
+        this.element.querySelector(".player-detail")?.after(details);
+      }
       for (const button of this._buttons) {
         keyboard(button.element, button.onClick);
         button.element.setAttribute("aria-label", button.label);

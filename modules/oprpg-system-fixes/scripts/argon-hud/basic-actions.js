@@ -1,8 +1,8 @@
 // Adapted from OPRPG Argon 6.4.1; see LICENSE-ARGON.txt.
 const MODULE_ID = "oprpg-system-fixes";
 const t = key => game.i18n.localize('oprpg-system-fixes.argon.' + key);
-import { executeEntry } from "./execute.js";
-import { activityList as activitiesOf, economyOf as activityType } from "./model.js";
+import { executeEntry, isAvailable } from "./execute.js";
+import { activityList as activitiesOf, economyOf as activityType, asArray } from "./model.js";
 import { movementInfo } from "./movement.js";
 const activityCanUse = activity => activity?.canUse !== false && typeof activity?.use === "function";
 
@@ -23,7 +23,7 @@ function canManageActor(actor) {
 function combatStamp(actor) {
   const combat = game.combat;
   const combatant = combat?.combatant;
-  if (!combat?.started || !combatant || combatant.actor !== actor) return null;
+  if (!combat?.started || !combatant || !asArray(combat.combatants).some(c=>c.actor === actor)) return null;
   return { combatId: combat.id, round: combat.round, turn: combat.turn, combatantId: combatant.id };
 }
 
@@ -65,9 +65,29 @@ function effectData(actor, key, icon, extra={}) {
 
 async function replaceEffect(actor, key, icon, extra={}) {
   const previous = basicActionEffect(actor, key);
-  if (previous) await previous.delete();
   const [effect] = await actor.createEmbeddedDocuments("ActiveEffect", [effectData(actor, key, icon, extra)]);
+  if (effect && previous) await previous.delete();
   return effect;
+}
+
+export function basicEffectActive(effect) {
+  if (!effect || effect.disabled || effect.isSuppressed) return false;
+  if (effect.id && effect.parent?.effects?.get && effect.parent.effects.get(effect.id) !== effect) return false;
+  const duration = effect.duration;
+  if (duration?.seconds > 0 && game.time?.worldTime >= duration.startTime + duration.seconds) return false;
+  const state = effect.getFlag?.(MODULE_ID, FLAG_KEY);
+  if (!state?.activated) return true;
+  const combat = game.combat;
+  if (!combat?.started || state.activated.combatId !== combat.id) return false;
+  const current = {combatId:combat.id, round:combat.round, turn:combat.turn, combatantId:combat.combatant?.id};
+  if (state.key === "dash") return sameTurn(state.activated,current);
+  const ownerTurn = combat.turns?.findIndex(c=>c.actor === effect.parent) ?? -1;
+  if (ownerTurn >= 0) {
+    const rounds = combat.round - state.activated.round;
+    if (rounds > 1 || (rounds === 1 && (combat.turn >= ownerTurn || state.activated.turn < ownerTurn)) ||
+      (rounds === 0 && state.activated.turn < ownerTurn && combat.turn >= ownerTurn)) return false;
+  }
+  return !(combat.combatant?.actor === effect.parent && !sameTurn(state.activated,current));
 }
 
 async function postActionCard(actor, key, icon, extra="") {
@@ -94,16 +114,14 @@ function movementZero(actor) {
 
 export function isDodging(actor) {
   const effect = basicActionEffect(actor, "dodge");
-  const expired = effect?.duration?.seconds && game.time.worldTime >= effect.duration.startTime + effect.duration.seconds;
-  return !!effect && !effect.disabled && !effect.isSuppressed && !expired && !incapacitated(actor) && !movementZero(actor);
+  return basicEffectActive(effect) && !incapacitated(actor) && !movementZero(actor);
 }
 
 export function dashMovementInfo(actor, token, movementMode="walk") {
   const info = movementInfo(actor, token, movementMode);
   const effect = basicActionEffect(actor, "dash");
   const state = basicActionState(actor, "dash");
-  const expired = effect?.duration?.seconds && game.time.worldTime >= effect.duration.startTime + effect.duration.seconds;
-  if (!effect || effect.disabled || effect.isSuppressed || expired || state?.movementMode !== movementMode) return info;
+  if (!basicEffectActive(effect) || incapacitated(actor) || state?.movementMode !== movementMode) return info;
   const bonus = Number(state?.movementBonus ?? 0);
   if (!Number.isFinite(bonus) || bonus <= 0) return info;
   const max = info.max + bonus;
@@ -123,13 +141,14 @@ async function useDodge(actor, icon) {
 async function useDash(actor, icon) {
   const existing = basicActionState(actor, "dash");
   const stamp = combatStamp(actor);
-  if (existing && ((stamp && sameTurn(existing.activated, stamp)) || (!stamp && !existing.activated))) {
+  if (basicEffectActive(basicActionEffect(actor,"dash")) && existing && ((stamp && sameTurn(existing.activated, stamp)) || (!stamp && !existing.activated))) {
     ui.notifications.info(t("basic.dash.alreadyActive"));
     return basicActionEffect(actor, "dash");
   }
   const movement = actor?.system?.attributes?.movement ?? {};
-  const mode = ui.ARGON?._token?.document?.movementAction || "walk";
+  const mode = ui.ARGON?._token?.actor === actor ? ui.ARGON._token.document?.movementAction || "walk" : "walk";
   const bonus = Number(movement?.[mode] ?? movement.walk ?? 0) || 0;
+  if (bonus <= 0) return ui.notifications.warn("Disparada: não há deslocamento disponível nesta modalidade.");
   const effect = await replaceEffect(actor, "dash", icon, { movementBonus: bonus, movementMode: mode });
   await postActionCard(actor, "dash", icon, `<p><strong>+${bonus} ${movement.units ?? "m"}</strong> ${t("basic.dash.movementAdded")}</p>`);
   ui.ARGON?.components?.movement?.updateMovement?.();
@@ -162,9 +181,9 @@ async function useHide(actor, icon, event) {
 
 function readyChoices(actor) {
   const choices = [];
-  for (const item of actor?.items ?? []) {
+  for (const item of asArray(actor?.items)) {
     for (const activity of activitiesOf(item)) {
-      if (!activityCanUse(activity)) continue;
+      if (!activityCanUse(activity) || !isAvailable(actor,{itemId:item.id,activityId:activity.id})) continue;
       const activation = activityType(activity);
       if (!new Set(["action", "powerful"]).has(activation)) continue;
       choices.push({ activity, item, activation });
@@ -193,9 +212,31 @@ async function useReady(actor, icon) {
         const activityUuid = root.querySelector("#oprpg-ready-activity")?.value;
         if (!trigger || !activityUuid) { ui.notifications.warn(t("basic.ready.missingData")); return null; }
         const chosen = choices.find(c => c.activity.uuid === activityUuid);
-        const effect = await replaceEffect(actor, "ready", icon, {
+        if (!chosen || !isAvailable(actor,{itemId:chosen.item.id,activityId:chosen.activity.id})) return null;
+        const extraState = {
           trigger, activityUuid, itemUuid: chosen?.item?.uuid ?? null, activityName: chosen?.activity?.name ?? ""
-        });
+        };
+        let effect;
+        if ((chosen.item.type === "spell" || chosen.activity.duration?.concentration) && !game.settings.get("oprpg-system","disableConcentration")) {
+          // Native concentration enforces damage checks and incapacitation. Never end unrelated effects here.
+          const limit = actor.system?.attributes?.concentration?.limit ?? 1;
+          const previous = basicActionEffect(actor,"ready");
+          const others = asArray(actor.concentration?.effects).filter(e=>e !== previous);
+          if (limit > 0 && others.length >= limit) return ui.notifications.warn("Encerre uma concentração pela ficha antes de preparar esta atividade.");
+          if (chosen.activity.duration?.concentration) {
+            if (typeof actor.beginConcentrating !== "function") return ui.notifications.warn("Concentração nativa indisponível; prepare esta atividade pela ficha.");
+            effect = await actor.beginConcentrating(chosen.activity,effectData(actor,"ready",icon,{...extraState,nativeConcentration:true}));
+          } else {
+            // Holding a prepared technique requires concentration even when its normal use does not.
+            const status = CONFIG.specialStatusEffects?.CONCENTRATING;
+            if (!status || !actor.system?.attributes?.concentration?.limit) return ui.notifications.warn("Concentração nativa indisponível; prepare esta Técnica pela ficha.");
+            const data = effectData(actor,"ready",icon,extraState);
+            data.statuses = [status];
+            [effect] = await actor.createEmbeddedDocuments("ActiveEffect",[data]);
+          }
+          if (!effect) return null;
+          if (previous) await previous.delete();
+        } else effect = await replaceEffect(actor, "ready", icon, extraState);
         const extra = `<hr><p><strong>${t("basic.ready.triggerLabel")}:</strong> ${foundry.utils.escapeHTML(trigger)}</p><p><strong>${t("basic.ready.activityLabel")}:</strong> ${foundry.utils.escapeHTML(chosen?.item?.name ?? "")} — ${foundry.utils.escapeHTML(chosen?.activity?.name ?? "")}</p><div class="card-buttons"><button type="button" data-oprpg-ready-execute="${effect.uuid}"><i class="fa-solid fa-bolt"></i> ${t("basic.ready.execute")}</button><button type="button" data-oprpg-ready-cancel="${effect.uuid}"><i class="fa-solid fa-xmark"></i> ${t("basic.ready.cancel")}</button></div>`;
         await postActionCard(actor, "ready", icon, extra);
         ui.ARGON?.refresh?.();
@@ -215,11 +256,18 @@ export async function executePrepared(effectOrUuid) {
   let activity = null;
   try { activity = await fromUuid(state.activityUuid); } catch (_) { activity = null; }
   if (!activity || typeof activity.use !== "function") return ui.notifications.error(t("basic.ready.activityMissing"));
-  if (activity.item?.parent !== actor || effect.disabled || pendingPrepared.has(effect.uuid)) return;
+  if (activity.item?.parent !== actor || !basicEffectActive(effect) || incapacitated(actor) || pendingPrepared.has(effect.uuid)) return;
   pendingPrepared.add(effect.uuid);
   try {
-    const result = await executeEntry(actor, {itemId:activity.item.id, activityId:activity.id, label:activity.name});
-    if (result.ok) await effect.delete();
+    const confirmed = await foundry.applications.api.DialogV2.confirm({window:{title:"Executar ação preparada"},content:"<p>O gatilho ocorreu e sua Reação está disponível? A execução usará sua Reação. Confira os demais usos na ficha.</p>",rejectClose:false});
+    if (!confirmed || !basicEffectActive(effect) || incapacitated(actor)) return {ok:false,reason:"cancelled"};
+    const result = await executeEntry(actor, {itemId:activity.item.id, activityId:activity.id, label:activity.name},
+      {usageConfig:state.nativeConcentration ? {concentration:{begin:false,end:null}} : undefined,
+        messageConfig:state.nativeConcentration ? {data:{system:{concentration:effect.id}}} : undefined});
+    if (result.ok) {
+      if (state.nativeConcentration && basicEffectActive(effect)) await effect.update({[`flags.${MODULE_ID}.-=${FLAG_KEY}`]:null,duration:activity.duration.getEffectData()});
+      else await effect.delete();
+    }
     ui.ARGON?.refresh?.();
     return result;
   } catch (error) {
@@ -242,6 +290,7 @@ async function cancelPrepared(effectOrUuid) {
 export async function useBasicAction(actor, key, icon, event) {
   if (!actor) return ui.notifications.warn(t("basic.noActor"));
   if (!actor.isOwner && !game.user.isGM) return ui.notifications.warn(t("basic.noPermission"));
+  if (incapacitated(actor)) return ui.notifications.warn("Esta ficha está incapacitada e não pode executar ações básicas.");
   if (pendingBasics.has(actor)) return;
   pendingBasics.add(actor);
   try {
@@ -257,18 +306,35 @@ export async function useBasicAction(actor, key, icon, event) {
   }
 }
 
-function dodgingTargets() {
-  return Array.from(game.user?.targets ?? []).filter(token => isDodging(token.actor));
+/** Test the defender's sight source, never the GM's or another token's visibility. */
+export function defenderSeesAttacker(defender, attacker) {
+  if (!defender?.vision || !attacker?.center || attacker.document?.hidden) return false;
+  const levelRef = attacker.document?.level;
+  const level = typeof levelRef === "string" ? attacker.document.parent?.levels?.get(levelRef) : levelRef;
+  if (!level) return false; // V14 level is required; unknown vision stays manual.
+  const sight = foundry.canvas?.perception?.DetectionMode?.DETECTION_TYPES?.SIGHT;
+  if (sight === undefined) return false;
+  const points = attacker.document.getVisibilityTestPoints?.() ?? [{...attacker.center,elevation:attacker.document.elevation ?? 0}];
+  const tests = points.map(point=>({level,los:new Map(),point}));
+  for (const mode of defender.document?.detectionModes ?? []) {
+    const detection = CONFIG.Canvas?.detectionModes?.[mode.id];
+    if (!mode.enabled || detection?.type !== sight || typeof detection.testVisibility !== "function") continue;
+    try { if (detection.testVisibility(defender.vision,mode,{object:attacker,level,tests})) return true; }
+    catch (_) { /* Unsupported perception extension: leave the modifier to the native dialog. */ }
+  }
+  return false;
 }
 
-function applyDodgeToAttack(config) {
-  const targets = Array.from(game.user?.targets ?? []);
+export function applyDodgeToAttack(config) {
+  const targets = asArray(config.targets ?? game.user?.targets).map(target=>target?.object ?? target);
   if (!targets.length) return;
-  const dodging = dodgingTargets();
-  if (!dodging.length) return;
+  const sourceActor = config.subject?.actor ?? config.subject?.item?.actor;
+  const source = sourceActor?.token?.object;
+  const tokens = source ? [source] : sourceActor?.getActiveTokens?.() ?? [];
+  if (tokens.length !== 1) return;
   // Attack rolls are normally single-target. For mixed multi-target rolls we do not
   // force a global modifier because that would incorrectly penalize non-dodging targets.
-  if (targets.length > 1 && dodging.length !== targets.length) return;
+  if (!targets.every(token=>isDodging(token.actor) && defenderSeesAttacker(token,tokens[0]))) return;
   config.disadvantage = true;
   for (const roll of config.rolls ?? []) {
     roll.options ??= {};
@@ -335,9 +401,20 @@ function attachReadyButtons(message, html) {
 }
 
 let installed = false;
+async function expireIncapacitatedStates(actor) {
+  if (!actor || !canManageActor(actor)) return;
+  const ids = asArray(actor.effects).filter(effect=>{
+    const key = effect.getFlag?.(MODULE_ID,FLAG_KEY)?.key;
+    return TURN_SCOPED.has(key) && (incapacitated(actor) || (key === "dodge" && movementZero(actor)));
+  }).map(effect=>effect.id);
+  if (ids.length) await actor.deleteEmbeddedDocuments("ActiveEffect",ids);
+}
+
 export function installBasicActionAutomation() {
   if (installed) return;
   installed = true;
+  Hooks.on("updateActor", expireIncapacitatedStates);
+  for (const hook of ["createActiveEffect","updateActiveEffect"]) Hooks.on(hook,effect=>expireIncapacitatedStates(effect.parent));
   Hooks.on("updateWorldTime", async worldTime => {
     const actors = new Set([...Array.from(game.actors ?? []), ...Array.from(canvas.tokens?.placeables ?? [], token => token.actor)]);
     for (const actor of actors) {

@@ -1,4 +1,4 @@
-# System Fixes 1.27.17 — detalhes e atalhos de combate
+# System Fixes 1.27.18 — ações básicas e recursos de combate
 
 Ative **System Fixes + Argon CORE 5.x** no OP RPG/Foundry V14. Deixe **enhancedcombathud-oprpg-system desativado**: a integração está dentro do Fixes e se recusa a registrar duas vezes quando o adaptador antigo está ativo.
 

@@ -35,7 +35,7 @@
           "triggerLabel": "Gatilho",
           "triggerPlaceholder": "Ex.: quando o inimigo atravessar a porta",
           "activityLabel": "Ação preparada",
-          "hint": "A ação será executada pela sua Reação quando você clicar em Executar no card. Ela expira no início do seu próximo turno.",
+          "hint": "Ao executar, confirme o gatilho e a disponibilidade de sua Reação. Técnicas preparadas mantêm concentração, conforme a configuração do sistema. Recursos são consumidos apenas na execução nativa. A preparação expira no início do seu próximo turno.",
           "confirm": "Preparar",
           "missingData": "Informe o gatilho e escolha uma ação.",
           "execute": "Executar",
