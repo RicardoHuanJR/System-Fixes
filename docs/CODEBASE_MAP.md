@@ -34,6 +34,7 @@ flowchart LR
 | scripts/argon-hud/execute.js | Resolve documento atual, propriedade, bloqueio nativo, trava concorrente e cancelamento |
 | scripts/argon-hud/argon.js | Cinco lançadores de economia, listas/filtros, foco/estado por ator, retrato, drawer, teclado, movimento e macros |
 | scripts/argon-hud/favorites.js | Identidade relativa nativa, leitura e inclusão/remoção de favoritos por atividade |
+| scripts/argon-hud/activity-details.js | Leitura pura de rótulos preparados da atividade, sem rolagem ou avaliação de fórmulas |
 | scripts/argon-hud/weapon-sets.js | Três conjuntos nas flags CORE, validação de propriedade e atualização de slots sem equipar |
 | scripts/argon-hud/basic-actions.js | Ações recuperadas 6.4.1; efeitos próprios, Preparar, expiração e hooks Esquivar |
 | scripts/argon-hud/movement.js | Movimento real, unidades e histórico V14 |
@@ -55,4 +56,4 @@ Não gastar PP, aplicar dano ou repetir efeitos de atividade na camada visual. O
 
 ## Limites
 
-CORE é opcional; adaptador antigo ativo bloqueia o interno. Haki é aberto pela API nativa; PP vêm de energy. Fonte oficial do OP RPG fica somente na pasta local ignorada, inclusive arquivos com licenças individuais, e jamais deve entrar em commit ou ZIP. Não há mundo Foundry neste workspace; verificação de navegador é simulada. Consulte REVISAO-1.27.15.md para evidência e rollback.
+CORE é opcional; adaptador antigo ativo bloqueia o interno. Haki é aberto pela API nativa; PP vêm de energy. Detalhes usam rótulos preparados e os atalhos do retrato reutilizam OPRPGList/OPRPGActivityButton com IDs individuais. Fonte oficial do OP RPG fica somente na pasta local ignorada, inclusive arquivos com licenças individuais, e jamais deve entrar em commit ou ZIP. Não há mundo Foundry neste workspace; verificação de navegador é simulada. Consulte REVISAO-1.27.17.md para evidência e rollback.

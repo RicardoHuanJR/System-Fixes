@@ -38,7 +38,7 @@ const actions=['action','powerful','bonus','reaction','none'];
 for(let i=0;i<60;i++){
  const item={id:'i'+i,uuid:`Actor.actor.Item.i${i}`,documentName:'Item',name:(i%2?'Técnica com descrição longa de teste ':'Ação de teste ')+i,type:types[i%types.length],parent:actor,img:'/icons/item.svg',flags:i%7===0?{'oprpg-system':{akumaTec:true}}:{},system:{activities:new Map(),equipped:i===0||i===6},sheet:{render:()=>{window.sheetOpened=true;}}};
  item.getRelativeUUID=()=>`Item.${item.id}`;
- for(let j=0;j<2;j++){const a={id:'a'+j,item,name:j?'Área de alcance':'Ataque direto',type:j?'save':'attack',activation:{type:actions[(i+j)%actions.length]},consumption:{targets:[{type:'attribute',target:'energy.total',value:j?'@prof':'3'}]},use:async()=>{window.executed={itemId:item.id,activityId:'a'+j};return {};}};item.system.activities.set(a.id,a);}
+ for(let j=0;j<2;j++){const a={id:'a'+j,item,name:j?'Área de alcance':'Ataque direto',type:j?'save':'attack',activation:{type:actions[(i+j)%actions.length]},labels:{activation:'1 ação',range:j?'12 m':'1,5 m',duration:'Instantânea',damage:[{label:j?'2d6 cortante':'1d8 + 3 cortante'}]},target:{affects:{labels:{sheet:j?'2 criaturas':'1 criatura'}},template:{labels:{description:j?'Cone de 6 m':''}}},consumption:{targets:[{type:'attribute',target:'energy.total',value:j?'@prof':'3'}]},use:async()=>{window.executed={itemId:item.id,activityId:'a'+j};return {};}};item.system.activities.set(a.id,a);}
  actor.items.set(item.id,item);
 }
 window.fromUuidSync=uuid=>{const parts=uuid.split('.');const item=actor.items.get(parts[parts.indexOf('Item')+1]);return parts.includes('Activity')?item?.system.activities.get(parts.at(-1)):item;};
@@ -53,13 +53,13 @@ let renderSequence=0;
 window.renderFixture=async()=>{
  const sequence=++renderSequence;
  hud.replaceChildren();
- const portrait=new registry.PortraitPanel();hud.append(portrait.element);await portrait.render();
+ const bar=document.createElement('div');bar.className='action-hud';hud.append(bar);ui.ARGON.buttonPanelContainer=bar;
+ const portrait=new registry.PortraitPanel();hud.insertBefore(portrait.element,bar);await portrait.render();
  if(sequence!==renderSequence)return;
- const drawer=new registry.DrawerPanel();hud.append(drawer.element);await drawer.render();
+ const drawer=new registry.DrawerPanel();hud.insertBefore(drawer.element,bar);await drawer.render();
  if(sequence!==renderSequence)return;
  ui.ARGON.components={portrait,drawer};
  if (ui.ARGON._token) {const movement=new registry.MovementHud();hud.append(movement.element);ui.ARGON.components.movement=movement;await movement.render();}
- const bar=document.createElement('div');bar.className='action-hud';hud.append(bar);ui.ARGON.buttonPanelContainer=bar;
  for(const Panel of registry.MainPanels){if(sequence!==renderSequence)return;const panel=new Panel();bar.append(panel.element);await panel.render();}
 };
 ui.ARGON.refresh=()=>{rememberArgonFocus();window.renderPromise=window.renderFixture();return window.renderPromise;};

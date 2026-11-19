@@ -34,10 +34,18 @@
 .argon-oprpg-loadout input[type=checkbox] { width:16px; height:16px; accent-color:#e8c66a; }
 .argon-oprpg-list input[type=search] { width:100%; min-height:32px; flex:0 0 auto; background:#222a34; color:#f2f4f7; border:1px solid #8390a1; padding:4px 8px; caret-color:#e8c66a; }
 .argon-oprpg-list input::placeholder { color:#bbc4d0; }
-.extended-combat-hud.argon-oprpg .argon-oprpg-list .action-element { display:block; width:100%; height:auto; min-height:52px; flex:0 0 auto; padding:4px 38px 6px 0; background-size:30px; background-position:8px center; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-list .action-element { display:block; width:100%; height:auto; min-height:52px; flex:0 0 auto; padding:4px 76px 6px 0; background-size:30px; background-position:8px center; }
 .extended-combat-hud.argon-oprpg .argon-oprpg-list .action-element-title { display:block; position:static; margin-left:48px; width:auto; height:auto; padding:1px 4px 0; line-height:17px; font-size:13px; text-align:left; background:transparent; overflow-wrap:anywhere; }
 .argon-oprpg-resources { display:block; padding:0 4px 0 52px; line-height:15px; font-size:11px; color:#c8d2df; }
 .extended-combat-hud.argon-oprpg button.argon-oprpg-favorite { position:absolute; right:2px; top:6px; width:32px; height:32px; padding:4px; color:#e8c66a; background:#222a34; border:0; font-size:14px; cursor:pointer; }
+.extended-combat-hud.argon-oprpg button.argon-oprpg-info { position:absolute; right:38px; top:6px; width:32px; height:32px; padding:4px; background:#222a34; color:#f2f4f7; border:0; font-size:14px; cursor:pointer; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-entry:not(:has(.argon-oprpg-favorite)) .argon-oprpg-info { right:2px; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-entry:not(:has(.argon-oprpg-favorite)) .argon-oprpg-activity { padding-right:38px; }
+.argon-oprpg-activity-details { display:grid; grid-template-columns:minmax(72px, .35fr) minmax(0, 1fr); gap:4px 8px; margin:0; padding:8px 12px; background:#1c232d; color:#f2f4f7; border-top:1px solid #768395; }
+.argon-oprpg-activity-details dt { font-size:11px; color:#c8d2df; font-weight:600; }
+.argon-oprpg-activity-details dd { margin:0; font-size:12px; line-height:18px; overflow-wrap:anywhere; }
+.argon-oprpg-activity-details dd:only-child { grid-column:1 / -1; }
+.extended-combat-hud.argon-oprpg button:focus-visible, .extended-combat-hud.argon-oprpg summary:focus-visible, .extended-combat-hud.argon-oprpg select:focus-visible { outline:2px solid #e8c66a; outline-offset:-2px; }
 .argon-oprpg-pending { outline:1px solid #e8c66a; cursor:progress !important; }
 .argon-oprpg-pending .action-element-title:after { content:" · Em execução…"; color:#e8c66a; }
 .argon-oprpg-empty { margin:0; font-size:12px; }
@@ -57,7 +65,7 @@
 .extended-combat-hud.argon-oprpg .portrait-hud .portrait-stat-block.player-details .player-detail { font-size:10px; }
 .extended-combat-hud.argon-oprpg .portrait-hud .effects-container { max-height:26px; overflow-y:auto; }
 .extended-combat-hud.argon-oprpg .portrait-hud .effects-container .effect-icon { width:22px; height:22px; }
-.extended-combat-hud.argon-oprpg .portrait-hud .player-buttons { bottom:0; top:auto; right:0; height:28px; }
+.extended-combat-hud.argon-oprpg .portrait-hud .player-buttons { bottom:0; top:auto; right:0; height:28px; width:100%; justify-content:center; }
 .extended-combat-hud.argon-oprpg .portrait-hud .player-button { width:30px; height:28px; font-size:14px; padding:4px; }
 .extended-combat-hud.argon-oprpg .portrait-hud .death-save-btn { font-size:28px; }
 .extended-combat-hud.argon-oprpg .portrait-hud .death-save-result-container { font-size:16px; }
@@ -74,6 +82,7 @@
   .extended-combat-hud.argon-oprpg { --argon-portrait-width:144px; }
   .extended-combat-hud.argon-oprpg .portrait-hud { width:144px; min-width:144px; flex-basis:144px; }
   .extended-combat-hud.argon-oprpg .portrait-hud .player-name { max-width:128px; }
+  .extended-combat-hud.argon-oprpg .portrait-hud .player-button { width:24px; padding:4px; }
   .extended-combat-hud.argon-oprpg .action-hud { max-width:calc(100vw - 184px); }
 }
 @media (max-height:540px) {

@@ -1,8 +1,8 @@
 {
   "id": "oprpg-system-fixes",
   "title": "OPRPG System Fixes & Compatibility",
-  "description": "Correções OPRPG e Argon HUD compacto 5.x para Foundry V14: cinco botões de ação, filtros, favoritos por atividade e conjuntos de armas sem equipar automaticamente.",
-  "version": "1.27.16",
+  "description": "Correções OPRPG e Argon HUD compacto 5.x para Foundry V14: detalhes nativos por atividade e atalhos de favoritos e armas, mantendo a execução e o consumo no sistema.",
+  "version": "1.27.17",
   "authors": [
     {
       "name": "Adaptação OPRPG — módulo de compatibilidade local"
@@ -58,5 +58,5 @@
   ],
   "url": "https://github.com/RicardoHuanJR/System-Fixes",
   "manifest": "https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json",
-  "download": "https://github.com/RicardoHuanJR/System-Fixes/releases/download/v1.27.16/oprpg-system-fixes.zip"
+  "download": "https://github.com/RicardoHuanJR/System-Fixes/releases/download/v1.27.17/oprpg-system-fixes.zip"
 }

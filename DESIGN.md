@@ -21,3 +21,5 @@ Comparação da simulação com 60 itens e 120 atividades: barra passou de 924×
 O CSS só atua sob `.extended-combat-hud.argon-oprpg`. O retrato adiciona essa classe apenas quando o adaptador interno está registrado. Dimensões CSS prevalecem sobre os cartões grandes do CORE; o estado minimizar nativo permanece.
 
 Mesmo com `playerDetailsBottom` ativo no CORE, o retrato compacto mantém os detalhes no topo, ordem normal e padding de 6 px, sem máscara; essa configuração foi coberta em 867×453 px na regressão 1.27.16.
+
+Na 1.27.17, o controle de informações abre um `dl` dentro da linha contextual, separado dos botões de executar e favoritar; nomes e valores quebram quando necessário. Consulta por clique ou I e leitura de rótulos preparados, sem rolar dados. O detalhe aberto e o foco são preservados por ator/painel. Os atalhos do retrato reutilizam a mesma lista: favoritos e conjunto de armas, com economia visível em cada atividade. A barra principal continua com cinco botões e o retrato mantém 122 px de altura. Em celular, os controles do retrato medem 24 px de largura para acomodar seis controles, incluindo Haki.

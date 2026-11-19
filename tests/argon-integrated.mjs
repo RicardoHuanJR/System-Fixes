@@ -4,6 +4,7 @@ import { entriesForActor, economyOf, groupOf, finiteValue, resourceLabel, escape
 import { executeEntry, isAvailable, diagnostics, unavailableReason } from '../modules/oprpg-system-fixes/scripts/argon-hud/execute.js';
 import { weaponSetsForActor, setWeaponSlot, selectWeaponSet } from '../modules/oprpg-system-fixes/scripts/argon-hud/weapon-sets.js';
 import { isFavoriteEntry, toggleFavoriteEntry } from '../modules/oprpg-system-fixes/scripts/argon-hud/favorites.js';
+import { activityDetails } from '../modules/oprpg-system-fixes/scripts/argon-hud/activity-details.js';
 import { convertLength, movementInfo } from '../modules/oprpg-system-fixes/scripts/argon-hud/movement.js';
 import { registerArgon } from '../modules/oprpg-system-fixes/scripts/argon-hud/argon.js';
 import { installEmbeddedArgonHUD, argonHUDStatus } from '../modules/oprpg-system-fixes/scripts/argon-hud/integration.js';
@@ -112,6 +113,43 @@ test('search ignores accents without losing category filters', () => {
   assert.equal(matchesEntry(entry,'area','techniques'),true);
   assert.equal(matchesEntry(entry,'area','weapons'),false);
   assert.equal(matchesEntry(entry,'x'),false);
+});
+
+test('activity details preserve prepared labels, weapon overrides and damage arrays', () => {
+  let uses=0;
+  const activity={type:'attack',use:()=>uses++,labels:{activation:'1 ação',range:'3 m',duration:'1 minuto',concentrationDuration:'Concentração, 1 minuto',damages:[{formula:'2d6',label:'2d6 cortante'},{formula:'@mod',label:'@mod fogo'}]},
+    activationLabels:{activation:'1 ação',range:'12 m'},target:{affects:{labels:{sheet:'2 criaturas'}},template:{labels:{description:'Cone de 6 m'}}}};
+  const rows=activityDetails(activity,{});
+  assert.deepEqual(rows.find(row=>row.label==='Alcance'),{label:'Alcance',value:'12 m'});
+  assert.equal(rows.find(row=>row.label==='Dano').value,'2d6 cortante; @mod fogo');
+  assert.equal(rows.find(row=>row.label==='Duração').value,'Concentração, 1 minuto');
+  assert.equal(rows.find(row=>row.label==='Alvos').value,'2 criaturas');
+  assert.equal(rows.find(row=>row.label==='Área').value,'Cone de 6 m');
+  assert.equal(uses,0);
+});
+
+test('missing activity metadata is not inferred from a different activity or item', () => {
+  const {item,first,second}=fixture();
+  first.labels={range:'18 m',damage:'4d6 fogo'};
+  second.labels={}; item.labels={range:'999 m'};
+  assert.deepEqual(activityDetails(second,item),[]);
+  assert.deepEqual(activityDetails(null,item),[]);
+  assert.equal(activityDetails(first,item).find(row=>row.label==='Dano').value,'4d6 fogo');
+});
+
+test('healing details remain unevaluated and native localization is respected', () => {
+  const rows=activityDetails({type:'heal',labels:{range:'DND5E.DistTouch',damage:[{label:'1d8 + @mod pontos de vida'}]}},null,value=>value==='DND5E.DistTouch'?'Toque':value);
+  assert.equal(rows.find(row=>row.label==='Alcance').value,'Toque');
+  assert.equal(rows.find(row=>row.label==='Cura').value,'1d8 + @mod pontos de vida');
+  assert.ok(!rows.some(row=>row.value.includes('[object Object]')));
+});
+
+test('activity details respect unidentified items and native sheet visibility', () => {
+  const item={system:{identified:false}};
+  const activity={labels:{range:'18 m',damage:[{label:'segredo'}]}};
+  assert.deepEqual(activityDetails(activity,item),[]);
+  assert.equal(activityDetails(activity,item,value=>value,{isGM:true}).find(row=>row.label==='Dano').value,'segredo');
+  assert.deepEqual(activityDetails({...activity,canConfigure:false},{system:{}}),[]);
 });
 
 test('activities sharing one item cannot open concurrent native usage dialogs', async () => {

@@ -3,6 +3,7 @@ import { executeEntry, getItem, isAvailable, unavailableReason, isEntryPending }
 import { useBasicAction, dashMovementInfo } from "./basic-actions.js";
 import { weaponSetsForActor, weaponsForActor, setWeaponSlot, selectWeaponSet } from "./weapon-sets.js";
 import { isFavoriteEntry, toggleFavoriteEntry } from "./favorites.js";
+import { activityDetails } from "./activity-details.js";
 
 const ID = "oprpg-system-fixes";
 const warn = msg => ui.notifications?.warn?.(`Argon OPRPG: ${msg}`);
@@ -17,6 +18,7 @@ export function rememberArgonFocus(hud = globalThis.ui?.ARGON) {
   if (active.matches("input[type=search]")) state.focus = {search:true, start:active.selectionStart, end:active.selectionEnd};
   else if (active.dataset.entryKey) state.focus = {key:active.dataset.entryKey};
   else if (active.classList.contains("argon-oprpg-favorite")) state.focus = {favorite:active.closest(".argon-oprpg-entry")?.querySelector("[data-entry-key]")?.dataset.entryKey};
+  else if (active.classList.contains("argon-oprpg-info")) state.focus = {info:active.closest(".argon-oprpg-entry")?.querySelector("[data-entry-key]")?.dataset.entryKey};
   else if (active.matches("select")) state.focus = {control:active.getAttribute("aria-label")};
   else if (active.dataset.group) state.focus = {group:active.dataset.group};
   else if (active.matches("summary")) state.focus = {summary:true};
@@ -64,9 +66,13 @@ export function registerArgon(CoreHUD) {
       this.ownerActor = options.actor ?? this.actor;
       this.title = options.title ?? "Atividades";
       this.filters = options.filters ?? false;
+      this.weaponSetOnly = options.weaponSetOnly ?? false;
+      this.showEconomy = options.showEconomy ?? false;
       if (!panelStates.has(this.ownerActor)) panelStates.set(this.ownerActor, new Map());
       const states = panelStates.get(this.ownerActor);
-      if (!states.has(this.id)) states.set(this.id, {query:"", group:"all", scroll:0});
+      const sets = weaponSetsForActor(this.ownerActor);
+      const selected = sets.sets.find(set => set.id === sets.active);
+      if (!states.has(this.id)) states.set(this.id, {query:"", group:"all", scroll:0, useSet:this.weaponSetOnly && !!(selected.primary || selected.secondary)});
       this.state = states.get(this.id);
       listComponents.set(this.element, this);
     }
@@ -103,6 +109,8 @@ export function registerArgon(CoreHUD) {
         container.append(button.element);
         const favorite = button.element.querySelector(".argon-oprpg-favorite");
         if (favorite) container.append(favorite);
+        if (button.infoElement) container.append(button.infoElement);
+        if (button.detailsElement) container.append(button.detailsElement);
         rows.append(container);
       }
       const status = document.createElement("p"); status.setAttribute("role", "status");
@@ -151,7 +159,7 @@ export function registerArgon(CoreHUD) {
       loadout.disabled = !this.ownerActor.isOwner;
       const applyFilters = () => {
         this.state.query = search.value;
-        loadoutSection.hidden = !weapons.length || this.state.group !== "weapons";
+        loadoutSection.hidden = !weapons.length || !(this.weaponSetOnly || this.state.group === "weapons");
         const sets = weaponSetsForActor(this.ownerActor);
         const selected = sets.sets.find(set => set.id === sets.active);
         const itemIds = new Set([selected?.primary?.id, selected?.secondary?.id]);
@@ -160,13 +168,14 @@ export function registerArgon(CoreHUD) {
           const group = this.state.group === "favorites" ? "all" : this.state.group;
           const match = matchesEntry({label:button.label,group:button.entry?.group}, this.state.query, group) &&
             (this.state.group !== "favorites" || isFavoriteEntry(this.ownerActor, button.entry)) &&
-            !(this.state.useSet && this.state.group === "weapons" && !itemIds.has(button.entry?.itemId));
+            !(this.state.useSet && (this.weaponSetOnly || this.state.group === "weapons") && !itemIds.has(button.entry?.itemId));
           button.element.hidden = !match;
           button.entryContainer.hidden = !match;
           if (match) count++;
         }
         for (const filter of filters.children) filter.setAttribute("aria-pressed", String(filter.dataset.group === this.state.group));
-        status.textContent = count ? `${count} ${count === 1 ? "atividade" : "atividades"}` : "Nenhuma atividade encontrada.";
+        status.textContent = count ? `${count} ${count === 1 ? "atividade" : "atividades"}` :
+          this.weaponSetOnly && this.state.useSet ? "Conjunto sem atividades. Abra Conjuntos de armas para selecionar outras armas ou desmarcar o filtro." : "Nenhuma atividade encontrada.";
       };
       for (const group of groups) {
         const filter = document.createElement("button"); filter.type = "button"; filter.textContent = group.label;
@@ -182,6 +191,7 @@ export function registerArgon(CoreHUD) {
         const focus = this.state.focus; delete this.state.focus;
         if (focus.search) {search.focus({preventScroll:true}); search.setSelectionRange(focus.start,focus.end);}
         else if (focus.favorite) this._buttons.find(button => button.element.dataset.entryKey === focus.favorite)?.favoriteElement?.focus({preventScroll:true});
+        else if (focus.info) this._buttons.find(button => button.element.dataset.entryKey === focus.info)?.infoElement?.focus({preventScroll:true});
         else if (focus.control) [...loadout.querySelectorAll("select")].find(control => control.getAttribute("aria-label") === focus.control)?.focus({preventScroll:true});
         else if (focus.group) [...filters.children].find(filter => filter.dataset.group === focus.group)?.focus({preventScroll:true});
         else if (focus.summary) summary.focus({preventScroll:true});
@@ -246,7 +256,8 @@ export function registerArgon(CoreHUD) {
       this.element.toggleAttribute("aria-busy", !!this.busy);
       if (this.busy) this.element.setAttribute("aria-busy", "true");
       this.element.classList.toggle("argon-oprpg-pending", !!this.busy);
-      const details = resourceLabel(activityById(this.item, this.entry.activityId), this.item);
+      const economy = this.parent.showEconomy ? ECONOMY.find(e => e.key === this.entry.economy)?.label : "";
+      const details = [economy,resourceLabel(activityById(this.item, this.entry.activityId), this.item)].filter(Boolean).join(" · ");
       const reason = unavailableReason(this.ownerActor, this.entry);
       if (details || reason || this.busy) {
         const line = document.createElement("small"); line.textContent = details;
@@ -278,6 +289,55 @@ export function registerArgon(CoreHUD) {
         this.favoriteElement = favorite;
         (this.entryContainer ?? this.element).append(favorite);
       }
+      this.infoElement?.remove(); this.detailsElement?.remove();
+      const info = document.createElement("button"); info.type = "button";
+      info.className = "argon-oprpg-info";
+      info.innerHTML = '<i class="fas fa-circle-info" aria-hidden="true"></i>';
+      info.title = "Detalhes da atividade (I)";
+      info.setAttribute("aria-label", `Detalhes de ${this.entry.label}`);
+      const body = document.createElement("dl"); body.className = "argon-oprpg-activity-details"; body.hidden = true;
+      body.id = `${this.parent.id}-details-${this.entry.itemId}-${this.entry.activityId ?? "item"}`;
+      info.setAttribute("aria-controls",body.id); info.setAttribute("aria-expanded","false");
+      info.onmousedown = info.onmouseup = event => event.stopPropagation();
+      const drawDetails = () => {
+        body.replaceChildren();
+        try {
+          if (!game.user.isGM && !this.ownerActor.isOwner && this.ownerActor.testUserPermission?.(game.user,"OBSERVER") !== true) {
+            const message = document.createElement("dd"); message.textContent = "Sem permissão para consultar os detalhes desta ficha."; body.append(message); return;
+          }
+          const rows = activityDetails(activityById(this.item,this.entry.activityId),this.item,value=>game.i18n.localize(value),{isGM:game.user.isGM});
+          if (!rows.length) {
+            const message = document.createElement("dd"); message.textContent = this.item?.system?.identified === false && !game.user.isGM
+              ? "Item não identificado. Abra a ficha para consultar as informações disponíveis."
+              : "O sistema não forneceu detalhes visíveis preparados. Abra a ficha do item para consultar."; body.append(message);
+          }
+          for (const row of rows) {
+            const label = document.createElement("dt"); label.textContent = row.label;
+            const value = document.createElement("dd"); value.textContent = row.value;
+            body.append(label,value);
+          }
+        } catch (error) {
+          console.error("[System Fixes/Argon] Detalhes",error);
+          const message = document.createElement("dd"); message.textContent = "Não foi possível consultar os detalhes. Abra a ficha do item."; body.append(message);
+        }
+      };
+      const expanded = this.parent.state.detailsKey === this.element.dataset.entryKey;
+      if (expanded) {drawDetails(); body.hidden = false;}
+      info.setAttribute("aria-expanded",String(expanded));
+      info.onclick = event => {
+        event.stopPropagation();
+        if (ui.ARGON._actor !== this.ownerActor) return;
+        const open = body.hidden;
+        for (const button of this.parent._buttons) {
+          if (button.detailsElement) button.detailsElement.hidden = true;
+          button.infoElement?.setAttribute("aria-expanded","false");
+        }
+        if (open) drawDetails();
+        body.hidden = !open; info.setAttribute("aria-expanded",String(open));
+        this.parent.state.detailsKey = open ? this.element.dataset.entryKey : null;
+      };
+      this.infoElement = info; this.detailsElement = body;
+      (this.entryContainer ?? this.element).append(info,body);
     }
     async _onLeftClick(event) {
       event?.preventDefault?.(); event?.stopPropagation?.();
@@ -303,6 +363,7 @@ export function registerArgon(CoreHUD) {
         if (event.target !== element) return;
         if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void this._onLeftClick(event); }
         if (event.key === "F2") { event.preventDefault(); void this._onRightClick(event); }
+        if (event.key.toLocaleLowerCase() === "i" && !event.ctrlKey && !event.altKey && !event.metaKey) { event.preventDefault(); this.infoElement?.click(); }
       };
     }
   }
@@ -319,8 +380,9 @@ export function registerArgon(CoreHUD) {
     async activateListeners(element) {
       await super.activateListeners(element);
       keyboard(element, event => this._onClick(event), {expanded: true});
-      element.setAttribute("aria-label", `${this.economy.label}: ${this.entries.length} atividades`);
-      element.title = `${this.economy.label}: ${this.entries.length} atividades`;
+      const count = this.entries.length + (this.economy.key === "action" ? 4 : 0);
+      element.setAttribute("aria-label", `${this.economy.label}: ${count} atividades`);
+      element.title = `${this.economy.label}: ${count} atividades`;
       element.setAttribute("aria-expanded", String(this.panel?.visible ?? false));
     }
     async getData() { const data = await super.getData(); return {...data, label: escapeHTML(data.label)}; }
@@ -378,15 +440,53 @@ export function registerArgon(CoreHUD) {
     get failures() { return this.actor.system?.attributes?.death?.failure ?? 0; }
     async _onDeathSave(event) { return this.actor.rollDeathSave?.({event}); }
     async _renderInner(data) {
+      const actor = this.actor;
+      const container = ui.ARGON.buttonPanelContainer;
+      const previous = new Map((this.quickPanels ?? []).map(panel=>[panel.id,panel]));
+      this.quickPanels = [];
       ui.ARGON.element.classList.add("argon-oprpg");
       await super._renderInner(data);
+      if (this.actor !== actor || !this.element.isConnected || container !== ui.ARGON.buttonPanelContainer) return;
       for (const button of this._buttons) {
         keyboard(button.element, button.onClick);
         button.element.setAttribute("aria-label", button.label);
+        if (button.quick) {
+          const entries = entriesForActor(actor).filter(entry => button.quick === "favorites" ? isFavoriteEntry(actor,entry) : entry.item.type === "weapon");
+          const id = `argon-oprpg-quick-${button.quick}`;
+          let panel = previous.get(id);
+          const reusable = panel?.ownerActor === actor && panel.element.parentElement === container;
+          if (!reusable) panel = new OPRPGList({id, title:button.label, actor, buttons:entries.map(entry=>new OPRPGActivityButton(entry,actor)), weaponSetOnly:button.quick === "weapons", showEconomy:true});
+          panel._parent = button;
+          this.quickPanels.push(panel); previous.delete(id);
+          if (!reusable) {container.append(panel.element); await panel.render();}
+          button.panel = panel;
+          button.element.setAttribute("aria-haspopup","true");
+          button.element.setAttribute("aria-controls",panel.id);
+          button.element.setAttribute("aria-expanded",String(panel.visible));
+        }
+      }
+      for (const panel of previous.values()) {
+        if (panel.ownerActor === actor && panel.element.isConnected) ui.ARGON.setPanelState({visible:false},panel);
+        panel.element.remove();
       }
     }
     async _getButtons() {
       const buttons = await super._getButtons();
+      const entries = entriesForActor(this.actor);
+      const quick = (kind,label,icon) => ({id:`oprpg-${kind}`,quick:kind,label,icon,onClick:() => {
+        const button = this._buttons.find(button=>button.quick === kind);
+        if (!button?.panel || button.panel.ownerActor !== ui.ARGON._actor) return;
+        button.panel.toggle();
+        if (button.panel.visible) button.panel.element.querySelector("input[type=search]")?.focus();
+      }});
+      if (entries.some(entry=>isFavoriteEntry(this.actor,entry))) buttons.push(quick("favorites","Favoritos — atividades","fas fa-star"));
+      else if (asArray(this.actor.system?.favorites).length) buttons.push({id:"oprpg-favorites",label:"Favoritos da ficha",icon:"fas fa-star",onClick:()=>{
+        const drawer = ui.ARGON.components?.drawer;
+        if (!drawer) return;
+        if (String(ui.ARGON._lastExpandedDrawer) !== "0") drawer._expandPanel("0");
+        drawer.element.querySelector(".collapsible-panel")?.scrollTo(0,0);
+      }});
+      if (entries.some(entry=>entry.item.type === "weapon")) buttons.push(quick("weapons","Armas — conjunto ativo","fas fa-crosshairs"));
       if (asArray(this.actor.getFlag?.("oprpg-system", "haki")?.talentos).length && typeof game.oprpg?.openHakiHud === "function") {
         buttons.push({id:"haki", icon:"fas fa-hand-fist", label:"Abrir Haki", onClick:() => game.oprpg.openHakiHud(this.actor)});
       }

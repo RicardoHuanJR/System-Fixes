@@ -1,12 +1,12 @@
-# System Fixes 1.27.16 — correção do retrato compacto
+# System Fixes 1.27.17 — detalhes e atalhos de combate
 
 Ative **System Fixes + Argon CORE 5.x** no OP RPG/Foundry V14. Deixe **enhancedcombathud-oprpg-system desativado**: a integração está dentro do Fixes e se recusa a registrar duas vezes quando o adaptador antigo está ativo.
 
-Cinco botões de economia na barra, filtros por categoria dentro do painel, busca sem acentos e estado preservado após atualizações. Favoritos por atividade e três conjuntos de armas acessíveis no painel, sem alterar equipamento. Mostra motivos de indisponibilidade, execução em andamento e movimento restante real. Ações básicas, Haki, Akuma, efeitos e rolagens nativas continuam integrados.
+Cinco botões de economia na barra, filtros e busca sem acentos. O botão de detalhes (ou tecla I na atividade) mostra alcance, alvos, área, duração e dano/cura já preparados pelo sistema. Atalhos no retrato abrem favoritos e armas do conjunto ativo com as atividades individuais; não mudam equipamento nem consomem ações ao abrir. Estado, foco, permissões e execução nativa são preservados.
 
 Corrige também o conflito com a opção do CORE de mostrar detalhes abaixo do retrato, que podia sobrepor nome, nível e atributos. A regressão usa 867×453 px, as dimensões da captura fornecida pelo usuário.
 
-[Manifesto permanente de instalação](https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json) · [revisão, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.16.md) · [mapa de arquitetura](docs/CODEBASE_MAP.md).
+[Manifesto permanente de instalação](https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json) · [revisão, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.17.md) · [mapa de arquitetura](docs/CODEBASE_MAP.md).
 
 Esta versão tem testes automatizados e verificação visual **simulada**, sem execução em Foundry real. Não foi inventada uma contagem de ações restantes: o sistema inspecionado não oferece estado universal para ela.
 
