@@ -5,7 +5,7 @@ Sem dependências Node de produção:
 ```sh
 node --test tests/argon-integrated.mjs
 python -m unittest discover -s tests -p 'test_*.py'
-python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.27.19
+python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.27.20
 ```
 
 O workflow executa Node/Python antes do build e exige que o job Chromium passe antes da publicação. O teste Python cria e remove apenas diretórios temporários sob `tests/`.
@@ -35,3 +35,5 @@ A 1.27.17 acrescenta detalhes da atividade sem executar, restauração do detalh
 A 1.27.18 cobre visão por defensor e nível V14, alvos mistos, expiração fora do turno, supressão, cancelamento da Reação, concentração nativa e transferência da duração sem duplicar uso. O navegador confere o resumo de PP gerado/escudo, painel de recursos por teclado, limites da viewport e retrato com 122 px. Capturas: hud-resources-867.png e hud-resources-390.png.
 
 A 1.27.19 verifica miniaturas nas cinco economias, fotos específicas versus ícones preparados genéricos, fallback de imagem, custo/alcance, abas sem sobrepor os atalhos em 867×453, e versão móvel em 390×844. O teste Node reproduz performModuleCheck antes de argonInit, verificando o registro interno e a preservação do aviso quando desabilitado. Capturas hud-images-actions.png, hud-images-reactions.png e hud-images-mobile.png.
+
+A 1.27.20 verifica fontes locais, ícones próprios decorativos, fallback fechado, cinco controles de 60×48 px sem recorte/rotação/itálico, alinhamento horizontal e fotos nativas preservadas no tema integrado. O teste aguarda os cinco lançadores efetivamente montados.

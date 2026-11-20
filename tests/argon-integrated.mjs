@@ -10,6 +10,7 @@ import { registerArgon } from '../modules/oprpg-system-fixes/scripts/argon-hud/a
 import { installEmbeddedArgonHUD, argonHUDStatus, installArgonModuleCheckCompatibility } from '../modules/oprpg-system-fixes/scripts/argon-hud/integration.js';
 import { executePrepared, installBasicActionAutomation, isDodging, useBasicAction, dashMovementInfo, basicEffectActive, applyDodgeToAttack } from '../modules/oprpg-system-fixes/scripts/argon-hud/basic-actions.js';
 import { resourceIndicators } from '../modules/oprpg-system-fixes/scripts/argon-hud/resource-state.js';
+import { argonIconPath, argonIconMarkup } from '../modules/oprpg-system-fixes/scripts/argon-hud/icons.js';
 
 function fixture(use = async () => ({})) {
   const first = {id:'a',name:'Ataque',type:'attack',activation:{type:'action'},use};
@@ -19,6 +20,16 @@ function fixture(use = async () => ({})) {
   item.parent = actor; first.item = second.item = item;
   return {actor,item,first,second};
 }
+
+test('original HUD icons have local paths, accessible markup and a closed fallback', () => {
+  for(const key of ['sword','bolt','clock','shield','other','star','info','close','haki']) {
+    assert.equal(argonIconPath(key),`modules/oprpg-system-fixes/assets/argon/icons/${key}.svg`);
+    assert.match(argonIconMarkup(key),/aria-hidden="true"/);
+    assert.ok(!argonIconMarkup(key).includes('style="color:'));
+  }
+  assert.equal(argonIconMarkup('__proto__'),argonIconMarkup('other'));
+  assert.equal(argonIconPath('../bad'),'modules/oprpg-system-fixes/assets/argon/icons/other.svg');
+});
 
 test('multiple activities retain exact identity, economy and stable labels', () => {
   const {actor} = fixture();

@@ -6,7 +6,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname,'..');
 const core = path.resolve(process.env.ARGON_CORE_DIR || path.join(root,'.local-reference/argon-core'));
 const handlebars = path.resolve(process.env.HANDLEBARS_DIR || path.join(root,'.local-reference/test-runtime/node_modules/handlebars'));
-const types = {'.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.hbs':'text/plain','.html':'text/html','.svg':'image/svg+xml','.json':'application/json'};
+const types = {'.woff2':'font/woff2','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.hbs':'text/plain','.html':'text/html','.svg':'image/svg+xml','.json':'application/json'};
 http.createServer((req,res)=>{
   const url = decodeURIComponent(req.url.split('?')[0]);
   let file;

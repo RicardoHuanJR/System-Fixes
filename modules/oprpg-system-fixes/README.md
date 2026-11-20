@@ -1,3 +1,9 @@
+# OPRPG System Fixes 1.27.20 — Orquídea Negra
+
+HUD Argon integrado com tema próprio, 22 ícones, botões retos e fotos nativas por atividade. Ative System Fixes e Argon CORE 5.x, mantendo o adaptador antigo separado desativado.
+
+Veja [REVISAO-1.27.20.md](REVISAO-1.27.20.md) para testes e retorno à versão anterior. As verificações de navegador são simuladas; ainda falta conferir no Foundry real.
+
 # OPRPG System Fixes 1.27.13 — Foundry V14
 
 Compilação local após **dez passagens de auditoria** por diferentes funcionalidades. Corrige efeitos da segunda atividade de salvaguarda, CD numérica, manutenção de área com Região indisponível e imunidade do lançador pela integração opcional DAE.

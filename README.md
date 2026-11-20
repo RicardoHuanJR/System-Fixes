@@ -1,4 +1,4 @@
-# System Fixes 1.27.19 — HUD compacto com imagens por atividade
+# System Fixes 1.27.20 — HUD Orquídea Negra integrado
 
 Ative **System Fixes + Argon CORE 5.x** no OP RPG/Foundry V14. Deixe **enhancedcombathud-oprpg-system desativado**: a integração está dentro do Fixes e se recusa a registrar duas vezes quando o adaptador antigo está ativo.
 
@@ -6,9 +6,9 @@ Cinco botões de economia na barra, filtros e busca sem acentos. O botão de det
 
 Corrige também o conflito com a opção do CORE de mostrar detalhes abaixo do retrato, que podia sobrepor nome, nível e atributos. A regressão usa 867×453 px, as dimensões da captura fornecida pelo usuário.
 
-[Manifesto permanente de instalação](https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json) · [revisão, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.19.md) · [mapa de arquitetura](docs/CODEBASE_MAP.md).
+[Manifesto permanente de instalação](https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json) · [revisão, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.20.md) · [mapa de arquitetura](docs/CODEBASE_MAP.md).
 
-O [design Orquídea Negra](design/hud-argon/README.md) reúne a proposta posterior à 1.27.19: prévia interativa, 22 ícones próprios, capturas e botões retos. Esse visual ainda não foi aplicado ao módulo instalável.
+O [design Orquídea Negra](design/hud-argon/README.md) foi integrado ao módulo na **1.27.20**: tema próprio, 22 ícones e cinco botões retos. A prévia HTML continua disponível com dados demonstrativos; o módulo usa os documentos reais do mundo. Veja a [revisão 1.27.20, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.20.md).
 
 Esta versão tem testes automatizados e verificação visual **simulada**, sem execução em Foundry real. Não foi inventada uma contagem de ações restantes: o sistema inspecionado não oferece estado universal para ela.
 

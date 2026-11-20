@@ -6,6 +6,7 @@ import { isFavoriteEntry, toggleFavoriteEntry } from "./favorites.js";
 import { activityDetails } from "./activity-details.js";
 import { resourceIndicators } from "./resource-state.js";
 import { activityImage } from "./model.js";
+import { argonIconPath, argonIconMarkup } from "./icons.js";
 
 const ID = "oprpg-system-fixes";
 const warn = msg => ui.notifications?.warn?.(`Argon OPRPG: ${msg}`);
@@ -38,7 +39,7 @@ export function rememberArgonFocus(hud = globalThis.ui?.ARGON) {
   else if (active.matches("summary")) state.focus = {summary:true};
 }
 
-function iconFor(group) { return GROUPS.find(g => g.key === group)?.icon ?? "icons/svg/dice-target.svg"; }
+function iconFor(group) { return argonIconPath(({akuma:"effects",weapons:"sword",techniques:"flame",features:"haki",items:"potion"})[group] ?? "other"); }
 function usableMacro(macro) { return !!macro && macro.canExecute !== false && typeof macro.execute === "function"; }
 
 /** Register all classes during Argon's argonInit, when CoreHUD.ARGON exists. */
@@ -106,7 +107,8 @@ export function registerArgon(CoreHUD) {
       this.element.setAttribute("aria-label", this.title);
       const header = document.createElement("div"); header.className = "argon-oprpg-list-header";
       const title = document.createElement("strong"); title.textContent = this.title;
-      const close = document.createElement("button"); close.type = "button"; close.textContent = "Fechar";
+      const close = document.createElement("button"); close.type = "button";
+      close.innerHTML = argonIconMarkup("close"); close.setAttribute("aria-label","Fechar"); close.title = "Fechar";
       close.onclick = () => this.close(); header.append(title, close);
       const search = document.createElement("input");
       search.type = "search"; search.placeholder = "Buscar por nome ou atividade…"; search.value = this.state.query;
@@ -290,7 +292,7 @@ export function registerArgon(CoreHUD) {
         const favorite = document.createElement("button"); favorite.type = "button";
         favorite.className = "argon-oprpg-favorite";
         const starred = isFavoriteEntry(this.ownerActor, this.entry);
-        favorite.innerHTML = `<i class="${starred ? "fas" : "far"} fa-star" aria-hidden="true"></i>`;
+        favorite.innerHTML = argonIconMarkup("star");
         favorite.setAttribute("aria-label", starred ? "Remover dos favoritos" : "Adicionar aos favoritos");
         favorite.setAttribute("aria-pressed", String(starred));
         favorite.onmousedown = favorite.onmouseup = event => event.stopPropagation();
@@ -310,7 +312,7 @@ export function registerArgon(CoreHUD) {
       this.infoElement?.remove(); this.detailsElement?.remove();
       const info = document.createElement("button"); info.type = "button";
       info.className = "argon-oprpg-info";
-      info.innerHTML = '<i class="fas fa-circle-info" aria-hidden="true"></i>';
+      info.innerHTML = argonIconMarkup("info");
       info.title = "Detalhes da atividade (I)";
       info.setAttribute("aria-label", `Detalhes de ${this.entry.label}`);
       const body = document.createElement("dl"); body.className = "argon-oprpg-activity-details"; body.hidden = true;
@@ -394,6 +396,13 @@ export function registerArgon(CoreHUD) {
     get buttonPanelContainer() { return this.hudContainer ?? super.buttonPanelContainer; }
     get label() { return this.economy.label; }
     get icon() { return this.economy.icon; }
+    async _renderInner() {
+      await super._renderInner();
+      this.element.classList.add("argon-oprpg-launcher");
+      this.element.style.backgroundImage = "none";
+      const key = ({action:"sword",powerful:"bolt",bonus:"clock",reaction:"shield",free:"other"})[this.economy.key];
+      this.element.insertAdjacentHTML("afterbegin",argonIconMarkup(key));
+    }
     get colorScheme() { return ({bonus:1,free:2,reaction:3})[this.economy.key] ?? 0; }
     async activateListeners(element) {
       await super.activateListeners(element);
@@ -436,7 +445,7 @@ export function registerArgon(CoreHUD) {
   }
   function basicButtons() {
     return [["dodge","Esquivar","shield"],["ready","Preparar","clockwork"],["dash","Disparada","wingfoot"],["hide","Esconder","cloak"]]
-      .map(([key,label,icon]) => new OPRPGBasicButton(key,label,`icons/svg/${icon}.svg`));
+      .map(([key,label]) => new OPRPGBasicButton(key,label,argonIconPath(key)));
   }
 
   function makePanel(economy) {
@@ -495,6 +504,8 @@ export function registerArgon(CoreHUD) {
       for (const button of this._buttons) {
         keyboard(button.element, button.onClick);
         button.element.setAttribute("aria-label", button.label);
+        const glyph = ({"roll-initiative":"ready","open-sheet":"sheet","toggle-minimize":"minus","oprpg-favorites":"star","oprpg-weapons":"sword",haki:"haki"})[button.id];
+        if (glyph) button.element.innerHTML = argonIconMarkup(glyph);
         if (button.quick) {
           const entries = entriesForActor(actor).filter(entry => button.quick === "favorites" ? isFavoriteEntry(actor,entry) : entry.item.type === "weapon");
           const id = `argon-oprpg-quick-${button.quick}`;

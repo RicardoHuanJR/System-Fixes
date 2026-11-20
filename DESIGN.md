@@ -1,12 +1,12 @@
 # HUD Argon OPRPG
 
-Interface de operação: a cena permanece prioritária. Preserva as categorias e cores de economia do CORE, sem nova identidade ilustrada.
+Interface de operação: a cena permanece prioritária. Orquídea Negra usa marfim, preto ameixa e rosa-orquídea. Preserva a organização e a execução do CORE; os ícones e o emblema são próprios.
 
 Fonte visual: classes/templates do CORE no tag 5.0.2; verificação Chromium simulada documentada em REVISAO-1.27.15.md. Ícones substitutos e dados fictícios do teste não são arte de produção.
 
 | Elemento | Valor implementado |
 |---|---|
-| Botão inferior | 56×48 px; ícone 22 px; um botão por economia, até cinco |
+| Botão inferior | 60×48 px; ícone 20 px; um botão por economia, até cinco |
 | Retrato | 180×122 px; 144 px de largura em tela estreita |
 | Lista contextual | até 380 px de largura e 440 px de altura; rolagem e limite pela viewport |
 | Linha de atividade | mínimo 44 px; nome 12 px com quebra; informação secundária 11 px |
@@ -27,3 +27,5 @@ Na 1.27.17, o controle de informações abre um `dl` dentro da linha contextual,
 Na 1.27.18, o retrato inclui uma linha de recursos expansível, sem aumentar sua altura: resumo de PP gerado/escudo e estados ativos; lista completa por clique/teclado, Escape para fechar. O detalhamento se abre acima do retrato e fecha a ficha de atalhos; efeitos nativos ficam em uma coluna lateral quando há recursos. Não há campos editáveis.
 
 Na 1.27.19, as linhas usam imagem explícita de 32 px, nome em até duas linhas e custo/alcance em uma linha secundária com texto completo no título. Imagem própria da atividade precede a foto do item; ícone genérico preparado não apaga a foto do item. Ficha e atalhos usam miniaturas de 24 px nos documentos que possuem imagem. Cores de economia ficam nos lançadores; listas usam superfície neutra. A barra fechada mede 484×122 px na simulação; em 390 px, as ações ocupam 206×100 px. Telas baixas reservam espaço para retrato e atalhos.
+
+Na 1.27.20, a proposta Orquídea Negra passa ao módulo: tema isolado em argon-orchid.css, SVGs em assets/argon e marcação segura em icons.js. Botões retos com rótulos sem itálico, borda fina e fonte Roboto Condensed com licença preservada. Títulos dos painéis mantêm a assinatura visual; fotos de atividades/itens continuam nativas. Capturas anteriores à integração são históricas.

@@ -1,6 +1,6 @@
 # Orquídea Negra — prévia do HUD Argon
 
-Proposta visual interativa produzida após a versão instalável **1.27.19**. Este diretório não é carregado pelo módulo Foundry nem incluído em seus pacotes. A integração do novo visual ao módulo ainda não foi realizada.
+Proposta visual interativa produzida após a versão **1.27.19**, com tema e ícones integrados ao módulo na **1.27.20**. Este diretório demonstrativo não é carregado pelo Foundry nem incluído em seus pacotes; o módulo tem seus próprios arquivos de produção e usa documentos reais do mundo.
 
 Abra [preview.html](preview.html) no navegador. A interface permite alternar economias, buscar, favoritar, consultar detalhes e recolher o HUD. Toda execução é simulada: nomes, valores, atividades e imagens são exemplos; na integração real, as informações devem vir dos documentos e APIs nativas do sistema. Não há consumo de PP ou alteração de fichas nesta prévia.
 
