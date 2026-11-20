@@ -22,7 +22,7 @@ const assert=require('node:assert/strict');
  assert.equal(await launchers.locator(':scope > svg.argon-oprpg-glyph').count(),5);
  await page.screenshot({path:path.resolve('.local-reference/hud-desktop.png')});
  console.log('collapsed',await page.locator('#hud').boundingBox());
- assert.ok((await page.locator('#hud').boundingBox()).height <= 122);
+ assert.ok((await page.locator('#hud').boundingBox()).height <= 184);
  assert.equal(await page.locator('.action-hud > .actions-container > .action-element').count(),5);
  const action = page.getByRole('button',{name:/^Ação: \d+ atividades$/});
  await action.click();
@@ -223,6 +223,19 @@ const assert=require('node:assert/strict');
    fixtureActor.system.akuma={powerUp:{active:true}};
    return ui.ARGON.refresh();
  });
+ for (const width of [1920,867,390]) {
+   await page.setViewportSize({width,height:width===1920?1080:width===867?453:844});
+   const photo=page.locator('.argon-oprpg-portrait-photo');
+   const p=await photo.boundingBox(),card=await page.locator('.portrait-hud').boundingBox();
+   assert.equal(Math.round(p.width),width===1920?116:width===867?80:72);
+   assert.equal(Math.round(p.height),width===1920?116:width===867?80:84);
+   assert.equal(Math.round(card.width),width===1920?280:width===867?236:144);
+   assert.equal(Math.round(card.height),width===1920?184:width===867?144:150);
+   if(width===1920) {
+     assert.equal(await page.locator('.portrait-hud .player-name').evaluate(el=>getComputedStyle(el).fontSize),'16px');
+     await page.screenshot({path:path.resolve('.local-reference/hud-portrait-fullhd.png')});
+   }
+ }
  for (const width of [867,390]) {
    await page.setViewportSize({width,height:width===867?453:844});
    const summary=page.locator('.argon-oprpg-actor-resources summary');
@@ -230,7 +243,7 @@ const assert=require('node:assert/strict');
    const summaryBounds=await summary.boundingBox();
    const statsBounds=await page.locator('.argon-oprpg-portrait-stats > .portrait-stat-block').first().boundingBox();
    assert.ok(summaryBounds.y+summaryBounds.height<=statsBounds.y,'resources must not overlap PV/PP/defense');
-   assert.equal(Math.round((await page.locator('.portrait-hud').boundingBox()).height),122);
+   assert.equal(Math.round((await page.locator('.portrait-hud').boundingBox()).height),width===867?144:150);
    await summary.focus();await page.keyboard.press('Enter');
    const panel=page.locator('.argon-oprpg-actor-resources dl');await panel.waitFor({state:'visible'});
    assert.match(await panel.innerText(),/Power Up/);
@@ -290,7 +303,7 @@ const assert=require('node:assert/strict');
    const p=await photo.boundingBox(),n=await name.boundingBox(),stats=await page.locator('.argon-oprpg-portrait-stats').boundingBox();
    assert.ok(p.width>=50&&p.height>=58&&p.x+p.width<n.x&&p.y+p.height<=stats.y);
    assert.equal(await page.locator('.argon-oprpg-portrait-stats > div').first().evaluate(el=>getComputedStyle(el,'::before').display),'none');
-   assert.equal(Math.round((await page.locator('.portrait-hud').boundingBox()).height),122);
+   assert.equal(Math.round((await page.locator('.portrait-hud').boundingBox()).height),width===867?144:150);
    await page.screenshot({path:path.resolve(`.local-reference/hud-portrait-${width}.png`)});
  }
  await page.evaluate(()=>{window.sheetOpened=false;});

@@ -662,7 +662,7 @@ export function registerArgon(CoreHUD) {
       const open = !!target && !target.classList.contains("active");
       if (open) closeLists();
       for (const panel of this.element.querySelectorAll(".collapsible-panel")) {
-        panel.style.maxHeight = open && panel.dataset.index === String(index) ? `${Math.max(80, window.innerHeight - 180)}px` : "0px";
+        panel.style.maxHeight = open && panel.dataset.index === String(index) ? `${Math.max(80, ui.ARGON.element.getBoundingClientRect().top - 40)}px` : "0px";
       }
       for (const toggle of toggles) {
         const active = open && toggle === target;

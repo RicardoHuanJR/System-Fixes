@@ -5,7 +5,7 @@ Sem dependências Node de produção:
 ```sh
 node --test tests/argon-integrated.mjs
 python -m unittest discover -s tests -p 'test_*.py'
-python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.27.21
+python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.27.22
 ```
 
 O workflow executa Node/Python antes do build e exige que o job Chromium passe antes da publicação. O teste Python cria e remove apenas diretórios temporários sob `tests/`.
@@ -39,3 +39,5 @@ A 1.27.19 verifica miniaturas nas cinco economias, fotos específicas versus íc
 A 1.27.20 verifica fontes locais, ícones próprios decorativos, fallback fechado, cinco controles de 60×48 px sem recorte/rotação/itálico, alinhamento horizontal e fotos nativas preservadas no tema integrado. O teste aguarda os cinco lançadores efetivamente montados.
 
 A 1.27.21 verifica imagem explícita com opacidade 1 e sem filtro, origem real do ator, identidade sem sobreposição, nome acessível, abertura da ficha via teclado, fallback, efeitos temporários em coluna separada, minimizar e salvaguarda de morte nativa. Capturas: hud-portrait-867.png e hud-portrait-390.png.
+
+A 1.27.22 mede foto e painel em Full HD, janela baixa e celular; também verifica o nome de 16 px em telas grandes. Captura adicional: hud-portrait-fullhd.png. A faixa de ações mantém seu tamanho e os atalhos respeitam a altura adaptativa.

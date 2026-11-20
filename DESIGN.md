@@ -31,3 +31,5 @@ Na 1.27.19, as linhas usam imagem explícita de 32 px, nome em até duas linhas 
 Na 1.27.20, a proposta Orquídea Negra passa ao módulo: tema isolado em argon-orchid.css, SVGs em assets/argon e marcação segura em icons.js. Botões retos com rótulos sem itálico, borda fina e fonte Roboto Condensed com licença preservada. Títulos dos painéis mantêm a assinatura visual; fotos de atividades/itens continuam nativas. Capturas anteriores à integração são históricas.
 
 Na 1.27.21, o retrato abandona a foto de fundo: botão de imagem real 60×60 px (52×60 em celular), nome em duas linhas sem itálico e faixa independente de PV/PP/defesa. Efeitos nativos são mantidos em coluna lateral. A altura permanece em 122 px, e a consulta de recursos se abre acima dos atalhos. Os títulos e as demais superfícies conservam Orquídea Negra.
+
+A 1.27.22 substitui o limite fixo de 122 px do retrato: telas largas (≥1200 px) usam painel de 280×184 px e foto de 116×116 px; janelas médias, 236×158 e 92×92; telas estreitas, 144×150 e 72×84. Em altura ≤540 px, o retrato tem 144 px e foto de 80×80. As ações mantêm 60×48 px. Atalhos e consulta acompanham as variáveis de altura do retrato.

@@ -1,3 +1,7 @@
+# OPRPG System Fixes 1.27.22 — foto ampliada
+
+Retrato proporcional à tela, com foto de 116×116 px em telas grandes e nome mais legível. Painéis e atalhos acompanham a nova altura. Veja [REVISAO-1.27.22.md](REVISAO-1.27.22.md) para verificação e rollback. Ainda sem teste em Foundry real.
+
 # OPRPG System Fixes 1.27.21 — retrato claro
 
 Foto real do personagem ao lado do nome, sem transparência nem texto por cima. Indicadores separados, retrato compacto e controles nativos preservados. Veja [REVISAO-1.27.21.md](REVISAO-1.27.21.md) para testes, limites e rollback. Ainda sem teste em uma sessão real do Foundry.
