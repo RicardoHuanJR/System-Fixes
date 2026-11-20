@@ -6,7 +6,9 @@ Cinco botões de economia na barra, filtros e busca sem acentos. O botão de det
 
 Corrige também o conflito com a opção do CORE de mostrar detalhes abaixo do retrato, que podia sobrepor nome, nível e atributos. A regressão usa 867×453 px, as dimensões da captura fornecida pelo usuário.
 
-[Manifesto permanente de instalação](https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json) · [revisão, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.17.md) · [mapa de arquitetura](docs/CODEBASE_MAP.md).
+[Manifesto permanente de instalação](https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json) · [revisão, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.19.md) · [mapa de arquitetura](docs/CODEBASE_MAP.md).
+
+O [design Orquídea Negra](design/hud-argon/README.md) reúne a proposta posterior à 1.27.19: prévia interativa, 22 ícones próprios, capturas e botões retos. Esse visual ainda não foi aplicado ao módulo instalável.
 
 Esta versão tem testes automatizados e verificação visual **simulada**, sem execução em Foundry real. Não foi inventada uma contagem de ações restantes: o sistema inspecionado não oferece estado universal para ela.
 
