@@ -5,11 +5,24 @@ import { weaponSetsForActor, weaponsForActor, setWeaponSlot, selectWeaponSet } f
 import { isFavoriteEntry, toggleFavoriteEntry } from "./favorites.js";
 import { activityDetails } from "./activity-details.js";
 import { resourceIndicators } from "./resource-state.js";
+import { activityImage } from "./model.js";
 
 const ID = "oprpg-system-fixes";
 const warn = msg => ui.notifications?.warn?.(`Argon OPRPG: ${msg}`);
 const panelStates = new WeakMap();
 const listComponents = new WeakMap();
+
+function rowImage(element, source, fallback) {
+  const image = document.createElement("img");
+  image.className = "argon-oprpg-thumbnail"; image.alt = "";
+  image.width = image.height = 32; image.draggable = false; image.decoding = "async";
+  image.setAttribute("aria-hidden","true");
+  const sources = [...new Set([source,fallback,"icons/svg/dice-target.svg"].filter(Boolean))];
+  let index = 0;
+  image.onerror = () => {if (++index < sources.length) image.src = sources[index]; else image.onerror = null;};
+  image.src = sources[0];
+  element.prepend(image);
+}
 
 export function rememberArgonFocus(hud = globalThis.ui?.ARGON) {
   const active = globalThis.document?.activeElement;
@@ -237,9 +250,7 @@ export function registerArgon(CoreHUD) {
     constructor(entry, actor) { super(); this.entry = entry; this.ownerActor = actor; }
     get item() { return getItem(this.ownerActor, this.entry.itemId); }
     get label() { return this.entry.label; }
-    get icon() { return this.item?.img && !this.entry.activityId
-      ? this.item.img : (this.entry.activityId ? activityById(this.item, this.entry.activityId)?.img : null)
-        || this.item?.img || this.entry.icon || iconFor(this.entry.group); }
+    get icon() { return activityImage(activityById(this.item,this.entry.activityId),this.item,iconFor(this.entry.group)); }
     get colorScheme() { return ({bonus:1,free:2,reaction:3})[this.entry.economy] ?? 0; }
     get busy() { return this._busy || isEntryPending(this.ownerActor,this.entry); }
     set busy(value) { this._busy = value; }
@@ -249,6 +260,8 @@ export function registerArgon(CoreHUD) {
     async _renderInner() {
       await super._renderInner();
       this.element.classList.add("argon-oprpg-activity");
+      this.element.style.backgroundImage = "none";
+      rowImage(this.element,this.icon,this.item?.img !== this.icon ? this.item?.img : iconFor(this.entry.group));
       this.element.dataset.entryKey = `${this.entry.itemId}:${this.entry.activityId ?? "item"}`;
       this.element.classList.toggle("argon-oprpg-disabled", this.disabled);
       this.element.title = `${this.entry.label} — ${ECONOMY.find(e => e.key === this.entry.economy)?.label ?? ""}. F2 ou botão direito: ficha`;
@@ -258,13 +271,17 @@ export function registerArgon(CoreHUD) {
       if (this.busy) this.element.setAttribute("aria-busy", "true");
       this.element.classList.toggle("argon-oprpg-pending", !!this.busy);
       const economy = this.parent.showEconomy ? ECONOMY.find(e => e.key === this.entry.economy)?.label : "";
-      const details = [economy,resourceLabel(activityById(this.item, this.entry.activityId), this.item)].filter(Boolean).join(" · ");
+      const activity = activityById(this.item,this.entry.activityId);
+      let range;
+      try { range = activityDetails(activity,this.item,value=>game.i18n.localize(value),{isGM:game.user.isGM}).find(row=>row.label === "Alcance")?.value; }
+      catch (_) { /* Unprepared metadata remains available through the item sheet. */ }
+      const details = [economy,resourceLabel(activity, this.item),range].filter(Boolean).join(" · ");
       const reason = unavailableReason(this.ownerActor, this.entry);
       if (details || reason || this.busy) {
         const line = document.createElement("small"); line.textContent = details;
         if (reason) line.textContent = reason;
         if (this.busy) line.textContent = "Em execução…";
-        line.className = "argon-oprpg-actor-resources"; this.element.append(line);
+        line.className = "argon-oprpg-activity-meta"; line.title = line.textContent; this.element.append(line);
         this.element.title += ` · ${details}`;
       }
       this.element.tabIndex = 0;
@@ -404,6 +421,9 @@ export function registerArgon(CoreHUD) {
     get icon() { return this.image; }
     async _renderInner() {
       await super._renderInner();
+      this.element.classList.add("argon-oprpg-basic");
+      this.element.style.backgroundImage = "none";
+      rowImage(this.element,this.icon,"icons/svg/dice-target.svg");
       this.element.setAttribute("aria-disabled", String(!this.ownerActor?.isOwner));
       this.element.classList.toggle("argon-oprpg-disabled", !this.ownerActor?.isOwner);
     }
@@ -571,6 +591,7 @@ export function registerArgon(CoreHUD) {
       for (const span of element.querySelectorAll("span[data-index]")) {
         const button = this._buttons[Number(span.dataset.index)];
         if (!button?.onClick) continue;
+        if (button.image) rowImage(span,button.image,"icons/svg/dice-target.svg");
         keyboard(span, event => span.onclick?.(event));
         const onKey = span.onkeydown;
         span.onkeydown = event => {
@@ -584,9 +605,9 @@ export function registerArgon(CoreHUD) {
       }
     }
   }
-  function drawerRow(label, callback) {
+  function drawerRow(label, callback, image) {
     const actor = ui.ARGON._actor;
-    return new OPRPGAccessibleRow([{label:escapeHTML(label), onClick:async event => {
+    return new OPRPGAccessibleRow([{label:escapeHTML(label), image, onClick:async event => {
       if (ui.ARGON._actor !== actor || !actor?.isOwner) return warn("Sem permissão para esta ficha.");
       try { await callback(event); } catch (error) { console.error("[System Fixes/Argon]", error); warn("Não foi possível executar. Abra a ficha."); }
     }}]);
@@ -625,8 +646,10 @@ export function registerArgon(CoreHUD) {
       const result = [];
       const favorites = asArray(actor.system?.favorites).slice().sort((a,b) => (a.sort ?? 0) - (b.sort ?? 0));
       if (favorites.length) result.push(category("Favoritos", favorites.map(favorite => {
-        let name = favorite.id;
-        try { name = globalThis.fromUuidSync?.(favorite.id, {relative:actor,strict:false})?.name ??
+        let name = favorite.id, image;
+        try { const doc = globalThis.fromUuidSync?.(favorite.id, {relative:actor,strict:false});
+          image = doc?.item ? activityImage(doc,doc.item) : doc?.img;
+          name = doc?.name ??
           game.i18n.localize(CONFIG.DND5E?.skills?.[favorite.id]?.label ?? CONFIG.DND5E?.toolTypes?.[favorite.id] ?? favorite.id); } catch (_) { /* stale favorite stays inspectable */ }
         return drawerRow(name, async event => {
         if (favorite.type === "skill") return actor.rollSkill({skill:favorite.id, event});
@@ -642,7 +665,7 @@ export function registerArgon(CoreHUD) {
         }
         if (favorite.type === "effect" && doc && !doc.isSuppressed && doc.isOwner) return doc.update({disabled:!doc.disabled});
         return doc?.sheet?.render(true);
-      }); })));
+      },image); })));
       if (typeof actor.rollAbilityCheck === "function") result.push(category("Atributos", Object.keys(actor.system?.abilities ?? {}).map(key =>
         drawerRow(game.i18n.localize(CONFIG.DND5E?.abilities?.[key]?.label ?? key), event => actor.rollAbilityCheck({ability:key,event})))));
       if (typeof actor.rollSavingThrow === "function") result.push(category("Salvaguardas", Object.keys(actor.system?.abilities ?? {}).map(key =>
@@ -655,16 +678,16 @@ export function registerArgon(CoreHUD) {
       if (effects.length) result.push(category("Efeitos — ativar/desativar", effects.map(effect => drawerRow(`${effect.disabled ? "Inativo" : "Ativo"}: ${effect.name}`, () => {
         if (effect.isSuppressed || !effect.isOwner) return warn("Efeito suprimido ou sem permissão; abra a ficha.");
         return effect.update({disabled:!effect.disabled});
-      }))));
+      },effect.img))));
       const passive = asArray(actor.items).filter(item => !entriesForActor({items:[item]}).length);
-      if (passive.length) result.push(category("Itens e habilidades — ficha", passive.map(item => drawerRow(item.name, () => item.sheet?.render(true)))));
+      if (passive.length) result.push(category("Itens e habilidades — ficha", passive.map(item => drawerRow(item.name, () => item.sheet?.render(true),item.img))));
       const enabled = game.settings?.get?.(ID, "argonShowMacros") ?? true;
       const macros = enabled ? [...new Set(Object.entries(game.user?.hotbar ?? {}).sort(([a],[b]) => Number(a)-Number(b)).map(([,id]) => id))]
         .map(id => game.macros?.get?.(id)).filter(usableMacro) : [];
       if (macros.length) result.push(category("Macros", macros.map(m => drawerRow(m.name, () => {
         if (usableMacro(m)) return m.execute();
         warn("Macro indisponível ou sem permissão.");
-      }))));
+      },m.img))));
       return result.length ? result : [category("Ficha", [drawerRow("Abrir ficha", () => actor.sheet.render(true))])];
     }
   }

@@ -6,10 +6,10 @@ Fonte visual: classes/templates do CORE no tag 5.0.2; verificação Chromium sim
 
 | Elemento | Valor implementado |
 |---|---|
-| Botão inferior | 64×56 px; ícone 25 px; um botão por economia, até cinco |
+| Botão inferior | 56×48 px; ícone 22 px; um botão por economia, até cinco |
 | Retrato | 180×122 px; 144 px de largura em tela estreita |
-| Lista contextual | até 480 px de largura e 520 px de altura; rolagem e limite pela viewport |
-| Linha de atividade | mínimo 52 px; nome 13 px com quebra; informação secundária 11 px |
+| Lista contextual | até 380 px de largura e 440 px de altura; rolagem e limite pela viewport |
+| Linha de atividade | mínimo 44 px; nome 12 px com quebra; informação secundária 11 px |
 | Superfície contextual | #14181e com opacidade; texto #f2f4f7 |
 | Foco | 2 px #e8c66a |
 | Layout estreito | os cinco botões quebram em linhas; painel reposicionado para permanecer na viewport |
@@ -25,3 +25,5 @@ Mesmo com `playerDetailsBottom` ativo no CORE, o retrato compacto mantém os det
 Na 1.27.17, o controle de informações abre um `dl` dentro da linha contextual, separado dos botões de executar e favoritar; nomes e valores quebram quando necessário. Consulta por clique ou I e leitura de rótulos preparados, sem rolar dados. O detalhe aberto e o foco são preservados por ator/painel. Os atalhos do retrato reutilizam a mesma lista: favoritos e conjunto de armas, com economia visível em cada atividade. A barra principal continua com cinco botões e o retrato mantém 122 px de altura. Em celular, os controles do retrato medem 24 px de largura para acomodar seis controles, incluindo Haki.
 
 Na 1.27.18, o retrato inclui uma linha de recursos expansível, sem aumentar sua altura: resumo de PP gerado/escudo e estados ativos; lista completa por clique/teclado, Escape para fechar. O detalhamento se abre acima do retrato e fecha a ficha de atalhos; efeitos nativos ficam em uma coluna lateral quando há recursos. Não há campos editáveis.
+
+Na 1.27.19, as linhas usam imagem explícita de 32 px, nome em até duas linhas e custo/alcance em uma linha secundária com texto completo no título. Imagem própria da atividade precede a foto do item; ícone genérico preparado não apaga a foto do item. Ficha e atalhos usam miniaturas de 24 px nos documentos que possuem imagem. Cores de economia ficam nos lançadores; listas usam superfície neutra. A barra fechada mede 484×122 px na simulação; em 390 px, as ações ocupam 206×100 px. Telas baixas reservam espaço para retrato e atalhos.

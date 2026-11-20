@@ -80,7 +80,7 @@ export function entriesForActor(actor) {
         const label = next > 1 ? `${baseLabel} (${next})` : baseLabel;
         entries.push({ itemId: item.id, activityId: String(activity.id ?? activity._id),
           group: groupOf(item), economy: economyOf(activity), label,
-          icon: activity.img || item.img || "icons/svg/dice-target.svg",
+          icon: activityImage(activity,item),
           type: String(activity.type ?? ""), item });
       }
       continue;
@@ -101,6 +101,12 @@ export function escapeHTML(input) {
 
 export function finiteValue(value) {
   return value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value)) ? Number(value) : null;
+}
+
+/** Prepared activities inherit a generic metadata icon; prefer the item's artwork in that case. */
+export function activityImage(activity, item, fallback = "icons/svg/dice-target.svg") {
+  const custom = activity?._source ? activity._source.img : activity?.img;
+  return custom || item?.img || activity?.img || fallback;
 }
 
 export function searchText(value) {

@@ -9,6 +9,23 @@ const SYSTEM_ID = "oprpg-system";
 let registered = false;
 let hookInstalled = false;
 let lastError = null;
+const patchedModuleChecks = new WeakSet();
+
+export function installArgonModuleCheckCompatibility() {
+  const prototype = globalThis.CONFIG?.ARGON?.CORE?.CoreHud?.prototype;
+  if (!prototype || typeof prototype.performModuleCheck !== "function" || patchedModuleChecks.has(prototype)) return;
+  const original = prototype.performModuleCheck;
+  prototype.performModuleCheck = function(...args) {
+    if (game.system?.id !== SYSTEM_ID) return original.apply(this,args);
+    // CORE checks the old package ID before argonInit. Wait for actual registration;
+    // retain its warning whenever this integration is disabled, unsupported or fails.
+    queueMicrotask(()=>{
+      if (registered && setting("argonHudEnabled") && !game.modules?.get(OLD_ADAPTER_ID)?.active) return;
+      original.apply(this,args);
+    });
+  };
+  patchedModuleChecks.add(prototype);
+}
 
 function setting(key, fallback = true) {
   try { return game.settings.get(MODULE_ID, key); }
@@ -42,6 +59,8 @@ export function registerArgonHUDSettings() {
 export function installEmbeddedArgonHUD() {
   if (hookInstalled) return;
   hookInstalled = true;
+  Hooks.on("setup", installArgonModuleCheckCompatibility);
+  installArgonModuleCheckCompatibility();
   Hooks.on("argonInit", CoreHUD => {
     if (game.system?.id !== SYSTEM_ID || !setting("argonHudEnabled")) return;
     // Do not register two sets of action panels when the old standalone plugin is still enabled.

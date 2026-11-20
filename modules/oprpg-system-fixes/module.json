@@ -1,8 +1,8 @@
 {
   "id": "oprpg-system-fixes",
   "title": "OPRPG System Fixes & Compatibility",
-  "description": "Correções OPRPG e HUD Argon compacto 5.x para Foundry V14: ações básicas, concentração nativa e indicadores reais de PP, escudo, Haki e Akuma.",
-  "version": "1.27.18",
+  "description": "Correções OPRPG e HUD Argon compacto 5.x para Foundry V14: fotos por atividade e item, custos e alcance visíveis, integração sem adaptador duplicado.",
+  "version": "1.27.19",
   "authors": [
     {
       "name": "Adaptação OPRPG — módulo de compatibilidade local"
@@ -58,5 +58,5 @@
   ],
   "url": "https://github.com/RicardoHuanJR/System-Fixes",
   "manifest": "https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json",
-  "download": "https://github.com/RicardoHuanJR/System-Fixes/releases/download/v1.27.18/oprpg-system-fixes.zip"
+  "download": "https://github.com/RicardoHuanJR/System-Fixes/releases/download/v1.27.19/oprpg-system-fixes.zip"
 }

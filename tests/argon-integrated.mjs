@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { entriesForActor, economyOf, groupOf, finiteValue, resourceLabel, escapeHTML, matchesEntry } from '../modules/oprpg-system-fixes/scripts/argon-hud/model.js';
+import { entriesForActor, economyOf, groupOf, finiteValue, resourceLabel, escapeHTML, matchesEntry, activityImage } from '../modules/oprpg-system-fixes/scripts/argon-hud/model.js';
 import { executeEntry, isAvailable, diagnostics, unavailableReason } from '../modules/oprpg-system-fixes/scripts/argon-hud/execute.js';
 import { weaponSetsForActor, setWeaponSlot, selectWeaponSet } from '../modules/oprpg-system-fixes/scripts/argon-hud/weapon-sets.js';
 import { isFavoriteEntry, toggleFavoriteEntry } from '../modules/oprpg-system-fixes/scripts/argon-hud/favorites.js';
 import { activityDetails } from '../modules/oprpg-system-fixes/scripts/argon-hud/activity-details.js';
 import { convertLength, movementInfo } from '../modules/oprpg-system-fixes/scripts/argon-hud/movement.js';
 import { registerArgon } from '../modules/oprpg-system-fixes/scripts/argon-hud/argon.js';
-import { installEmbeddedArgonHUD, argonHUDStatus } from '../modules/oprpg-system-fixes/scripts/argon-hud/integration.js';
+import { installEmbeddedArgonHUD, argonHUDStatus, installArgonModuleCheckCompatibility } from '../modules/oprpg-system-fixes/scripts/argon-hud/integration.js';
 import { executePrepared, installBasicActionAutomation, isDodging, useBasicAction, dashMovementInfo, basicEffectActive, applyDodgeToAttack } from '../modules/oprpg-system-fixes/scripts/argon-hud/basic-actions.js';
 import { resourceIndicators } from '../modules/oprpg-system-fixes/scripts/argon-hud/resource-state.js';
 
@@ -114,6 +114,15 @@ test('search ignores accents without losing category filters', () => {
   assert.equal(matchesEntry(entry,'area','techniques'),true);
   assert.equal(matchesEntry(entry,'area','weapons'),false);
   assert.equal(matchesEntry(entry,'x'),false);
+});
+
+test('activity artwork prefers explicit activity images over item photos, and item photos over prepared defaults', () => {
+  const item={img:'worlds/campaign/weapon.webp'};
+  assert.equal(activityImage({_source:{img:''},img:'icons/svg/sword.svg'},item),item.img);
+  assert.equal(activityImage({_source:{img:'worlds/campaign/technique.webp'},img:'icons/svg/sword.svg'},item),'worlds/campaign/technique.webp');
+  assert.equal(activityImage({img:'activity.webp'},item),'activity.webp');
+  assert.equal(activityImage({_source:{img:''},img:'icons/svg/sword.svg'},{}),'icons/svg/sword.svg');
+  assert.equal(activityImage(null,{}),'icons/svg/dice-target.svg');
 });
 
 test('activity details preserve prepared labels, weapon overrides and damage arrays', () => {
@@ -346,4 +355,31 @@ test('integration is optional, idempotent and refuses the legacy adapter or unsu
     legacy.active=false; core.version='6.0.0'; handler({});
     assert.match(argonHUDStatus().lastError,/6.0.0/);
   } finally {console.warn=old;}
+});
+
+test('CORE package check waits for successful embedded registration and keeps legitimate warnings', async () => {
+  const integration=await import('../modules/oprpg-system-fixes/scripts/argon-hud/integration.js?module-check');
+  const hooks=new Map();globalThis.Hooks={on:(name,fn)=>hooks.set(name,fn)};
+  let checks=0,enabled=true;
+  class Base {get classes(){return [];} }
+  class Core {
+    constructor(){this.performModuleCheck();hooks.get('argonInit')(Core);}
+    performModuleCheck(){checks++;}
+  }
+  Core.ARGON={CORE:{CoreHud:Core},MAIN:{BUTTONS:{ActionButton:Base,ButtonPanelButton:Base},ActionPanel:Base,BUTTON_PANELS:{ButtonPanel:Base}},PORTRAIT:{PortraitPanel:Base},DRAWER:{DrawerPanel:Base,DrawerButton:Base},WeaponSets:Base,MovementHud:Base};
+  for(const key of ['SupportedActorTypes','PortraitPanel','DrawerPanel','WeaponSets','MovementHud','MainPanels'])Core['define'+key]=()=>{};
+  globalThis.CONFIG={ARGON:Core.ARGON};game.settings={get:()=>enabled};game.system={id:'oprpg-system'};
+  game.modules=new Map([['enhancedcombathud',{active:true,version:'5.0.2'}]]);
+  const previousInfo=console.info,previousWarn=console.warn;console.info=()=>{};console.warn=()=>{};
+  try {
+    integration.installEmbeddedArgonHUD();
+    const wrapped=Core.prototype.performModuleCheck;
+    hooks.get('setup')();assert.equal(Core.prototype.performModuleCheck,wrapped);
+    game.modules.get('enhancedcombathud').version='6.0.0';
+    new Core();await Promise.resolve();assert.equal(checks,1);assert.equal(integration.argonHUDStatus().registered,false);
+    game.modules.get('enhancedcombathud').version='5.0.2';checks=0;
+    const core=new Core();await Promise.resolve();assert.equal(checks,0);assert.equal(integration.argonHUDStatus().registered,true);
+    enabled=false;core.performModuleCheck();await Promise.resolve();assert.equal(checks,1);
+    enabled=true;game.system.id='other';core.performModuleCheck();assert.equal(checks,2);
+  } finally {console.info=previousInfo;console.warn=previousWarn;}
 });

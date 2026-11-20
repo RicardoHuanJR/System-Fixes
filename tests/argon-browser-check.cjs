@@ -230,6 +230,41 @@ const assert=require('node:assert/strict');
    await page.screenshot({path:path.resolve(`.local-reference/hud-resources-${width}.png`)});
    await page.keyboard.press('Escape');assert.equal(await panel.isVisible(),false);
  }
+ await page.setViewportSize({width:867,height:453});
+ await page.evaluate(()=>{
+   const item=fixtureActor.items.get('i24');item.img='/icons/weapon.svg';
+   item.system.activities.get('a1')._source={img:''};item.system.activities.get('a1').img='/icons/svg/sword.svg';
+   item.system.activities.get('a1').use=async()=>{window.thumbnailUsed=(window.thumbnailUsed??0)+1;return {};};
+   return ui.ARGON.refresh();
+ });
+ for (const name of [/^Ação: \d+ atividades$/,/^Poderosa: \d+ atividades$/,/^Ação bônus: \d+ atividades$/,/^Reação: \d+ atividades$/,/^Livre \/ outras: \d+ atividades$/]) {
+   await page.getByRole('button',{name}).click();
+   const panel=page.locator('.argon-oprpg-list.show');
+   const panelBounds=await panel.boundingBox(), drawerBounds=await page.locator('.ability-menu').boundingBox();
+   assert.ok(panelBounds.y+panelBounds.height<=drawerBounds.y,'context panel must not cover portrait shortcuts');
+   const all=panel.getByRole('button',{name:'Todas',exact:true});if(await all.count())await all.click();
+   await panel.getByRole('searchbox').fill('');
+   await page.waitForFunction(()=>[...document.querySelectorAll('.argon-oprpg-list.show .argon-oprpg-thumbnail')].every(img=>img.complete && img.naturalWidth>0));
+   const buttons=panel.locator('.action-element:visible');assert.ok(await buttons.count()>0);
+   assert.equal(await buttons.locator(':scope > img.argon-oprpg-thumbnail').count(),await buttons.count());
+   assert.equal(await panel.evaluate(el=>[...el.querySelectorAll('.argon-oprpg-thumbnail')].every(img=>getComputedStyle(img).width==='32px')),true);
+   if (String(name).includes('Reação')) await page.screenshot({path:path.resolve('.local-reference/hud-images-reactions.png')});
+   await panel.getByRole('button',{name:'Fechar',exact:true}).click();
+ }
+ await page.getByRole('button',{name:/^Ação: \d+ atividades$/}).click();
+ const imagePanel=page.locator('.argon-oprpg-list.show');
+ const image=imagePanel.locator('[data-entry-key="i24:a1"] > img');
+ assert.equal(await image.getAttribute('src'),'/icons/weapon.svg');
+ await image.evaluate(img=>img.dispatchEvent(new Event('error')));
+ assert.equal(await image.getAttribute('src'),'icons/svg/sword.svg');
+ await image.evaluate(img=>img.dispatchEvent(new Event('error')));
+ assert.equal(await image.getAttribute('src'),'icons/svg/dice-target.svg');
+ assert.match(await imagePanel.locator('[data-entry-key="i24:a1"] .argon-oprpg-activity-meta').innerText(),/PP variável · 12 m/);
+ await page.screenshot({path:path.resolve('.local-reference/hud-images-actions.png')});
+ await page.setViewportSize({width:390,height:844});
+ await page.screenshot({path:path.resolve('.local-reference/hud-images-mobile.png')});
+ await imagePanel.locator('[data-entry-key="i24:a1"]').click({position:{x:20,y:20}});
+ assert.equal(await page.evaluate(()=>window.thumbnailUsed),1);
  assert.deepEqual(errors,[]);
  } finally { await browser.close(); }
 })().catch(error=>{console.error(error);process.exit(1);});
