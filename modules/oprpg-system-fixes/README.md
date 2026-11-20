@@ -1,3 +1,7 @@
+# OPRPG System Fixes 1.27.21 — retrato claro
+
+Foto real do personagem ao lado do nome, sem transparência nem texto por cima. Indicadores separados, retrato compacto e controles nativos preservados. Veja [REVISAO-1.27.21.md](REVISAO-1.27.21.md) para testes, limites e rollback. Ainda sem teste em uma sessão real do Foundry.
+
 # OPRPG System Fixes 1.27.20 — Orquídea Negra
 
 HUD Argon integrado com tema próprio, 22 ícones, botões retos e fotos nativas por atividade. Ative System Fixes e Argon CORE 5.x, mantendo o adaptador antigo separado desativado.

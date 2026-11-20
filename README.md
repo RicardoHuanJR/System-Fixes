@@ -1,12 +1,12 @@
-# System Fixes 1.27.20 — HUD Orquídea Negra integrado
+# System Fixes 1.27.21 — retrato claro e identificação do personagem
 
 Ative **System Fixes + Argon CORE 5.x** no OP RPG/Foundry V14. Deixe **enhancedcombathud-oprpg-system desativado**: a integração está dentro do Fixes e se recusa a registrar duas vezes quando o adaptador antigo está ativo.
 
-Cinco botões de economia na barra, filtros e busca sem acentos. O botão de detalhes (ou tecla I na atividade) mostra alcance, alvos, área, duração e dano/cura já preparados pelo sistema. Atalhos no retrato abrem favoritos e armas do conjunto ativo com as atividades individuais; não mudam equipamento nem consomem ações ao abrir. Estado, foco, permissões e execução nativa são preservados.
+Foto nítida ao lado do nome, com PV/PP/defesa separados e retrato de 122 px de altura. Cinco botões de economia na barra, filtros e busca sem acentos. O botão de detalhes (ou tecla I na atividade) mostra alcance, alvos, área, duração e dano/cura já preparados pelo sistema. Atalhos no retrato abrem favoritos e armas do conjunto ativo com as atividades individuais; não mudam equipamento nem consomem ações ao abrir. Estado, foco, permissões e execução nativa são preservados.
 
 Corrige também o conflito com a opção do CORE de mostrar detalhes abaixo do retrato, que podia sobrepor nome, nível e atributos. A regressão usa 867×453 px, as dimensões da captura fornecida pelo usuário.
 
-[Manifesto permanente de instalação](https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json) · [revisão, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.20.md) · [mapa de arquitetura](docs/CODEBASE_MAP.md).
+[Manifesto permanente de instalação](https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json) · [revisão, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.21.md) · [mapa de arquitetura](docs/CODEBASE_MAP.md).
 
 O [design Orquídea Negra](design/hud-argon/README.md) foi integrado ao módulo na **1.27.20**: tema próprio, 22 ícones e cinco botões retos. A prévia HTML continua disponível com dados demonstrativos; o módulo usa os documentos reais do mundo. Veja a [revisão 1.27.20, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.20.md).
 

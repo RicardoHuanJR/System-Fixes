@@ -477,6 +477,26 @@ export function registerArgon(CoreHUD) {
       ui.ARGON.element.classList.add("argon-oprpg");
       await super._renderInner(data);
       if (this.actor !== actor || !this.element.isConnected || container !== ui.ARGON.buttonPanelContainer) return;
+      // Keep the real portrait separate from every label and resource overlay.
+      this.element.querySelector(".portrait-hud-image")?.remove();
+      const photo = document.createElement("button"); photo.type = "button";
+      photo.className = "argon-oprpg-portrait-photo";
+      photo.setAttribute("aria-label", `Abrir ficha de ${actor.name}`); photo.title = `Abrir ficha de ${actor.name}`;
+      const image = document.createElement("img");
+      image.alt = `Retrato de ${actor.name}`; image.draggable = false;
+      image.onerror = () => {image.onerror = null; image.src = argonIconPath("hide");};
+      image.src = this.image || argonIconPath("hide"); photo.append(image);
+      photo.onclick = () => {if (ui.ARGON._actor === actor) actor.sheet?.render(true);};
+      this.element.prepend(photo);
+      const name = this.element.querySelector(".player-name");
+      if (name) {name.title = actor.name; name.setAttribute("aria-label",actor.name);}
+      const effects = this.element.querySelector(".effects-container");
+      if (effects) this.element.append(effects);
+      const stats = document.createElement("div"); stats.className = "argon-oprpg-portrait-stats";
+      for (const block of this.element.querySelectorAll(":scope > .portrait-stat-block:not(.player-details)")) {
+        block.title = block.textContent; stats.append(block);
+      }
+      if (stats.children.length) this.element.append(stats);
       const resources = resourceIndicators(actor, globalThis.OPRPG_FIXES_AKUMA_COMBAT_STATUS?.(actor));
       if (resources.length) {
         const details = document.createElement("details");
