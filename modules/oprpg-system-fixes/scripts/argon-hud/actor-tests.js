@@ -12,3 +12,12 @@ export function actorAbilities(actor, config = {}, localize = value => value) {
 export function relatedSkills(actor, ability, config = {}) {
   return Object.entries(actor?.system?.skills ?? {}).filter(([key,data]) => (data?.ability ?? config.skills?.[key]?.ability) === ability).map(([key]) => key);
 }
+
+/** Display prepared numeric bonuses; a base modifier is explicitly identified. */
+export function rollBonusLabel(actor,kind,key) {
+  const ability=actor?.system?.abilities?.[key];
+  const prepared=kind==="skill"?actor?.system?.skills?.[key]?.total:kind==="save"?ability?.save?.value:ability?.check?.value;
+  const value=finiteValue(prepared), mod=kind==="check"?finiteValue(ability?.mod):null;
+  const number=value ?? mod;
+  return number===null?"":(value===null?"Mod. ":"")+(number>=0?"+":"")+number;
+}

@@ -4,9 +4,10 @@ import { useBasicAction, dashMovementInfo } from "./basic-actions.js";
 import { weaponSetsForActor, weaponsForActor, setWeaponSlot, selectWeaponSet } from "./weapon-sets.js";
 import { isFavoriteEntry, toggleFavoriteEntry } from "./favorites.js";
 import { activityDetails } from "./activity-details.js";
-import { actorAbilities, relatedSkills } from "./actor-tests.js";
+import { actorAbilities, relatedSkills, rollBonusLabel } from "./actor-tests.js";
 import { activityImage } from "./model.js";
 import { argonIconPath, argonIconMarkup } from "./icons.js";
+import { panelPlacement } from "./panel-layout.js";
 
 const ID = "oprpg-system-fixes";
 const warn = msg => ui.notifications?.warn?.(`Argon OPRPG: ${msg}`);
@@ -36,12 +37,23 @@ export function rememberArgonFocus(hud = globalThis.ui?.ARGON) {
   const state = panelStates.get(hud?._actor)?.get(panel?.id);
   if (!state) return;
   if (active.matches("input[type=search]")) state.focus = {search:true, start:active.selectionStart, end:active.selectionEnd};
+  else if (active.dataset.entrySheet) state.focus = {sheet:active.dataset.entrySheet};
   else if (active.dataset.entryKey) state.focus = {key:active.dataset.entryKey};
   else if (active.classList.contains("argon-oprpg-favorite")) state.focus = {favorite:active.closest(".argon-oprpg-entry")?.querySelector("[data-entry-key]")?.dataset.entryKey};
   else if (active.classList.contains("argon-oprpg-info")) state.focus = {info:active.closest(".argon-oprpg-entry")?.querySelector("[data-entry-key]")?.dataset.entryKey};
   else if (active.matches("select")) state.focus = {control:active.getAttribute("aria-label")};
   else if (active.dataset.group) state.focus = {group:active.dataset.group};
   else if (active.matches("summary")) state.focus = {summary:true};
+}
+
+function focusInPanel(control,panel) {
+  if (!control) return;
+  control.focus({preventScroll:true});
+  for (const box of [...new Set([control.closest(".argon-oprpg-rows"),panel].filter(Boolean))]) {
+    const row=control.getBoundingClientRect(), bounds=box.getBoundingClientRect();
+    if (row.top<bounds.top+4) box.scrollTop-=bounds.top+4-row.top;
+    else if (row.bottom>bounds.bottom-4) box.scrollTop+=row.bottom-bounds.bottom+4;
+  }
 }
 
 function iconFor(group) { return argonIconPath(({akuma:"effects",weapons:"sword",techniques:"flame",features:"haki",items:"potion"})[group] ?? "other"); }
@@ -80,21 +92,35 @@ export function registerArgon(CoreHUD) {
     }
   }
 
-  let layoutObserver, observedHUD, observedActions;
+  let layoutObserver, observedElements=[];
+  function chromeRect(id) {
+    const element=document.getElementById(id);
+    if (!element || element.classList.contains("ech-hidden") || element.hidden) return null;
+    const style=getComputedStyle(element), rect=element.getBoundingClientRect();
+    return style.display!=="none" && style.visibility!=="hidden" && Number(style.opacity)!==0 && rect.width>0 && rect.height>0 && rect.right>0 && rect.left<innerWidth && rect.bottom>0 && rect.top<innerHeight ? rect : null;
+  }
+  function placement(anchor,width) {
+    return panelPlacement({anchor,width,portrait:ui.ARGON.element.querySelector(".portrait-hud")?.getBoundingClientRect(),viewport:{width:innerWidth,height:innerHeight},sidebar:chromeRect("sidebar"),hotbar:chromeRect("hotbar")});
+  }
+  function applyPlacement(element,position) {
+    element.style.left=position.left+"px";element.style.width=position.width+"px";
+    element.style.bottom=position.bottom+"px";element.style.maxHeight=position.maxHeight+"px";
+    element.classList.toggle("argon-oprpg-narrow",position.narrow);
+  }
   function watchLayout() {
     if (!globalThis.ResizeObserver) return;
-    const hud = globalThis.ui?.ARGON?.element;
+    const hud=globalThis.ui?.ARGON?.element;
     if (!hud) return;
-    const actions = hud.querySelector(".action-hud");
-    if (hud === observedHUD && actions === observedActions) return;
-    layoutObserver ??= new ResizeObserver(placeLists);
-    layoutObserver.disconnect();
-    for (const element of [hud,actions].filter(Boolean)) layoutObserver.observe(element);
-    observedHUD = hud; observedActions = actions;
+    const elements=[hud,hud.querySelector(".action-hud"),document.getElementById("sidebar"),document.getElementById("hotbar")].filter(Boolean);
+    if (elements.length===observedElements.length && elements.every((el,i)=>el===observedElements[i])) return;
+    layoutObserver ??= new ResizeObserver(placeLists); layoutObserver.disconnect();
+    for (const element of elements) layoutObserver.observe(element);
+    observedElements=elements;
   }
   function placeLists() {
     watchLayout();
     for (const element of ui.ARGON?.element?.querySelectorAll(".argon-oprpg-list.show") ?? []) listComponents.get(element)?.place();
+    ui.ARGON?.components?.drawer?.place?.();
   }
 
   class OPRPGList extends ButtonPanel {
@@ -196,6 +222,8 @@ export function registerArgon(CoreHUD) {
       };
       setChoice.onchange = () => changeLoadout(() => selectWeaponSet(this.ownerActor, setChoice.value));
       loadout.disabled = !this.ownerActor.isOwner;
+      const reset = document.createElement("button"); reset.type="button";reset.className="argon-oprpg-reset";reset.textContent="Limpar busca e filtros";
+      reset.onclick=()=>{search.value="";this.state.group="all";this.state.useSet=false;useSet.checked=false;this.state.scroll=0;rows.scrollTop=0;applyFilters();search.focus();};
       const applyFilters = () => {
         this.state.query = search.value;
         loadoutSection.hidden = !weapons.length || !(this.weaponSetOnly || this.state.group === "weapons");
@@ -215,6 +243,7 @@ export function registerArgon(CoreHUD) {
         for (const filter of filters.children) filter.setAttribute("aria-pressed", String(filter.dataset.group === this.state.group));
         status.textContent = count ? `${count} ${count === 1 ? "atividade" : "atividades"}` :
           this.weaponSetOnly && this.state.useSet ? "Conjunto sem atividades. Abra Conjuntos de armas para selecionar outras armas ou desmarcar o filtro." : "Nenhuma atividade encontrada.";
+        if (!count && (this.state.query || this.state.group!=="all" || this.state.useSet)) status.append(reset);
       };
       for (const group of groups) {
         const filter = document.createElement("button"); filter.type = "button"; filter.textContent = group.label;
@@ -229,6 +258,7 @@ export function registerArgon(CoreHUD) {
       if (this.visible && this.state.focus) {
         const focus = this.state.focus; delete this.state.focus;
         if (focus.search) {search.focus({preventScroll:true}); search.setSelectionRange(focus.start,focus.end);}
+        else if (focus.sheet) this._buttons.find(button=>button.element.dataset.entryKey===focus.sheet)?.sheetElement?.focus({preventScroll:true});
         else if (focus.favorite) this._buttons.find(button => button.element.dataset.entryKey === focus.favorite)?.favoriteElement?.focus({preventScroll:true});
         else if (focus.info) this._buttons.find(button => button.element.dataset.entryKey === focus.info)?.infoElement?.focus({preventScroll:true});
         else if (focus.control) [...loadout.querySelectorAll("select")].find(control => control.getAttribute("aria-label") === focus.control)?.focus({preventScroll:true});
@@ -236,14 +266,23 @@ export function registerArgon(CoreHUD) {
         else if (focus.summary) summary.focus({preventScroll:true});
         else this._buttons.find(button => button.element.dataset.entryKey === focus.key && !button.element.hidden)?.element.focus({preventScroll:true});
       }
+      if (this.visible && this.element.contains(document.activeElement)) focusInPanel(document.activeElement,this.element);
       this.element.onkeydown = event => {
-        if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); this.close(); }
-        if (["ArrowDown","ArrowUp"].includes(event.key) && !event.target.matches("select")) {
+        if (event.key === "Escape") {
+          event.preventDefault();event.stopPropagation();
+          if (event.target.closest(".argon-oprpg-activity-details")) {
+            const info=event.target.closest(".argon-oprpg-entry")?.querySelector(".argon-oprpg-info");info?.click();focusInPanel(info,this.element);
+          } else this.close();
+        }
+        if (["Home","End"].includes(event.key) && event.target.matches(".argon-oprpg-activity,.argon-oprpg-basic")) {
+          const buttons=this._buttons.filter(button=>!button.element.hidden);event.preventDefault();focusInPanel((event.key==="Home"?buttons[0]:buttons.at(-1))?.element,this.element);
+        }
+        if (["ArrowDown","ArrowUp"].includes(event.key) && event.target.matches("input[type=search],.argon-oprpg-activity,.argon-oprpg-basic")) {
           const buttons = this._buttons.filter(button => !button.element.hidden);
           if (!buttons.length) return;
           const current = buttons.findIndex(button => button.element === event.target);
           const next = current < 0 ? 0 : (current + (event.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length;
-          event.preventDefault(); buttons[next].element.focus();
+          event.preventDefault(); focusInPanel(buttons[next].element,this.element);
         }
       };
     }
@@ -252,16 +291,7 @@ export function registerArgon(CoreHUD) {
       if (!this.visible) return;
       if (this.ownerActor !== ui.ARGON._actor || !this.element.isConnected || !this.parent?.element?.isConnected) return;
       watchLayout();
-      const anchor = this.parent.element.getBoundingClientRect();
-      const width = this.element.getBoundingClientRect().width;
-      const left = Math.max(8, Math.min(anchor.left, window.innerWidth - width - 8));
-      const portrait = ui.ARGON.element.querySelector(".portrait-hud")?.getBoundingClientRect();
-      // When the panel cannot fit beside the portrait, keep the whole identity visible.
-      const overlapsPortrait = portrait && left < portrait.right && left + width > portrait.left;
-      const bottom = Math.max(8, Math.min(anchor.top, overlapsPortrait ? portrait.top : anchor.top) - 8);
-      this.element.style.left = left + "px";
-      this.element.style.bottom = window.innerHeight - bottom + "px";
-      this.element.style.maxHeight = Math.max(0, Math.min(380,bottom - 8)) + "px";
+      applyPlacement(this.element,placement(this.parent.element.getBoundingClientRect(),380));
     }
     toggle(value, noTransition) {
       if (this.ownerActor !== ui.ARGON._actor) return;
@@ -375,6 +405,13 @@ export function registerArgon(CoreHUD) {
             const value = document.createElement("dd"); value.textContent = row.value;
             body.append(label,value);
           }
+          if (typeof this.item?.sheet?.render === "function") {
+            const footer=document.createElement("dd"), sheet=document.createElement("button");footer.className="argon-oprpg-detail-actions";
+            sheet.type="button";sheet.textContent="Abrir ficha do item";sheet.dataset.entrySheet=this.element.dataset.entryKey;
+            sheet.onclick=event=>{event.stopPropagation();void this._onRightClick(event);};
+            sheet.onmousedown=sheet.onmouseup=event=>event.stopPropagation();
+            this.sheetElement=sheet;footer.append(sheet);body.append(footer);
+          }
         } catch (error) {
           console.error("[System Fixes/Argon] Detalhes",error);
           const message = document.createElement("dd"); message.textContent = "Não foi possível consultar os detalhes. Abra a ficha do item."; body.append(message);
@@ -433,7 +470,12 @@ export function registerArgon(CoreHUD) {
         if (ui.ARGON._actor === this.ownerActor) {rememberArgonFocus(); ui.ARGON.refresh?.();}
       }
     }
-    async _onRightClick(event) { event?.preventDefault?.(); event?.stopPropagation?.(); this.item?.sheet?.render?.(true); }
+    async _onRightClick(event) {
+      event?.preventDefault?.();event?.stopPropagation?.();
+      if (ui.ARGON?._actor!==this.ownerActor) return;
+      if (!game.user.isGM && !this.ownerActor.isOwner && this.ownerActor.testUserPermission?.(game.user,"OBSERVER")!==true) return warn("Sem permissão para consultar esta ficha.");
+      try {await this.item?.sheet?.render?.(true);} catch (error) {console.error("[System Fixes/Argon] Ficha",error);warn("Não foi possível abrir a ficha do item.");}
+    }
     async activateListeners(element) {
       await super.activateListeners(element);
       keyboard(element, event => this._onLeftClick(event));
@@ -533,6 +575,7 @@ export function registerArgon(CoreHUD) {
       const previous = new Map((this.quickPanels ?? []).map(panel=>[panel.id,panel]));
       this.quickPanels = [];
       ui.ARGON.element.classList.add("argon-oprpg");
+      ui.ARGON.element.classList.toggle("argon-oprpg-large-text",game.settings.get(ID,"argonTextSize")==="large");
       await super._renderInner(data);
       if (this.actor !== actor || !this.element.isConnected || container !== ui.ARGON.buttonPanelContainer) return;
       // Keep the real portrait separate from every label and resource overlay.
@@ -549,7 +592,21 @@ export function registerArgon(CoreHUD) {
       const name = this.element.querySelector(".player-name");
       if (name) {name.title = actor.name; name.setAttribute("aria-label",actor.name);}
       const effects = this.element.querySelector(".effects-container");
-      if (effects) this.element.append(effects);
+      if (effects) {
+        this.element.append(effects);effects.setAttribute("role","group");effects.setAttribute("aria-label","Efeitos do personagem");
+        for (const icon of effects.querySelectorAll(".effect-icon")) {
+          const label=icon.querySelector("img")?.alt || "Efeito";
+          const open=()=>{if (ui.ARGON._actor===actor) void ui.ARGON.components?.drawer?.openFor(null,icon,"effects");};
+          keyboard(icon,open,{expanded:true});icon.title=label+" — consultar efeitos";icon.setAttribute("aria-label","Consultar efeito: "+label);
+          icon.dataset.drawerSection="effects";icon.setAttribute("aria-controls","argon-oprpg-drawer");
+          const nativeMouseUp=icon.onmouseup;
+          icon.onmouseup=event=>{
+            if(event.button!==0) return nativeMouseUp?.call(icon,event);
+            event.preventDefault();event.stopPropagation();open();
+          };
+          icon.onfocus=()=>{if(icon.offsetTop<effects.scrollTop)effects.scrollTop=icon.offsetTop;else if(icon.offsetTop+icon.offsetHeight>effects.scrollTop+effects.clientHeight)effects.scrollTop=icon.offsetTop+icon.offsetHeight-effects.clientHeight;};
+        }
+      }
       const stats = document.createElement("div"); stats.className = "argon-oprpg-portrait-stats";
       for (const block of this.element.querySelectorAll(":scope > .portrait-stat-block:not(.player-details)")) {
         block.title = block.textContent; stats.append(block);
@@ -582,7 +639,7 @@ export function registerArgon(CoreHUD) {
         if (button.id === "open-sheet") {
           button.element.dataset.drawerShortcuts = "true";
           button.element.setAttribute("aria-controls","argon-oprpg-drawer");
-          button.element.setAttribute("aria-expanded",String(!!drawerStates.get(actor)?.open && drawerStates.get(actor).ability === null));
+          button.element.setAttribute("aria-expanded",String(!!drawerStates.get(actor)?.open && drawerStates.get(actor).ability === null && !drawerStates.get(actor).section));
         }
         if (button.quick) {
           const entries = entriesForActor(actor).filter(entry => button.quick === "favorites" ? isFavoriteEntry(actor,entry) : entry.item.type === "weapon");
@@ -627,7 +684,7 @@ export function registerArgon(CoreHUD) {
       else if (asArray(this.actor.system?.favorites).length) buttons.push({id:"oprpg-favorites",label:"Favoritos da ficha",icon:"fas fa-star",onClick:()=>{
         const drawer = ui.ARGON.components?.drawer;
         if (!drawer) return;
-        if (!drawer.state.open || drawer.state.ability !== null) void drawer.openFor(null);
+        if (!drawer.state.open || drawer.state.ability !== null || drawer.state.section) void drawer.openFor(null);
       }});
       if (entries.some(entry=>entry.item.type === "weapon")) buttons.push(quick("weapons","Armas — conjunto ativo","fas fa-crosshairs"));
       if (asArray(this.actor.getFlag?.("oprpg-system", "haki")?.talentos).length && typeof game.oprpg?.openHakiHud === "function") {
@@ -699,13 +756,16 @@ export function registerArgon(CoreHUD) {
           } else onKey(event);
         };
         span.setAttribute("aria-label", span.textContent);
+        if (button.bonus && (game.user.isGM || this.actor?.isOwner || this.actor?.testUserPermission?.(game.user,"OBSERVER") === true)) {
+          const bonus=document.createElement("strong");bonus.className="argon-oprpg-roll-bonus";bonus.textContent=button.bonus;span.append(bonus);
+        }
         span.setAttribute("aria-disabled",String(!this.actor?.isOwner));
       }
     }
   }
-  function drawerRow(label, callback, image) {
+  function drawerRow(label, callback, image, bonus) {
     const actor = ui.ARGON._actor;
-    return new OPRPGAccessibleRow([{label:escapeHTML(label), image, onClick:async event => {
+    return new OPRPGAccessibleRow([{label:escapeHTML(label), image, bonus, onClick:async event => {
       if (ui.ARGON._actor !== actor || !actor?.isOwner) return warn("Sem permissão para esta ficha.");
       try { await callback(event); } catch (error) { console.error("[System Fixes/Argon]", error); warn("Não foi possível executar. Abra a ficha."); }
     }}]);
@@ -721,45 +781,40 @@ export function registerArgon(CoreHUD) {
     }
     get classes() { return [...super.classes,"argon-oprpg-drawer"]; }
     get title() {
+      if (this.state.section==="effects") return "Efeitos";
       return this.state.ability === null ? "Atalhos da ficha" : actorAbilities(this.ownerActor,CONFIG.DND5E,value=>game.i18n.localize(value)).find(a=>a.key===this.state.ability)?.label ?? "Testes";
     }
     syncTriggers() {
-      for (const button of ui.ARGON.element.querySelectorAll("[data-ability], [data-drawer-shortcuts]")) {
-        const selected = button.hasAttribute("data-ability") ? button.dataset.ability === this.state.ability : this.state.ability === null;
+      for (const button of ui.ARGON.element.querySelectorAll("[data-ability], [data-drawer-shortcuts], [data-drawer-section]")) {
+        const selected = button.dataset.drawerSection ? button.dataset.drawerSection===this.state.section : button.hasAttribute("data-ability") ? button.dataset.ability===this.state.ability : this.state.ability===null && !this.state.section;
         button.setAttribute("aria-expanded",String(this.state.open && selected));
       }
     }
-    async openFor(ability, trigger) {
+    async openFor(ability, trigger, section=null) {
       if (this.ownerActor !== ui.ARGON._actor || !this.element.isConnected) return;
       if (ability !== null && !actorAbilities(this.ownerActor).some(a=>a.key===ability)) return;
-      if (this.state.open && this.state.ability === ability) return this.close(true);
-      closeLists(); this.state.ability = ability; this.state.open = true; delete this.state.focus;
+      if (this.state.open && this.state.ability === ability && (this.state.section ?? null)===section) return this.close(true);
+      closeLists(); this.state.ability = ability; this.state.section=section; this.state.open = true; delete this.state.focus;
       this.element.hidden = true; this.trigger = trigger; this.syncTriggers();
       try { await this.render(); }
       catch (error) {console.error("[System Fixes/Argon] Testes e atalhos",error); this.close(true); warn("Não foi possível abrir os testes. Abra a ficha pelo retrato."); return;}
       if (this.ownerActor === ui.ARGON._actor && this.state.open && this.element.isConnected) this.focusControl(this.element.querySelector("[data-drawer-key]:not([data-drawer-key=close])"));
     }
-    focusControl(control) {
-      if (!control) return;
-      control.focus({preventScroll:true});
-      const row = control.getBoundingClientRect(), panel = this.element.getBoundingClientRect();
-      if (row.top < panel.top + 4) this.element.scrollTop -= panel.top + 4 - row.top;
-      else if (row.bottom > panel.bottom - 4) this.element.scrollTop += row.bottom - panel.bottom + 4;
-    }
+    focusControl(control) {focusInPanel(control,this.element); }
     close(restoreFocus = false) {
       this.state.open = false; delete this.state.focus; this.element.hidden = true;
       ui.ARGON._lastExpandedDrawer = null; document.body.classList.remove("ech-show-ability-menu"); this.syncTriggers();
       if (restoreFocus) {
-        const trigger = this.trigger?.isConnected ? this.trigger : [...ui.ARGON.element.querySelectorAll("[data-ability], [data-drawer-shortcuts]")].find(b=>this.state.ability === null ? b.hasAttribute("data-drawer-shortcuts") : b.dataset.ability === this.state.ability);
-        trigger?.focus();
+        const trigger = this.trigger?.isConnected ? this.trigger : [...ui.ARGON.element.querySelectorAll("[data-ability], [data-drawer-shortcuts], [data-drawer-section]")].find(b=>this.state.section ? b.dataset.drawerSection===this.state.section : this.state.ability===null ? b.hasAttribute("data-drawer-shortcuts") : b.dataset.ability===this.state.ability);
+        (trigger ?? ui.ARGON.element.querySelector("[data-drawer-shortcuts], .argon-oprpg-portrait-photo"))?.focus({preventScroll:true});
       }
     }
     _expandPanel(index) { if (index == null) this.close(); }
     place() {
       if (!this.state.open) return;
-      const hud = ui.ARGON.element.getBoundingClientRect(), width = this.element.getBoundingClientRect().width;
-      this.element.style.left = Math.max(8-hud.left,Math.min(0,window.innerWidth-hud.left-width-8)) + "px";
-      this.element.style.maxHeight = Math.max(48,hud.top-16) + "px";
+      watchLayout();
+      const portrait=ui.ARGON.element.querySelector(".portrait-hud").getBoundingClientRect();
+      applyPlacement(this.element,placement({left:portrait.left,top:portrait.top},320));
     }
     async _renderInner() {
       const sequence = this.sequence = (this.sequence ?? 0) + 1;
@@ -777,10 +832,10 @@ export function registerArgon(CoreHUD) {
         for (const button of group.buttons) {
           button._parent = this; button.setGrid(group.gridCols); button.setAlign(group.captions.map(c=>c.align));
           await button.render(); list.append(button.element);
-          const control = button.element.querySelector("[role=button]"); if (control) control.dataset.drawerKey = String(list.children.length);
+          const control = button.element.querySelector("[role=button]"); if (control) {control.dataset.drawerKey=String(list.children.length);const bonus=control.querySelector(".argon-oprpg-roll-bonus");if(bonus){bonus.id="argon-oprpg-drawer-bonus-"+list.children.length;control.setAttribute("aria-describedby",bonus.id);}}
         }
       }
-      if (!list.children.length) {const empty = document.createElement("li"); empty.textContent = "Nenhum teste disponível na ficha."; list.append(empty);}
+      if (!list.children.length) {const empty = document.createElement("li"); empty.textContent = this.state.section==="effects"?"Nenhum efeito nesta ficha.":"Nenhum teste disponível na ficha."; list.append(empty);}
       if (sequence !== this.sequence || this.ownerActor !== ui.ARGON._actor || !this.element.isConnected) return;
       this.element.id = "argon-oprpg-drawer"; this.element.setAttribute("role","region"); this.element.setAttribute("aria-label",this.title);
       this.element.replaceChildren(heading,list); this.element.hidden = !this.state.open; this.syncTriggers(); this.place();
@@ -804,9 +859,9 @@ export function registerArgon(CoreHUD) {
       const ability = this.state.ability;
       if (ability !== null) {
         const label = game.i18n.localize(CONFIG.DND5E?.abilities?.[ability]?.label ?? ability);
-        if (typeof actor.rollAbilityCheck === "function") result.push(category("Teste de atributo",[drawerRow("Teste de " + label,event=>actor.rollAbilityCheck({ability,event}))]));
-        if (typeof actor.rollSavingThrow === "function") result.push(category("Salvaguarda",[drawerRow("Salvaguarda de " + label,event=>actor.rollSavingThrow({ability,event}))]));
-        if (typeof actor.rollSkill === "function") result.push(category("Perícias relacionadas",relatedSkills(actor,ability,CONFIG.DND5E).map(key=>drawerRow(game.i18n.localize(CONFIG.DND5E?.skills?.[key]?.label ?? key),event=>actor.rollSkill({skill:key,event})))));
+        if (typeof actor.rollAbilityCheck === "function") result.push(category("Teste de atributo",[drawerRow("Teste de " + label,event=>actor.rollAbilityCheck({ability,event}),null,rollBonusLabel(actor,"check",ability))]));
+        if (typeof actor.rollSavingThrow === "function") result.push(category("Salvaguarda",[drawerRow("Salvaguarda de " + label,event=>actor.rollSavingThrow({ability,event}),null,rollBonusLabel(actor,"save",ability))]));
+        if (typeof actor.rollSkill === "function") result.push(category("Perícias relacionadas",relatedSkills(actor,ability,CONFIG.DND5E).map(key=>drawerRow(game.i18n.localize(CONFIG.DND5E?.skills?.[key]?.label ?? key),event=>actor.rollSkill({skill:key,event}),null,rollBonusLabel(actor,"skill",key)))));
         return result;
       }
 
@@ -848,6 +903,7 @@ export function registerArgon(CoreHUD) {
         if (usableMacro(m)) return m.execute();
         warn("Macro indisponível ou sem permissão.");
       },m.img))));
+      if (this.state.section==="effects") return result.filter(group=>group.captions[0].label==="Efeitos — ativar/desativar");
       return result.length ? result : [category("Ficha", [drawerRow("Abrir ficha", () => actor.sheet.render(true))])];
     }
   }
@@ -865,7 +921,6 @@ export function registerArgon(CoreHUD) {
     }
   });
   globalThis.window?.addEventListener("resize", () => {
-    ui.ARGON?.components?.drawer?.place?.();
     placeLists();
   });
 }

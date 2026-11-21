@@ -50,6 +50,10 @@ export function registerArgonHUDSettings() {
     ["argonShowMacros", "Argon: mostrar macros", "Mostra as macros da barra de atalhos no painel lateral.", "client", true],
     ["argonShowMovement", "Argon: mostrar deslocamento", "Mostra o deslocamento durante combate no HUD.", "client", true]
   ];
+  game.settings.register(MODULE_ID,"argonTextSize",{
+    name:"Argon: tamanho do texto",hint:"Texto ampliado melhora a leitura e pode mostrar menos atividades por vez. A preferência vale apenas para você.",
+    scope:"client",config:true,type:String,choices:{normal:"Padrão compacto",large:"Texto ampliado"},default:"normal",onChange:()=>refreshEmbeddedArgonHUD()
+  });
   for (const [key,name,hint,scope,value] of options) {
     game.settings.register(MODULE_ID, key, {name,hint,scope,config:true,type:Boolean,default:value,requiresReload:true});
   }

@@ -5,7 +5,7 @@ Sem dependências Node de produção:
 ```sh
 node --test tests/argon-integrated.mjs
 python -m unittest discover -s tests -p 'test_*.py'
-python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.27.27
+python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.27.28
 ```
 
 O workflow executa Node/Python antes do build e exige que o job Chromium passe antes da publicação. O teste Python cria e remove apenas diretórios temporários sob `tests/`.
@@ -22,6 +22,7 @@ mkdir -p .local-reference
 node tests/argon-browser-server.cjs
 # Em outro terminal:
 node tests/argon-browser-check.cjs
+node tests/argon-refinement-check.cjs
 ```
 
 Servidor restrito a localhost:4173, com classes/templates/CSS do CORE e documentos de teste falsos. As capturas ficam em `.local-reference/`. A suíte verifica busca/filtros/foco após refresh, favoritos, flags de conjuntos sem equipar, identidade de atividade, cliques simultâneos, indisponibilidade e permissões, F2/Escape/setas, movimento excedido, minimizar e painéis nos tamanhos 1440×900, 900×700, 600×700, 390×844, 320×700 e 720×360. Verifica também a posição do painel com HUD deslocado para a direita. Não prova execução no Foundry real.
@@ -53,3 +54,5 @@ A 1.27.25 verifica abertura acima do próprio lançador com intervalo de 8 px, l
 A 1.27.26 mede pelo menos cinco atividades completas e 240 px de área útil na lista do cenário inicial em 1440×900 (medição atual: 248 px). Confere busca dentro do cabeçalho, segunda linha em 320 px, estabilidade dos atalhos ao adicionar/remover favoritos e Haki, rótulos em português e botões contidos no retrato, mantendo a largura mínima de 24 px em celular. Captura: hud-compact-header.png.
 
 A 1.27.27 cobre identidade separada, metadados persistentes durante execução/indisponibilidade, estado compartilhado entre variantes do mesmo item, cancelamento e ausência de erro após fechar o HUD durante um uso. Usa mouseup, o evento de execução real do CORE, no teste de concorrência. Confere falta de permissão, nomes extensos com travessão/caracteres HTML, descrições acessíveis e execução da variante a1. Capturas: hud-activity-pending.png, hud-activity-unavailable.png e hud-activity-long-name.png.
+
+A 1.27.28 adiciona argon-refinement-check.cjs ao job Chromium: ficha do item, foco após refresh, Escape em dois níveis, Home/End, selects/checkboxes, limpeza de filtros sem regravar dados, bônus preparados/Mod. explícito, oito efeitos e remoção do efeito aberto, barras nativas simuladas visíveis/ocultas, sidebar larga e texto ampliado em quatro tamanhos. Node cobre o helper de posicionamento, bônus sem avaliação e a preferência individual compacta por padrão. Capturas hud-chrome-safe.png e hud-large-text-*.png. Nenhuma dessas verificações equivale a uma sessão Foundry real.

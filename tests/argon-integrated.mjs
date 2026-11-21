@@ -9,8 +9,39 @@ import { convertLength, movementInfo } from '../modules/oprpg-system-fixes/scrip
 import { registerArgon } from '../modules/oprpg-system-fixes/scripts/argon-hud/argon.js';
 import { installEmbeddedArgonHUD, argonHUDStatus, installArgonModuleCheckCompatibility } from '../modules/oprpg-system-fixes/scripts/argon-hud/integration.js';
 import { executePrepared, installBasicActionAutomation, isDodging, useBasicAction, dashMovementInfo, basicEffectActive, applyDodgeToAttack } from '../modules/oprpg-system-fixes/scripts/argon-hud/basic-actions.js';
-import { actorAbilities, relatedSkills } from '../modules/oprpg-system-fixes/scripts/argon-hud/actor-tests.js';
+import { actorAbilities, relatedSkills, rollBonusLabel } from '../modules/oprpg-system-fixes/scripts/argon-hud/actor-tests.js';
+import { panelPlacement } from '../modules/oprpg-system-fixes/scripts/argon-hud/panel-layout.js';
+import { registerArgonHUDSettings } from '../modules/oprpg-system-fixes/scripts/argon-hud/integration.js';
 import { argonIconPath, argonIconMarkup } from '../modules/oprpg-system-fixes/scripts/argon-hud/icons.js';
+
+test('roll hints use prepared totals and explicitly label a base modifier without evaluating formulas', () => {
+  const actor={system:{abilities:{dex:{mod:3,check:{value:5},save:{value:7}},str:{mod:-1},con:{mod:0,save:{value:'@prof'}}},skills:{ste:{total:8},ath:{total:'1d4+3'}}}};
+  assert.equal(rollBonusLabel(actor,'check','dex'),'+5');
+  assert.equal(rollBonusLabel(actor,'save','dex'),'+7');
+  assert.equal(rollBonusLabel(actor,'skill','ste'),'+8');
+  assert.equal(rollBonusLabel(actor,'check','str'),'Mod. -1');
+  assert.equal(rollBonusLabel(actor,'check','con'),'Mod. +0');
+  for(const [kind,key] of [['save','con'],['save','str'],['skill','ath'],['check','missing']]) assert.equal(rollBonusLabel(actor,kind,key),'');
+});
+
+test('panel geometry respects the portrait, visible sidebar and hotbar without moving native UI', () => {
+  const base={anchor:{left:300,top:700},portrait:{left:16,right:296,top:550},viewport:{width:1000,height:800}};
+  assert.deepEqual(panelPlacement(base),{left:300,width:380,bottom:108,maxHeight:380,narrow:false});
+  const sidebar={left:600,right:1000,width:400,height:800};
+  const blocked=panelPlacement({...base,sidebar,hotbar:{left:250,right:600,top:480,bottom:540,width:350,height:60}});
+  assert.equal(blocked.left,212);assert.equal(blocked.bottom,328);assert.equal(blocked.maxHeight,380);
+  assert.ok(blocked.left+blocked.width<=sidebar.left-8);
+  const narrow=panelPlacement({...base,viewport:{width:320,height:360},anchor:{left:168,top:200},portrait:{left:16,right:160,top:120}});
+  assert.equal(narrow.width,280);assert.equal(narrow.left,32);assert.equal(narrow.bottom,248);assert.equal(narrow.maxHeight,104);assert.equal(narrow.narrow,true);
+  const low=panelPlacement({...base,anchor:{left:300,top:5}});assert.equal(low.maxHeight,0);
+});
+
+test('text preference is client-only, compact by default and refreshes without requiring a reload', () => {
+  const previous=globalThis.game,settings=new Map();
+  globalThis.game={settings:{register:(_id,key,value)=>settings.set(key,value)}};
+  try {registerArgonHUDSettings();const text=settings.get('argonTextSize');assert.equal(text.scope,'client');assert.equal(text.default,'normal');assert.equal(text.type,String);assert.equal(text.choices.large,'Texto ampliado');assert.equal(typeof text.onChange,'function');assert.ok(!text.requiresReload);}
+  finally {globalThis.game=previous;}
+});
 
 function fixture(use = async () => ({})) {
   const first = {id:'a',name:'Ataque',type:'attack',activation:{type:'action'},use};

@@ -1,4 +1,6 @@
-# System Fixes 1.27.27 — variantes legíveis e estados claros
+# System Fixes 1.27.28 — painéis refinados e texto ampliado
+
+Consulta de efeitos acessível, bônus preparados nos testes, abertura da ficha do item nos detalhes e limpeza de busca/filtros. Listas respeitam barras nativas visíveis. Em configurações do System Fixes, **Argon: tamanho do texto → Texto ampliado** é uma preferência individual; o padrão compacto permanece.
 
 Ative **System Fixes + Argon CORE 5.x** no OP RPG/Foundry V14. Deixe **enhancedcombathud-oprpg-system desativado**: a integração está dentro do Fixes e se recusa a registrar duas vezes quando o adaptador antigo está ativo.
 
@@ -14,7 +16,7 @@ Atributos clicáveis substituem a linha PPg: cada um abre seu teste, salvaguarda
 
 Corrige também o conflito com a opção do CORE de mostrar detalhes abaixo do retrato, que podia sobrepor nome, nível e atributos. A regressão usa 867×453 px, as dimensões da captura fornecida pelo usuário.
 
-[Manifesto permanente de instalação](https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json) · [revisão, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.27.md) · [mapa de arquitetura](docs/CODEBASE_MAP.md).
+[Manifesto permanente de instalação](https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json) · [revisão, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.28.md) · [mapa de arquitetura](docs/CODEBASE_MAP.md).
 
 O [design Orquídea Negra](design/hud-argon/README.md) foi integrado ao módulo na **1.27.20**: tema próprio, 22 ícones e cinco botões retos. A prévia HTML continua disponível com dados demonstrativos; o módulo usa os documentos reais do mundo. Veja a [revisão 1.27.20, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.20.md).
 

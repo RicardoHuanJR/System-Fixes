@@ -56,6 +56,7 @@ jobs:
             sleep 1
           done
           node tests/argon-browser-check.cjs
+          node tests/argon-refinement-check.cjs
       - name: Guardar capturas da simulação
         if: always()
         uses: actions/upload-artifact@v4

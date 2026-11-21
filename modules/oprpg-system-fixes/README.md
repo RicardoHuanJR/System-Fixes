@@ -1,3 +1,7 @@
+# OPRPG System Fixes 1.27.28 — painéis refinados e texto ampliado
+
+Consulta de efeitos por teclado/clique, bônus preparados nos testes, botão para abrir a ficha do item e limpeza de busca/filtros. Cabeçalhos e ícones harmonizados; painéis consideram barras nativas visíveis. Preferência individual **Argon: tamanho do texto → Texto ampliado**, mantendo o padrão compacto. Veja [REVISAO-1.27.28.md](REVISAO-1.27.28.md) para testes, limites e rollback. Sem execução em Foundry real.
+
 # OPRPG System Fixes 1.27.27 — variantes e estados de uso
 
 Nome do item e variante têm hierarquia própria; custo e alcance continuam visíveis durante uso ou indisponibilidade. Estados se atualizam nas atividades do mesmo item, com permissões e execução nativa preservadas. Veja [REVISAO-1.27.27.md](REVISAO-1.27.27.md) para testes e rollback. Ainda sem execução em Foundry real.

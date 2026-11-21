@@ -198,7 +198,7 @@ const assert=require('node:assert/strict');
    const intersectsPortrait=bounds.x<identity.x+identity.width && bounds.x+bounds.width>identity.x;
    assert.ok(bounds.y+bounds.height<=(intersectsPortrait?identity.y:button.y)-7,'fallback must keep portrait and launchers uncovered');
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth),true);
-   const header=await region.locator('.argon-oprpg-list-tools').boundingBox(),search=await region.getByRole('searchbox').boundingBox(),close=await region.getByRole('button',{name:'Fechar',exact:true}).boundingBox();
+   const {header,search,close}=await region.locator('.argon-oprpg-list-tools').evaluate(el=>({header:el.getBoundingClientRect().toJSON(),search:el.querySelector('input').getBoundingClientRect().toJSON(),close:el.querySelector('button').getBoundingClientRect().toJSON()}));
    assert.ok(search.x>=header.x && search.x+search.width<=header.x+header.width && search.y+search.height<=header.y+header.height);
    assert.ok(close.width>=24 && close.height>=24 && close.x+close.width<=header.x+header.width);
    if(viewport.width===320) assert.ok(search.y>=close.y+close.height,'very narrow header must put search below title and close');

@@ -32,6 +32,8 @@ flowchart LR
 | scripts/argon-hud/integration.js | Gate sistema/CORE/setting/legado, diagnóstico, atualização por documentos |
 | scripts/argon-hud/model.js | Coleções, IDs de atividades, agrupamento, economia, custos informativos, busca sem acentos e escape |
 | scripts/argon-hud/execute.js | Resolve documento atual, propriedade, bloqueio nativo, trava concorrente e cancelamento |
+| scripts/argon-hud/panel-layout.js | Geometria pura de listas/drawer, retrato e barras nativas visíveis |
+| scripts/argon-hud/actor-tests.js | Atributos/perícias relacionados e bônus numéricos preparados, sem avaliar fórmulas |
 | scripts/argon-hud/argon.js | Cinco lançadores de economia, listas/filtros, foco/estado por ator, retrato, drawer, teclado, movimento e macros |
 | scripts/argon-hud/favorites.js | Identidade relativa nativa, leitura e inclusão/remoção de favoritos por atividade |
 | scripts/argon-hud/activity-details.js | Leitura pura de rótulos preparados da atividade, sem rolagem ou avaliação de fórmulas |
@@ -57,3 +59,5 @@ Não gastar PP, aplicar dano ou repetir efeitos de atividade na camada visual. O
 ## Limites
 
 CORE é opcional; adaptador antigo ativo bloqueia o interno. Haki é aberto pela API nativa; PP vêm de energy. Detalhes usam rótulos preparados e os atalhos do retrato reutilizam OPRPGList/OPRPGActivityButton com IDs individuais. Fonte oficial do OP RPG fica somente na pasta local ignorada, inclusive arquivos com licenças individuais, e jamais deve entrar em commit ou ZIP. Não há mundo Foundry neste workspace; verificação de navegador é simulada. Atributos preparados e associações de perícias ficam em actor-tests.js; o drawer contextual substitui a abertura permanente e a antiga linha de recursos; basic-actions.js gerencia validade, visão e concentração das ações preparadas. Consulte REVISAO-1.27.18.md para evidência e rollback.
+
+Refinamento 1.27.28: argon-refinement-check.cjs complementa a suíte existente com efeitos, totais, ficha do item, navegação, texto ampliado e obstruções nativas simuladas. A preferência argonTextSize é client-only, compacta por padrão, registrada em integration.js.
