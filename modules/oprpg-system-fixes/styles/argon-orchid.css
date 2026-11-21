@@ -107,6 +107,5 @@
 }
 @media(max-height:540px) {
   .extended-combat-hud.argon-oprpg { --argon-photo-width:80px; --argon-photo-height:80px; }
-  .extended-combat-hud.argon-oprpg .argon-oprpg-list { max-height:calc(100vh - var(--argon-portrait-height) - 72px); }
 }
 .extended-combat-hud.argon-oprpg.minimize-hud .portrait-hud .player-buttons { height:28px; --argon-control-icon-size:18px; }

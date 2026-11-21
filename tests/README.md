@@ -5,7 +5,7 @@ Sem dependências Node de produção:
 ```sh
 node --test tests/argon-integrated.mjs
 python -m unittest discover -s tests -p 'test_*.py'
-python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.27.24
+python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.27.25
 ```
 
 O workflow executa Node/Python antes do build e exige que o job Chromium passe antes da publicação. O teste Python cria e remove apenas diretórios temporários sob `tests/`.
@@ -47,3 +47,5 @@ A 1.27.23 verifica enquadramento integral com imagens de proporção 1:3 e 3:1, 
 Na mesma 1.27.23, a antiga linha de recursos e a abertura permanente são removidas. O navegador testa atributos clicáveis, execução exata de teste/salvaguarda/perícia, ausência de rolagem ao abrir, perícia com atributo personalizado, macros, teclado, foco após atualizar, permissões e troca de ator para NPC sem atributos. Capturas atuais: hud-attributes-1920.png, hud-attributes-867.png e hud-attributes-390.png. Capturas de recursos das versões anteriores são históricas.
 
 A 1.27.24 atualiza as medidas do retrato para 202/186/212 px, verifica indicadores ao lado da foto, nome acima dos indicadores, faixa de atributos abaixo da identidade e foco inteiramente visível após atualizar o painel em janela baixa. As capturas de atributos e atividades mostram o acabamento atual.
+
+A 1.27.25 verifica abertura acima do próprio lançador com intervalo de 8 px, listas laterais nas cinco economias em 867 px, posição restaurada após atualizar o HUD e alternância de desktop/celular com o painel já aberto. Em telas estreitas e janelas baixas, a lista preserva retrato e botões. Capturas de atividades e abertura passam a representar a posição atual.

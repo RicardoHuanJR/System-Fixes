@@ -1,3 +1,7 @@
+# OPRPG System Fixes 1.27.25 — painéis acima dos botões
+
+Cada categoria abre sua lista acima do próprio ícone, ao lado do retrato quando há espaço. Telas estreitas usam a área acima do conjunto. Busca, filtros, fotos e execução permanecem. Veja [REVISAO-1.27.25.md](REVISAO-1.27.25.md) para testes e rollback. Ainda sem execução em Foundry real.
+
 # OPRPG System Fixes 1.27.24 — HUD harmonizado
 
 Paleta e acabamento unificados, atributos em faixa contínua e indicadores junto do nome. Retrato de 280×202 px em telas grandes, mantendo foto de 116 px e atalhos ampliados. Foco restaurado permanece visível em painéis com rolagem. Veja [REVISAO-1.27.24.md](REVISAO-1.27.24.md) para testes e rollback. Ainda sem execução em Foundry real.

@@ -15,7 +15,7 @@
 .extended-combat-hud.argon-oprpg .action-hud > .actions-container > .action-element .action-element-title { width:100%; box-sizing:border-box; overflow-wrap:normal; word-break:normal; }
 .extended-combat-hud.argon-oprpg .action-element { min-width:0; min-height:0; width:56px; height:48px; padding:0; background-position:center 3px; background-size:22px; background-repeat:no-repeat; cursor:pointer; transition:opacity 120ms ease-out; }
 .extended-combat-hud.argon-oprpg .action-element-title { height:23px; font-size:11px; line-height:12px; white-space:normal; overflow-wrap:anywhere; text-transform:none; display:grid; place-items:center; padding:1px 3px; background:#14181eee; color:#f2f4f7; }
-.extended-combat-hud.argon-oprpg .argon-oprpg-list { display:none; bottom:calc(100% + 40px); left:0; width:min(380px, calc(100vw - 40px)); max-width:none; max-height:min(440px, calc(100vh - 210px)); overflow-y:auto; overscroll-behavior:contain; padding:6px; margin:0; gap:4px; background:#14181ef5; color:#f2f4f7; border-radius:6px; box-shadow:0 8px 24px #0008; transform:none; transition:none; pointer-events:auto; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-list { display:none; position:fixed; top:auto; bottom:0; left:0; width:min(380px, calc(100vw - 40px)); max-width:none; max-height:min(440px, calc(100vh - 210px)); overflow-y:auto; overscroll-behavior:contain; padding:6px; margin:0; gap:4px; background:#14181ef5; color:#f2f4f7; border-radius:6px; box-shadow:0 8px 24px #0008; transform:none; transition:none; pointer-events:auto; }
 .extended-combat-hud.argon-oprpg .argon-oprpg-list.show { display:flex; flex-flow:column nowrap; }
 .argon-oprpg-list-header { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:14px; }
 .argon-oprpg-list-header button, .argon-oprpg-filters button { width:auto; min-height:26px; margin:0; padding:2px 7px; border:1px solid #768395; background:#222a34; color:#f2f4f7; font:inherit; font-size:12px; cursor:pointer; }
@@ -94,7 +94,6 @@
   .extended-combat-hud.argon-oprpg .action-hud { max-width:calc(100vw - 184px); }
 }
 @media (max-height:540px) {
-  .extended-combat-hud.argon-oprpg .argon-oprpg-list { position:fixed; top:8px; bottom:auto; max-height:calc(100vh - 194px); overflow-y:auto; }
   .extended-combat-hud.argon-oprpg .argon-oprpg-rows { min-height:88px; }
 }
 @media (prefers-reduced-motion:reduce) { .extended-combat-hud.argon-oprpg, .extended-combat-hud.argon-oprpg * { transition:none; animation:none; } }

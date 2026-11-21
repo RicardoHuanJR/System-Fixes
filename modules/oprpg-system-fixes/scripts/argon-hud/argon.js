@@ -80,6 +80,23 @@ export function registerArgon(CoreHUD) {
     }
   }
 
+  let layoutObserver, observedHUD, observedActions;
+  function watchLayout() {
+    if (!globalThis.ResizeObserver) return;
+    const hud = globalThis.ui?.ARGON?.element;
+    if (!hud) return;
+    const actions = hud.querySelector(".action-hud");
+    if (hud === observedHUD && actions === observedActions) return;
+    layoutObserver ??= new ResizeObserver(placeLists);
+    layoutObserver.disconnect();
+    for (const element of [hud,actions].filter(Boolean)) layoutObserver.observe(element);
+    observedHUD = hud; observedActions = actions;
+  }
+  function placeLists() {
+    watchLayout();
+    for (const element of ui.ARGON?.element?.querySelectorAll(".argon-oprpg-list.show") ?? []) listComponents.get(element)?.place();
+  }
+
   class OPRPGList extends ButtonPanel {
     constructor(options) {
       super(options);
@@ -232,10 +249,18 @@ export function registerArgon(CoreHUD) {
     close() { this.toggle(false); this.parent?.element.focus(); }
     place() {
       if (!this.visible) return;
-      const hudLeft = ui.ARGON.element.getBoundingClientRect().left;
+      if (this.ownerActor !== ui.ARGON._actor || !this.element.isConnected || !this.parent?.element?.isConnected) return;
+      watchLayout();
+      const anchor = this.parent.element.getBoundingClientRect();
       const width = this.element.getBoundingClientRect().width;
-      const left = Math.max(8, Math.min(hudLeft, window.innerWidth - width - 8));
-      this.element.style.left = `${getComputedStyle(this.element).position === "fixed" ? left : left - hudLeft}px`;
+      const left = Math.max(8, Math.min(anchor.left, window.innerWidth - width - 8));
+      const portrait = ui.ARGON.element.querySelector(".portrait-hud")?.getBoundingClientRect();
+      // When the panel cannot fit beside the portrait, keep the whole identity visible.
+      const overlapsPortrait = portrait && left < portrait.right && left + width > portrait.left;
+      const bottom = Math.max(8, Math.min(anchor.top, overlapsPortrait ? portrait.top : anchor.top) - 8);
+      this.element.style.left = left + "px";
+      this.element.style.bottom = window.innerHeight - bottom + "px";
+      this.element.style.maxHeight = Math.max(0, Math.min(380,bottom - 8)) + "px";
     }
     toggle(value, noTransition) {
       if (this.ownerActor !== ui.ARGON._actor) return;
@@ -808,6 +833,6 @@ export function registerArgon(CoreHUD) {
   });
   globalThis.window?.addEventListener("resize", () => {
     ui.ARGON?.components?.drawer?.place?.();
-    for (const element of ui.ARGON?.element?.querySelectorAll(".argon-oprpg-list.show") ?? []) listComponents.get(element)?.place();
+    placeLists();
   });
 }
