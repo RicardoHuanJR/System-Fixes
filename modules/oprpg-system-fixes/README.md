@@ -1,3 +1,7 @@
+# OPRPG System Fixes 1.27.27 — variantes e estados de uso
+
+Nome do item e variante têm hierarquia própria; custo e alcance continuam visíveis durante uso ou indisponibilidade. Estados se atualizam nas atividades do mesmo item, com permissões e execução nativa preservadas. Veja [REVISAO-1.27.27.md](REVISAO-1.27.27.md) para testes e rollback. Ainda sem execução em Foundry real.
+
 # OPRPG System Fixes 1.27.26 — ações mais visíveis e atalhos estáveis
 
 Título, busca e fechar compartilham a faixa superior do painel. Atalhos mantêm suas posições ao aparecerem favoritos e Haki, com controles nativos em português. Custo e alcance usam texto maior. Veja [REVISAO-1.27.26.md](REVISAO-1.27.26.md) para medidas, testes e rollback. Ainda sem execução em Foundry real.

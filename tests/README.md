@@ -5,7 +5,7 @@ Sem dependências Node de produção:
 ```sh
 node --test tests/argon-integrated.mjs
 python -m unittest discover -s tests -p 'test_*.py'
-python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.27.26
+python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.27.27
 ```
 
 O workflow executa Node/Python antes do build e exige que o job Chromium passe antes da publicação. O teste Python cria e remove apenas diretórios temporários sob `tests/`.
@@ -51,3 +51,5 @@ A 1.27.24 atualiza as medidas do retrato para 202/186/212 px, verifica indicador
 A 1.27.25 verifica abertura acima do próprio lançador com intervalo de 8 px, listas laterais nas cinco economias em 867 px, posição restaurada após atualizar o HUD e alternância de desktop/celular com o painel já aberto. Em telas estreitas e janelas baixas, a lista preserva retrato e botões. Capturas de atividades e abertura passam a representar a posição atual.
 
 A 1.27.26 mede pelo menos cinco atividades completas e 240 px de área útil na lista do cenário inicial em 1440×900 (medição atual: 248 px). Confere busca dentro do cabeçalho, segunda linha em 320 px, estabilidade dos atalhos ao adicionar/remover favoritos e Haki, rótulos em português e botões contidos no retrato, mantendo a largura mínima de 24 px em celular. Captura: hud-compact-header.png.
+
+A 1.27.27 cobre identidade separada, metadados persistentes durante execução/indisponibilidade, estado compartilhado entre variantes do mesmo item, cancelamento e ausência de erro após fechar o HUD durante um uso. Usa mouseup, o evento de execução real do CORE, no teste de concorrência. Confere falta de permissão, nomes extensos com travessão/caracteres HTML, descrições acessíveis e execução da variante a1. Capturas: hud-activity-pending.png, hud-activity-unavailable.png e hud-activity-long-name.png.

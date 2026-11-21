@@ -296,27 +296,35 @@ export function registerArgon(CoreHUD) {
       this.element.style.backgroundImage = "none";
       rowImage(this.element,this.icon,this.item?.img !== this.icon ? this.item?.img : iconFor(this.entry.group));
       this.element.dataset.entryKey = `${this.entry.itemId}:${this.entry.activityId ?? "item"}`;
-      this.element.classList.toggle("argon-oprpg-disabled", this.disabled);
-      this.element.title = `${this.entry.label} — ${ECONOMY.find(e => e.key === this.entry.economy)?.label ?? ""}. F2 ou botão direito: ficha`;
+      this.baseTitle = this.entry.label + " — " + (ECONOMY.find(e => e.key === this.entry.economy)?.label ?? "") + ". F2 ou botão direito: ficha";
       this.element.setAttribute("aria-label", this.entry.label);
-      this.element.setAttribute("aria-disabled", String(this.disabled));
-      this.element.toggleAttribute("aria-busy", !!this.busy);
-      if (this.busy) this.element.setAttribute("aria-busy", "true");
-      this.element.classList.toggle("argon-oprpg-pending", !!this.busy);
+      const title = this.element.querySelector(".action-element-title");
+      const itemName = String(this.item?.name ?? ""), prefix = itemName + " — ";
+      if (title && itemName && this.entry.label.startsWith(prefix)) {
+        const item = document.createElement("span"), activity = document.createElement("span");
+        item.className = "argon-oprpg-item-name"; item.textContent = itemName;
+        activity.className = "argon-oprpg-activity-name"; activity.textContent = "— " + this.entry.label.slice(prefix.length);
+        title.classList.add("argon-oprpg-identity"); title.replaceChildren(item,activity);
+        title.title = this.entry.label;
+      }
       const economy = this.parent.showEconomy ? ECONOMY.find(e => e.key === this.entry.economy)?.label : "";
       const activity = activityById(this.item,this.entry.activityId);
       let range;
       try { range = activityDetails(activity,this.item,value=>game.i18n.localize(value),{isGM:game.user.isGM}).find(row=>row.label === "Alcance")?.value; }
       catch (_) { /* Unprepared metadata remains available through the item sheet. */ }
-      const details = [economy,resourceLabel(activity, this.item),range].filter(Boolean).join(" · ");
-      const reason = unavailableReason(this.ownerActor, this.entry);
-      if (details || reason || this.busy) {
+      const canInspect = this.ownerActor.isOwner || game.user.isGM || this.ownerActor.testUserPermission?.(game.user,"OBSERVER") === true;
+      const details = canInspect ? [economy,resourceLabel(activity, this.item),range].filter(Boolean).join(" · ") : "";
+      const descriptionIds = [];
+      const id = this.parent.id + "-" + this.entry.itemId + "-" + (this.entry.activityId ?? "item");
+      if (details) {
         const line = document.createElement("small"); line.textContent = details;
-        if (reason) line.textContent = reason;
-        if (this.busy) line.textContent = "Em execução…";
-        line.className = "argon-oprpg-activity-meta"; line.title = line.textContent; this.element.append(line);
-        this.element.title += ` · ${details}`;
+        line.className = "argon-oprpg-activity-meta"; line.title = details; line.id = id + "-meta";
+        this.element.append(line); descriptionIds.push(line.id); this.baseTitle += " · " + details;
       }
+      const state = document.createElement("small"); state.className = "argon-oprpg-activity-state";
+      state.id = id + "-state"; this.statusElement = state; this.element.append(state); descriptionIds.push(state.id);
+      this.element.setAttribute("aria-describedby",descriptionIds.join(" "));
+      this.updateUsageState();
       this.element.tabIndex = 0;
       if (this.ownerActor.isOwner && typeof this.ownerActor.system?.addFavorite === "function") {
         this.favoriteElement?.remove();
@@ -390,19 +398,38 @@ export function registerArgon(CoreHUD) {
       this.infoElement = info; this.detailsElement = body;
       (this.entryContainer ?? this.element).append(info,body);
     }
+    updateUsageState() {
+      const busy = !!this.busy;
+      const reason = this.ownerActor === globalThis.ui?.ARGON?._actor ? unavailableReason(this.ownerActor,this.entry) : "A ficha selecionada foi trocada.";
+      const text = busy ? "Em execução…" : reason ?? "";
+      this.element.dataset.usageState = busy ? "pending" : reason ? "unavailable" : "ready";
+      this.element.setAttribute("aria-disabled",String(busy || !!reason));
+      if (busy) this.element.setAttribute("aria-busy","true"); else this.element.removeAttribute("aria-busy");
+      this.element.classList.toggle("argon-oprpg-disabled",!!reason);
+      this.element.classList.toggle("argon-oprpg-pending",busy);
+      this.element.title = [this.baseTitle,text].filter(Boolean).join(" · ");
+      if (this.statusElement) {this.statusElement.textContent = text; this.statusElement.title = text; this.statusElement.hidden = !text;}
+    }
+    refreshItemStates() {
+      this.updateUsageState();
+      for (const element of globalThis.ui?.ARGON?.element?.querySelectorAll(".argon-oprpg-list") ?? []) {
+        const panel = listComponents.get(element);
+        if (panel?.ownerActor !== this.ownerActor) continue;
+        for (const button of panel._buttons) if (button !== this && button.entry?.itemId === this.entry.itemId) button.updateUsageState?.();
+      }
+    }
     async _onLeftClick(event) {
       event?.preventDefault?.(); event?.stopPropagation?.();
       if (this.disabled) return warn(unavailableReason(this.ownerActor, this.entry) ?? "Esta atividade já está em execução ou a ficha foi trocada.");
       this.busy = true;
-      this.element.setAttribute("aria-busy", "true"); this.element.setAttribute("aria-disabled", "true");
-      this.element.classList.add("argon-oprpg-pending");
       try {
-        const result = await executeEntry(this.ownerActor, this.entry, {notify: warn});
+        const usage = executeEntry(this.ownerActor, this.entry, {notify: warn});
+        this.refreshItemStates();
+        const result = await usage;
         if (result.reason === "no-native-use") this.item?.sheet?.render?.(true);
         if (result.reason === "pending") warn("Este item já está em execução.");
       } finally {
-        this.busy = false; this.element.removeAttribute("aria-busy"); this.element.classList.remove("argon-oprpg-pending");
-        this.element.setAttribute("aria-disabled", String(this.disabled));
+        this.busy = false; this.refreshItemStates();
         if (ui.ARGON._actor === this.ownerActor) {rememberArgonFocus(); ui.ARGON.refresh?.();}
       }
     }
