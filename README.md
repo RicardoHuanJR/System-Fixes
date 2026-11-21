@@ -1,14 +1,14 @@
-# System Fixes 1.27.23 — atributos clicáveis e retrato claro
+# System Fixes 1.27.24 — HUD harmonizado e compacto
 
 Ative **System Fixes + Argon CORE 5.x** no OP RPG/Foundry V14. Deixe **enhancedcombathud-oprpg-system desativado**: a integração está dentro do Fixes e se recusa a registrar duas vezes quando o adaptador antigo está ativo.
 
-Foto ampliada ao lado do nome: 116×116 px e painel de 280×222 px com seis atributos em telas grandes, sem recorte automático, com adaptações para janelas menores e PV/PP/defesa separados. Ícones dos atalhos ampliados de 14 para até 22 px, com mais espaço para clicar. Cinco botões de economia na barra, filtros e busca sem acentos. O botão de detalhes (ou tecla I na atividade) mostra alcance, alvos, área, duração e dano/cura já preparados pelo sistema. Atalhos no retrato abrem favoritos e armas do conjunto ativo com as atividades individuais; não mudam equipamento nem consomem ações ao abrir. Estado, foco, permissões e execução nativa são preservados.
+Superfícies em ameixa escura, latão e rosa-orquídea em todo o HUD; atributos em faixa contínua e PV/PP/defesa ao lado do nome, com menos caixas separadas. Foto ampliada ao lado do nome: 116×116 px e painel de 280×202 px com seis atributos em telas grandes, sem recorte automático, com adaptações para janelas menores e PV/PP/defesa separados. Ícones dos atalhos ampliados de 14 para até 22 px, com mais espaço para clicar. Cinco botões de economia na barra, filtros e busca sem acentos. O botão de detalhes (ou tecla I na atividade) mostra alcance, alvos, área, duração e dano/cura já preparados pelo sistema. Atalhos no retrato abrem favoritos e armas do conjunto ativo com as atividades individuais; não mudam equipamento nem consomem ações ao abrir. Estado, foco, permissões e execução nativa são preservados.
 
 Atributos clicáveis substituem a linha PPg: cada um abre seu teste, salvaguarda e perícias relacionadas. A barra superior Ficha e atalhos sai; o ícone de ficha mantém macros e demais atalhos, e a foto abre a ficha completa.
 
 Corrige também o conflito com a opção do CORE de mostrar detalhes abaixo do retrato, que podia sobrepor nome, nível e atributos. A regressão usa 867×453 px, as dimensões da captura fornecida pelo usuário.
 
-[Manifesto permanente de instalação](https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json) · [revisão, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.23.md) · [mapa de arquitetura](docs/CODEBASE_MAP.md).
+[Manifesto permanente de instalação](https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json) · [revisão, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.24.md) · [mapa de arquitetura](docs/CODEBASE_MAP.md).
 
 O [design Orquídea Negra](design/hud-argon/README.md) foi integrado ao módulo na **1.27.20**: tema próprio, 22 ícones e cinco botões retos. A prévia HTML continua disponível com dados demonstrativos; o módulo usa os documentos reais do mundo. Veja a [revisão 1.27.20, testes e rollback](modules/oprpg-system-fixes/REVISAO-1.27.20.md).
 

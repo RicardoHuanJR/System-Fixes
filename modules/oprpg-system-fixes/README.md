@@ -1,3 +1,7 @@
+# OPRPG System Fixes 1.27.24 — HUD harmonizado
+
+Paleta e acabamento unificados, atributos em faixa contínua e indicadores junto do nome. Retrato de 280×202 px em telas grandes, mantendo foto de 116 px e atalhos ampliados. Foco restaurado permanece visível em painéis com rolagem. Veja [REVISAO-1.27.24.md](REVISAO-1.27.24.md) para testes e rollback. Ainda sem execução em Foundry real.
+
 # OPRPG System Fixes 1.27.23 — atributos clicáveis e retrato claro
 
 Atributos clicáveis abrem testes, salvaguardas e perícias relacionadas, substituindo PPg e a abertura permanente no topo. Macros e outros atalhos ficam no ícone de ficha. Foto sem recorte automático e ícones inferiores ampliados para 18–22 px, com mais espaço para clicar. Layout responsivo e dados preservados. Veja [REVISAO-1.27.23.md](REVISAO-1.27.23.md) para testes e rollback. Ainda sem teste em Foundry real.

@@ -679,7 +679,14 @@ export function registerArgon(CoreHUD) {
       this.element.hidden = true; this.trigger = trigger; this.syncTriggers();
       try { await this.render(); }
       catch (error) {console.error("[System Fixes/Argon] Testes e atalhos",error); this.close(true); warn("Não foi possível abrir os testes. Abra a ficha pelo retrato."); return;}
-      if (this.ownerActor === ui.ARGON._actor && this.state.open && this.element.isConnected) this.element.querySelector("[data-drawer-key]:not([data-drawer-key=close])")?.focus();
+      if (this.ownerActor === ui.ARGON._actor && this.state.open && this.element.isConnected) this.focusControl(this.element.querySelector("[data-drawer-key]:not([data-drawer-key=close])"));
+    }
+    focusControl(control) {
+      if (!control) return;
+      control.focus({preventScroll:true});
+      const row = control.getBoundingClientRect(), panel = this.element.getBoundingClientRect();
+      if (row.top < panel.top + 4) this.element.scrollTop -= panel.top + 4 - row.top;
+      else if (row.bottom > panel.bottom - 4) this.element.scrollTop += row.bottom - panel.bottom + 4;
     }
     close(restoreFocus = false) {
       this.state.open = false; delete this.state.focus; this.element.hidden = true;
@@ -720,7 +727,7 @@ export function registerArgon(CoreHUD) {
       this.element.id = "argon-oprpg-drawer"; this.element.setAttribute("role","region"); this.element.setAttribute("aria-label",this.title);
       this.element.replaceChildren(heading,list); this.element.hidden = !this.state.open; this.syncTriggers(); this.place();
       if (this.state.open && this.state.focus) {
-        const control = [...this.element.querySelectorAll("[data-drawer-key]")].find(b=>b.dataset.drawerKey===this.state.focus); delete this.state.focus; control?.focus({preventScroll:true});
+        const control = [...this.element.querySelectorAll("[data-drawer-key]")].find(b=>b.dataset.drawerKey===this.state.focus); delete this.state.focus; this.focusControl(control);
       }
     }
     async activateListeners(element) {
@@ -729,7 +736,7 @@ export function registerArgon(CoreHUD) {
         if (["ArrowUp","ArrowDown"].includes(event.key)) {
           const controls = [...element.querySelectorAll("[data-drawer-key]")];
           const current = controls.indexOf(document.activeElement), step = event.key === "ArrowDown" ? 1 : -1;
-          event.preventDefault(); controls[(current + step + controls.length) % controls.length]?.focus();
+          event.preventDefault(); this.focusControl(controls[(current + step + controls.length) % controls.length]);
         }
       };
     }
