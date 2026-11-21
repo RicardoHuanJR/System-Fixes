@@ -4,7 +4,7 @@ import { useBasicAction, dashMovementInfo } from "./basic-actions.js";
 import { weaponSetsForActor, weaponsForActor, setWeaponSlot, selectWeaponSet } from "./weapon-sets.js";
 import { isFavoriteEntry, toggleFavoriteEntry } from "./favorites.js";
 import { activityDetails } from "./activity-details.js";
-import { resourceIndicators } from "./resource-state.js";
+import { actorAbilities, relatedSkills } from "./actor-tests.js";
 import { activityImage } from "./model.js";
 import { argonIconPath, argonIconMarkup } from "./icons.js";
 
@@ -12,6 +12,7 @@ const ID = "oprpg-system-fixes";
 const warn = msg => ui.notifications?.warn?.(`Argon OPRPG: ${msg}`);
 const panelStates = new WeakMap();
 const listComponents = new WeakMap();
+const drawerStates = new WeakMap();
 
 function rowImage(element, source, fallback) {
   const image = document.createElement("img");
@@ -27,6 +28,10 @@ function rowImage(element, source, fallback) {
 
 export function rememberArgonFocus(hud = globalThis.ui?.ARGON) {
   const active = globalThis.document?.activeElement;
+  if (active?.closest?.(".argon-oprpg-drawer")) {
+    const state = drawerStates.get(hud?._actor);
+    if (state) state.focus = active.dataset.drawerKey;
+  }
   const panel = active?.closest?.(".argon-oprpg-list");
   const state = panelStates.get(hud?._actor)?.get(panel?.id);
   if (!state) return;
@@ -497,35 +502,34 @@ export function registerArgon(CoreHUD) {
         block.title = block.textContent; stats.append(block);
       }
       if (stats.children.length) this.element.append(stats);
-      const resources = resourceIndicators(actor, globalThis.OPRPG_FIXES_AKUMA_COMBAT_STATUS?.(actor));
-      if (resources.length) {
-        const details = document.createElement("details");
-        details.className = "argon-oprpg-actor-resources";
-        const summary = document.createElement("summary");
-        summary.textContent = resources.map(row=>`${row.short} ${row.value}`).join(" · ");
-        summary.title = resources.map(row=>`${row.label}: ${row.value}`).join("; ");
-        summary.setAttribute("aria-label", `Recursos e estados: ${summary.title}`);
-        const list = document.createElement("dl");
-        for (const row of resources) {
-          const term = document.createElement("dt"), value = document.createElement("dd");
-          term.textContent = row.label; value.textContent = row.value;
-          list.append(term,value);
+      const abilities = actorAbilities(actor, CONFIG.DND5E, value => game.i18n.localize(value));
+      if (abilities.length) {
+        const strip = document.createElement("div"); strip.className = "argon-oprpg-attributes";
+        strip.setAttribute("role","group"); strip.setAttribute("aria-label","Atributos — testes e perícias");
+        for (const ability of abilities) {
+          const button = document.createElement("button"); button.type = "button"; button.dataset.ability = ability.key;
+          const mod = ability.mod === null ? "" : (ability.mod >= 0 ? "+" : "") + ability.mod;
+          const caption = document.createElement("span"), modifier = document.createElement("strong");
+          caption.textContent = ability.short; modifier.textContent = mod; button.append(caption,modifier);
+          button.title = ability.label + (ability.value === null ? "" : ": " + ability.value) + (mod ? " (" + mod + ")" : "");
+          button.setAttribute("aria-label", "Testes de " + ability.label);
+          button.setAttribute("aria-haspopup","true"); button.setAttribute("aria-controls","argon-oprpg-drawer");
+          button.setAttribute("aria-expanded",String(!!drawerStates.get(actor)?.open && drawerStates.get(actor).ability === ability.key));
+          button.onclick = () => {if (ui.ARGON._actor === actor) void ui.ARGON.components?.drawer?.openFor(ability.key,button);};
+          strip.append(button);
         }
-        details.append(summary,list);
-        details.addEventListener("toggle",()=>{
-          if (!details.open) return;
-          closeLists();
-          const drawer = ui.ARGON.components?.drawer;
-          if (drawer && ui.ARGON._lastExpandedDrawer != null) drawer._expandPanel(ui.ARGON._lastExpandedDrawer);
-        });
-        details.addEventListener("keydown",event=>{if(event.key === "Escape") {details.open=false; summary.focus(); event.stopPropagation();}});
-        this.element.querySelector(".player-detail")?.after(details);
+        this.element.append(strip);
       }
       for (const button of this._buttons) {
         keyboard(button.element, button.onClick);
         button.element.setAttribute("aria-label", button.label);
         const glyph = ({"roll-initiative":"ready","open-sheet":"sheet","toggle-minimize":"minus","oprpg-favorites":"star","oprpg-weapons":"sword",haki:"haki"})[button.id];
         if (glyph) button.element.innerHTML = argonIconMarkup(glyph);
+        if (button.id === "open-sheet") {
+          button.element.dataset.drawerShortcuts = "true";
+          button.element.setAttribute("aria-controls","argon-oprpg-drawer");
+          button.element.setAttribute("aria-expanded",String(!!drawerStates.get(actor)?.open && drawerStates.get(actor).ability === null));
+        }
         if (button.quick) {
           const entries = entriesForActor(actor).filter(entry => button.quick === "favorites" ? isFavoriteEntry(actor,entry) : entry.item.type === "weapon");
           const id = `argon-oprpg-quick-${button.quick}`;
@@ -548,6 +552,12 @@ export function registerArgon(CoreHUD) {
     }
     async _getButtons() {
       const buttons = await super._getButtons();
+      const actor = this.actor;
+      const sheetButton = buttons.find(button => button.id === "open-sheet");
+      if (sheetButton) {
+        sheetButton.label = "Atalhos da ficha";
+        sheetButton.onClick = event => {if (ui.ARGON._actor === actor) void ui.ARGON.components?.drawer?.openFor(null,event?.currentTarget);};
+      }
       const entries = entriesForActor(this.actor);
       const quick = (kind,label,icon) => ({id:`oprpg-${kind}`,quick:kind,label,icon,onClick:() => {
         const button = this._buttons.find(button=>button.quick === kind);
@@ -559,8 +569,7 @@ export function registerArgon(CoreHUD) {
       else if (asArray(this.actor.system?.favorites).length) buttons.push({id:"oprpg-favorites",label:"Favoritos da ficha",icon:"fas fa-star",onClick:()=>{
         const drawer = ui.ARGON.components?.drawer;
         if (!drawer) return;
-        if (String(ui.ARGON._lastExpandedDrawer) !== "0") drawer._expandPanel("0");
-        drawer.element.querySelector(".collapsible-panel")?.scrollTo(0,0);
+        if (!drawer.state.open || drawer.state.ability !== null) void drawer.openFor(null);
       }});
       if (entries.some(entry=>entry.item.type === "weapon")) buttons.push(quick("weapons","Armas — conjunto ativo","fas fa-crosshairs"));
       if (asArray(this.actor.getFlag?.("oprpg-system", "haki")?.talentos).length && typeof game.oprpg?.openHakiHud === "function") {
@@ -628,11 +637,11 @@ export function registerArgon(CoreHUD) {
         span.onkeydown = event => {
           if (event.key === "Escape") {
             event.preventDefault();
-            this.parent._expandPanel(ui.ARGON._lastExpandedDrawer);
-            this.parent.element.querySelector(".ability-toggle .ability-title")?.focus();
+            event.stopPropagation(); this.parent.close(true);
           } else onKey(event);
         };
         span.setAttribute("aria-label", span.textContent);
+        span.setAttribute("aria-disabled",String(!this.actor?.isOwner));
       }
     }
   }
@@ -647,34 +656,95 @@ export function registerArgon(CoreHUD) {
     return {gridCols:"1fr", captions:[{label, align:"start"}], buttons};
   }
   class OPRPGDrawer extends DrawerPanel {
-    get title() { return "Ficha e atalhos"; }
-    async activateListeners(element) {
-      await super.activateListeners(element);
-      for (const toggle of element.querySelectorAll(".ability-toggle .ability-title")) {
-        keyboard(toggle, () => this._expandPanel(toggle.dataset.index));
-        toggle.setAttribute("aria-label", this.title);
-        toggle.setAttribute("aria-expanded", String(toggle.classList.contains("active")));
+    constructor() {
+      super(); this.ownerActor = this.actor;
+      if (!drawerStates.has(this.ownerActor)) drawerStates.set(this.ownerActor,{ability:null,open:false});
+      this.state = drawerStates.get(this.ownerActor);
+    }
+    get classes() { return [...super.classes,"argon-oprpg-drawer"]; }
+    get title() {
+      return this.state.ability === null ? "Atalhos da ficha" : actorAbilities(this.ownerActor,CONFIG.DND5E,value=>game.i18n.localize(value)).find(a=>a.key===this.state.ability)?.label ?? "Testes";
+    }
+    syncTriggers() {
+      for (const button of ui.ARGON.element.querySelectorAll("[data-ability], [data-drawer-shortcuts]")) {
+        const selected = button.hasAttribute("data-ability") ? button.dataset.ability === this.state.ability : this.state.ability === null;
+        button.setAttribute("aria-expanded",String(this.state.open && selected));
       }
     }
-    _expandPanel(index) {
-      const toggles = [...this.element.querySelectorAll(".ability-toggle .ability-title")];
-      const target = toggles.find(toggle => toggle.dataset.index === String(index));
-      const open = !!target && !target.classList.contains("active");
-      if (open) closeLists();
-      for (const panel of this.element.querySelectorAll(".collapsible-panel")) {
-        panel.style.maxHeight = open && panel.dataset.index === String(index) ? `${Math.max(80, ui.ARGON.element.getBoundingClientRect().top - 40)}px` : "0px";
+    async openFor(ability, trigger) {
+      if (this.ownerActor !== ui.ARGON._actor || !this.element.isConnected) return;
+      if (ability !== null && !actorAbilities(this.ownerActor).some(a=>a.key===ability)) return;
+      if (this.state.open && this.state.ability === ability) return this.close(true);
+      closeLists(); this.state.ability = ability; this.state.open = true; delete this.state.focus;
+      this.element.hidden = true; this.trigger = trigger; this.syncTriggers();
+      try { await this.render(); }
+      catch (error) {console.error("[System Fixes/Argon] Testes e atalhos",error); this.close(true); warn("Não foi possível abrir os testes. Abra a ficha pelo retrato."); return;}
+      if (this.ownerActor === ui.ARGON._actor && this.state.open && this.element.isConnected) this.element.querySelector("[data-drawer-key]:not([data-drawer-key=close])")?.focus();
+    }
+    close(restoreFocus = false) {
+      this.state.open = false; delete this.state.focus; this.element.hidden = true;
+      ui.ARGON._lastExpandedDrawer = null; document.body.classList.remove("ech-show-ability-menu"); this.syncTriggers();
+      if (restoreFocus) {
+        const trigger = this.trigger?.isConnected ? this.trigger : [...ui.ARGON.element.querySelectorAll("[data-ability], [data-drawer-shortcuts]")].find(b=>this.state.ability === null ? b.hasAttribute("data-drawer-shortcuts") : b.dataset.ability === this.state.ability);
+        trigger?.focus();
       }
-      for (const toggle of toggles) {
-        const active = open && toggle === target;
-        toggle.classList.toggle("active", active);
-        toggle.setAttribute("aria-expanded", String(active));
+    }
+    _expandPanel(index) { if (index == null) this.close(); }
+    place() {
+      if (!this.state.open) return;
+      const hud = ui.ARGON.element.getBoundingClientRect(), width = this.element.getBoundingClientRect().width;
+      this.element.style.left = Math.max(8-hud.left,Math.min(0,window.innerWidth-hud.left-width-8)) + "px";
+      this.element.style.maxHeight = Math.max(48,hud.top-16) + "px";
+    }
+    async _renderInner() {
+      const sequence = this.sequence = (this.sequence ?? 0) + 1;
+      if (this.ownerActor !== ui.ARGON._actor || !this.element.isConnected) return;
+      if (this.state.ability !== null && !actorAbilities(this.ownerActor).some(a=>a.key===this.state.ability)) this.state.open = false;
+      const heading = document.createElement("div"); heading.className = "argon-oprpg-list-header";
+      const title = document.createElement("strong"); title.textContent = this.title;
+      const close = document.createElement("button"); close.type = "button"; close.innerHTML = argonIconMarkup("close");
+      close.setAttribute("aria-label","Fechar testes e atalhos"); close.dataset.drawerKey = "close";
+      close.onclick = () => this.close(true); heading.append(title,close);
+      const list = document.createElement("ul"); list.className = "argon-oprpg-test-rows";
+      for (const group of this.categories) {
+        if (!group.buttons.length) continue;
+        const caption = document.createElement("li"); caption.className = "ability ability-title"; caption.textContent = group.captions[0].label; list.append(caption);
+        for (const button of group.buttons) {
+          button._parent = this; button.setGrid(group.gridCols); button.setAlign(group.captions.map(c=>c.align));
+          await button.render(); list.append(button.element);
+          const control = button.element.querySelector("[role=button]"); if (control) control.dataset.drawerKey = String(list.children.length);
+        }
       }
-      ui.ARGON._lastExpandedDrawer = open ? index : null;
-      document.body.classList.toggle("ech-show-ability-menu", open);
+      if (!list.children.length) {const empty = document.createElement("li"); empty.textContent = "Nenhum teste disponível na ficha."; list.append(empty);}
+      if (sequence !== this.sequence || this.ownerActor !== ui.ARGON._actor || !this.element.isConnected) return;
+      this.element.id = "argon-oprpg-drawer"; this.element.setAttribute("role","region"); this.element.setAttribute("aria-label",this.title);
+      this.element.replaceChildren(heading,list); this.element.hidden = !this.state.open; this.syncTriggers(); this.place();
+      if (this.state.open && this.state.focus) {
+        const control = [...this.element.querySelectorAll("[data-drawer-key]")].find(b=>b.dataset.drawerKey===this.state.focus); delete this.state.focus; control?.focus({preventScroll:true});
+      }
+    }
+    async activateListeners(element) {
+      element.onkeydown = event => {
+        if (event.key === "Escape") {event.preventDefault(); event.stopPropagation(); this.close(true);}
+        if (["ArrowUp","ArrowDown"].includes(event.key)) {
+          const controls = [...element.querySelectorAll("[data-drawer-key]")];
+          const current = controls.indexOf(document.activeElement), step = event.key === "ArrowDown" ? 1 : -1;
+          event.preventDefault(); controls[(current + step + controls.length) % controls.length]?.focus();
+        }
+      };
     }
     get categories() {
       const actor = this.actor;
       const result = [];
+      const ability = this.state.ability;
+      if (ability !== null) {
+        const label = game.i18n.localize(CONFIG.DND5E?.abilities?.[ability]?.label ?? ability);
+        if (typeof actor.rollAbilityCheck === "function") result.push(category("Teste de atributo",[drawerRow("Teste de " + label,event=>actor.rollAbilityCheck({ability,event}))]));
+        if (typeof actor.rollSavingThrow === "function") result.push(category("Salvaguarda",[drawerRow("Salvaguarda de " + label,event=>actor.rollSavingThrow({ability,event}))]));
+        if (typeof actor.rollSkill === "function") result.push(category("Perícias relacionadas",relatedSkills(actor,ability,CONFIG.DND5E).map(key=>drawerRow(game.i18n.localize(CONFIG.DND5E?.skills?.[key]?.label ?? key),event=>actor.rollSkill({skill:key,event})))));
+        return result;
+      }
+
       const favorites = asArray(actor.system?.favorites).slice().sort((a,b) => (a.sort ?? 0) - (b.sort ?? 0));
       if (favorites.length) result.push(category("Favoritos", favorites.map(favorite => {
         let name = favorite.id, image;
@@ -697,12 +767,6 @@ export function registerArgon(CoreHUD) {
         if (favorite.type === "effect" && doc && !doc.isSuppressed && doc.isOwner) return doc.update({disabled:!doc.disabled});
         return doc?.sheet?.render(true);
       },image); })));
-      if (typeof actor.rollAbilityCheck === "function") result.push(category("Atributos", Object.keys(actor.system?.abilities ?? {}).map(key =>
-        drawerRow(game.i18n.localize(CONFIG.DND5E?.abilities?.[key]?.label ?? key), event => actor.rollAbilityCheck({ability:key,event})))));
-      if (typeof actor.rollSavingThrow === "function") result.push(category("Salvaguardas", Object.keys(actor.system?.abilities ?? {}).map(key =>
-        drawerRow(game.i18n.localize(CONFIG.DND5E?.abilities?.[key]?.label ?? key), event => actor.rollSavingThrow({ability:key,event})))));
-      if (typeof actor.rollSkill === "function") result.push(category("Perícias", Object.keys(actor.system?.skills ?? {}).map(key =>
-        drawerRow(game.i18n.localize(CONFIG.DND5E?.skills?.[key]?.label ?? key), event => actor.rollSkill({skill:key,event})))));
       if (typeof actor.rollToolCheck === "function") result.push(category("Ferramentas", Object.keys(actor.system?.tools ?? {}).map(key =>
         drawerRow(game.i18n.localize(CONFIG.DND5E?.toolTypes?.[key] ?? key), event => actor.rollToolCheck({tool:key,event})))));
       const effects = asArray(actor.effects);
@@ -736,6 +800,7 @@ export function registerArgon(CoreHUD) {
     }
   });
   globalThis.window?.addEventListener("resize", () => {
+    ui.ARGON?.components?.drawer?.place?.();
     for (const element of ui.ARGON?.element?.querySelectorAll(".argon-oprpg-list.show") ?? []) listComponents.get(element)?.place();
   });
 }

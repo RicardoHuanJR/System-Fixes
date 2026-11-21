@@ -1,3 +1,7 @@
+# OPRPG System Fixes 1.27.23 — atributos clicáveis e retrato claro
+
+Atributos clicáveis abrem testes, salvaguardas e perícias relacionadas, substituindo PPg e a abertura permanente no topo. Macros e outros atalhos ficam no ícone de ficha. Foto sem recorte automático e ícones inferiores ampliados para 18–22 px, com mais espaço para clicar. Layout responsivo e dados preservados. Veja [REVISAO-1.27.23.md](REVISAO-1.27.23.md) para testes e rollback. Ainda sem teste em Foundry real.
+
 # OPRPG System Fixes 1.27.22 — foto ampliada
 
 Retrato proporcional à tela, com foto de 116×116 px em telas grandes e nome mais legível. Painéis e atalhos acompanham a nova altura. Veja [REVISAO-1.27.22.md](REVISAO-1.27.22.md) para verificação e rollback. Ainda sem teste em Foundry real.

@@ -5,7 +5,7 @@ Sem dependências Node de produção:
 ```sh
 node --test tests/argon-integrated.mjs
 python -m unittest discover -s tests -p 'test_*.py'
-python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.27.22
+python scripts/build_release.py --repository RicardoHuanJR/System-Fixes --tag v1.27.23
 ```
 
 O workflow executa Node/Python antes do build e exige que o job Chromium passe antes da publicação. O teste Python cria e remove apenas diretórios temporários sob `tests/`.
@@ -41,3 +41,7 @@ A 1.27.20 verifica fontes locais, ícones próprios decorativos, fallback fechad
 A 1.27.21 verifica imagem explícita com opacidade 1 e sem filtro, origem real do ator, identidade sem sobreposição, nome acessível, abertura da ficha via teclado, fallback, efeitos temporários em coluna separada, minimizar e salvaguarda de morte nativa. Capturas: hud-portrait-867.png e hud-portrait-390.png.
 
 A 1.27.22 mede foto e painel em Full HD, janela baixa e celular; também verifica o nome de 16 px em telas grandes. Captura adicional: hud-portrait-fullhd.png. A faixa de ações mantém seu tamanho e os atalhos respeitam a altura adaptativa.
+
+A 1.27.23 verifica enquadramento integral com imagens de proporção 1:3 e 3:1, ícones de 22/20/18 px, os seis botões dentro da faixa e indicadores separados. Capturas adicionais: hud-portrait-tall.png e hud-portrait-wide.png.
+
+Na mesma 1.27.23, a antiga linha de recursos e a abertura permanente são removidas. O navegador testa atributos clicáveis, execução exata de teste/salvaguarda/perícia, ausência de rolagem ao abrir, perícia com atributo personalizado, macros, teclado, foco após atualizar, permissões e troca de ator para NPC sem atributos. Capturas atuais: hud-attributes-1920.png, hud-attributes-867.png e hud-attributes-390.png. Capturas de recursos das versões anteriores são históricas.

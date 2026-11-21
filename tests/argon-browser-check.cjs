@@ -22,7 +22,7 @@ const assert=require('node:assert/strict');
  assert.equal(await launchers.locator(':scope > svg.argon-oprpg-glyph').count(),5);
  await page.screenshot({path:path.resolve('.local-reference/hud-desktop.png')});
  console.log('collapsed',await page.locator('#hud').boundingBox());
- assert.ok((await page.locator('#hud').boundingBox()).height <= 184);
+ assert.ok((await page.locator('#hud').boundingBox()).height <= 222);
  assert.equal(await page.locator('.action-hud > .actions-container > .action-element').count(),5);
  const action = page.getByRole('button',{name:/^Ação: \d+ atividades$/});
  await action.click();
@@ -84,12 +84,12 @@ const assert=require('node:assert/strict');
  assert.match(await chosen.textContent(),/indisponível no sistema/);
  await page.evaluate(()=>{fixtureActor.items.get('i24').system.activities.get('a1').canUse=true;return ui.ARGON.refresh();});
  await page.locator('.argon-oprpg-list.show .argon-oprpg-activity:visible').first().press('Escape');
- await page.getByRole('button',{name:'Ficha e atalhos',exact:true}).press('Enter');
+ await page.getByRole('button',{name:'Testes de Destreza',exact:true}).press('Enter');
  await page.getByRole('button',{name:'Furtividade',exact:true}).press('Enter');
  console.log('skill',await page.evaluate(()=>window.skillRolled));
  assert.equal(await page.evaluate(()=>window.skillRolled),true);
  await page.getByRole('button',{name:'Furtividade',exact:true}).press('Escape');
- assert.equal(await page.getByRole('button',{name:'Ficha e atalhos',exact:true}).getAttribute('aria-expanded'),'false');
+ assert.equal(await page.getByRole('button',{name:'Atalhos da ficha',exact:true}).getAttribute('aria-expanded'),'false');
  await page.getByRole('button',{name:/^Poderosa: \d+ atividades$/}).click();
  await action.click();
  assert.equal(await page.getByRole('button',{name:/^Poderosa: \d+ atividades$/}).getAttribute('aria-expanded'),'false');
@@ -215,9 +215,9 @@ const assert=require('node:assert/strict');
  await page.evaluate(()=>{fixtureActor.system.favorites=[{type:'skill',id:'ste'}];return ui.ARGON.components.portrait.render();});
  assert.equal(await page.locator('#argon-oprpg-quick-favorites').count(),0);
  await page.getByRole('button',{name:'Favoritos da ficha',exact:true}).click();
- assert.equal(await page.getByRole('button',{name:'Ficha e atalhos',exact:true}).getAttribute('aria-expanded'),'true');
+ assert.equal(await page.getByRole('button',{name:'Atalhos da ficha',exact:true}).getAttribute('aria-expanded'),'true');
  await page.getByRole('button',{name:'Favoritos da ficha',exact:true}).click();
- assert.equal(await page.getByRole('button',{name:'Ficha e atalhos',exact:true}).getAttribute('aria-expanded'),'true');
+ assert.equal(await page.getByRole('button',{name:'Atalhos da ficha',exact:true}).getAttribute('aria-expanded'),'true');
  await page.evaluate(()=>{
    fixtureActor.system.energy.generated=3;fixtureActor.system.shieldPoints={value:7,max:12};
    fixtureActor.system.akuma={powerUp:{active:true}};
@@ -230,28 +230,62 @@ const assert=require('node:assert/strict');
    assert.equal(Math.round(p.width),width===1920?116:width===867?80:72);
    assert.equal(Math.round(p.height),width===1920?116:width===867?80:84);
    assert.equal(Math.round(card.width),width===1920?280:width===867?236:144);
-   assert.equal(Math.round(card.height),width===1920?184:width===867?144:150);
+   assert.equal(Math.round(card.height),width===1920?222:width===867?178:214);
+   const buttons=page.locator('.portrait-hud .player-button');
+   for(const button of await buttons.all()) {
+     const bounds=await button.boundingBox(),icon=await button.locator('svg').boundingBox();
+     assert.ok(bounds.width >= (width===390?24:34) && bounds.height >= 31);
+     assert.equal(Math.round(icon.width),width===1920?22:width===390?18:20);
+     assert.ok(icon.x>=bounds.x && icon.x+icon.width<=bounds.x+bounds.width && icon.y>=bounds.y && icon.y+icon.height<=bounds.y+bounds.height);
+   }
+   const stats=await page.locator('.argon-oprpg-portrait-stats').boundingBox(),controls=await page.locator('.portrait-hud .player-buttons').boundingBox();
+   assert.ok(stats.y+stats.height<=controls.y);
    if(width===1920) {
      assert.equal(await page.locator('.portrait-hud .player-name').evaluate(el=>getComputedStyle(el).fontSize),'16px');
      await page.screenshot({path:path.resolve('.local-reference/hud-portrait-fullhd.png')});
    }
  }
- for (const width of [867,390]) {
-   await page.setViewportSize({width,height:width===867?453:844});
-   const summary=page.locator('.argon-oprpg-actor-resources summary');
-   assert.match(await summary.innerText(),/PPg 3 · Esc 7\/12/);
-   const summaryBounds=await summary.boundingBox();
-   const statsBounds=await page.locator('.argon-oprpg-portrait-stats > .portrait-stat-block').first().boundingBox();
-   assert.ok(summaryBounds.y+summaryBounds.height<=statsBounds.y,'resources must not overlap PV/PP/defense');
-   assert.equal(Math.round((await page.locator('.portrait-hud').boundingBox()).height),width===867?144:150);
-   await summary.focus();await page.keyboard.press('Enter');
-   const panel=page.locator('.argon-oprpg-actor-resources dl');await panel.waitFor({state:'visible'});
-   assert.match(await panel.innerText(),/Power Up/);
-   const bounds=await panel.boundingBox();assert.ok(bounds.x>=0 && bounds.x+bounds.width<=width && bounds.y>=0);
-   assert.equal(await panel.evaluate(el=>el.contains(document.elementFromPoint(el.getBoundingClientRect().x+20,el.getBoundingClientRect().y+20))),true,'resources must remain above other panels');
-   await page.screenshot({path:path.resolve(`.local-reference/hud-resources-${width}.png`)});
-   await page.keyboard.press('Escape');assert.equal(await panel.isVisible(),false);
+ assert.equal(await page.locator('.argon-oprpg-actor-resources').count(),0);
+ assert.equal(await page.locator('.ability-toggle').count(),0);
+ assert.equal(await page.getByRole('button',{name:'Ficha e atalhos',exact:true}).count(),0);
+ for (const width of [1920,867,390]) {
+   await page.setViewportSize({width,height:width===1920?1080:width===867?453:844});
+   const attributes=page.locator('.argon-oprpg-attributes');
+   assert.equal(await attributes.getByRole('button').count(),6);
+   const strip=await attributes.boundingBox(),photo=await page.locator('.argon-oprpg-portrait-photo').boundingBox(),stats=await page.locator('.argon-oprpg-portrait-stats').boundingBox();
+   assert.ok(strip.y>=photo.y+photo.height && strip.y+strip.height<=stats.y);
+   const dex=page.getByRole('button',{name:'Testes de Destreza',exact:true});
+   await page.evaluate(()=>{window.testRoll=null;}); await dex.click();
+   const panel=page.getByRole('region',{name:'Destreza',exact:true}); await panel.waitFor();
+   assert.equal(await page.evaluate(()=>window.testRoll),null,'opening the panel must not roll');
+   assert.equal(await panel.getByRole('button',{name:'Furtividade',exact:true}).count(),1);
+   assert.equal(await panel.getByRole('button',{name:'Atletismo',exact:true}).count(),0);
+   assert.equal(await panel.getByRole('button',{name:'Percepção',exact:true}).count(),0);
+   const bounds=await panel.boundingBox();assert.ok(bounds.x>=0 && bounds.x+bounds.width<=width && bounds.y>=0 && bounds.y+bounds.height<=strip.y);
+   await panel.getByRole('button',{name:'Teste de Destreza',exact:true}).press('Enter');
+   assert.deepEqual(await page.evaluate(()=>window.testRoll),{kind:'check',key:'dex'});
+   await panel.getByRole('button',{name:'Salvaguarda de Destreza',exact:true}).click();
+   assert.deepEqual(await page.evaluate(()=>window.testRoll),{kind:'save',key:'dex'});
+   await panel.getByRole('button',{name:'Furtividade',exact:true}).press('Enter');
+   assert.deepEqual(await page.evaluate(()=>window.testRoll),{kind:'skill',key:'ste'});
+   await page.evaluate(()=>ui.ARGON.refresh());
+   assert.equal(await panel.getByRole('button',{name:'Furtividade',exact:true}).evaluate(e=>e===document.activeElement),true);
+   await page.screenshot({path:path.resolve('.local-reference/hud-attributes-'+width+'.png')});
+   await panel.getByRole('button',{name:'Furtividade',exact:true}).press('Escape');
+   assert.equal(await dex.getAttribute('aria-expanded'),'false');
+   assert.equal(await dex.evaluate(e=>e===document.activeElement),true);
  }
+ await page.getByRole('button',{name:'Testes de Força',exact:true}).click();
+ await page.getByRole('region',{name:'Força',exact:true}).waitFor();
+ assert.equal(await page.getByRole('region',{name:'Força',exact:true}).getByRole('button',{name:'Atletismo',exact:true}).count(),1);
+ await page.getByRole('button',{name:'Testes de Constituição',exact:true}).click();
+ await page.getByRole('region',{name:'Constituição',exact:true}).waitFor();
+ assert.equal(await page.getByRole('region',{name:'Constituição',exact:true}).getByRole('button').count(),3,'no invented skill for Constitution');
+ await page.getByRole('button',{name:'Fechar testes e atalhos',exact:true}).click();
+ await page.getByRole('button',{name:'Atalhos da ficha',exact:true}).click();
+ await page.getByRole('button',{name:'Macro de teste',exact:true}).press('Enter');
+ assert.equal(await page.evaluate(()=>window.lastMacro),true);
+ await page.getByRole('button',{name:'Fechar testes e atalhos',exact:true}).click();
  await page.setViewportSize({width:867,height:453});
  await page.evaluate(()=>{
    const item=fixtureActor.items.get('i24');item.img='/icons/weapon.svg';
@@ -262,7 +296,7 @@ const assert=require('node:assert/strict');
  for (const name of [/^Ação: \d+ atividades$/,/^Poderosa: \d+ atividades$/,/^Ação bônus: \d+ atividades$/,/^Reação: \d+ atividades$/,/^Livre \/ outras: \d+ atividades$/]) {
    await page.getByRole('button',{name}).click();
    const panel=page.locator('.argon-oprpg-list.show');
-   const panelBounds=await panel.boundingBox(), drawerBounds=await page.locator('.ability-menu').boundingBox();
+   const panelBounds=await panel.boundingBox(), drawerBounds=await page.locator('.portrait-hud').boundingBox();
    assert.ok(panelBounds.y+panelBounds.height<=drawerBounds.y,'context panel must not cover portrait shortcuts');
    const all=panel.getByRole('button',{name:'Todas',exact:true});if(await all.count())await all.click();
    await panel.getByRole('searchbox').fill('');
@@ -303,9 +337,34 @@ const assert=require('node:assert/strict');
    const p=await photo.boundingBox(),n=await name.boundingBox(),stats=await page.locator('.argon-oprpg-portrait-stats').boundingBox();
    assert.ok(p.width>=50&&p.height>=58&&p.x+p.width<n.x&&p.y+p.height<=stats.y);
    assert.equal(await page.locator('.argon-oprpg-portrait-stats > div').first().evaluate(el=>getComputedStyle(el,'::before').display),'none');
-   assert.equal(Math.round((await page.locator('.portrait-hud').boundingBox()).height),width===867?144:150);
+   assert.equal(Math.round((await page.locator('.portrait-hud').boundingBox()).height),width===867?178:214);
    await page.screenshot({path:path.resolve(`.local-reference/hud-portrait-${width}.png`)});
  }
+ // Portrait aspect ratios reproduce the cropped head/edges reported by the user.
+ for(const shape of ['tall','wide']) {
+   await page.route('**/icons/portrait-'+shape+'.svg',route=>route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="'+(shape==='tall'?80:240)+'" height="'+(shape==='tall'?240:80)+'"><rect width="100%" height="100%" fill="#754361"/><rect x="2" y="2" width="76" height="76" fill="#ead6ad"/></svg>'}));
+   await page.evaluate(shape=>{fixtureActor.img='/icons/portrait-'+shape+'.svg';return ui.ARGON.refresh();},shape);
+   const photoImage=page.locator('.argon-oprpg-portrait-photo img');
+   await photoImage.evaluate(img=>img.decode());
+   const fit=await photoImage.evaluate(img=>({fit:getComputedStyle(img).objectFit,position:getComputedStyle(img).objectPosition,ratio:img.naturalWidth/img.naturalHeight}));
+   assert.equal(fit.fit,'contain');assert.equal(fit.position,'50% 50%');
+   assert.equal(fit.ratio,shape==='tall'?1/3:3);
+   await page.screenshot({path:path.resolve('.local-reference/hud-portrait-'+shape+'.png')});
+ }
+ // Custom skill associations come from prepared actor data, not the default mapping.
+ await page.evaluate(()=>{fixtureActor.system.skills.ath.ability='dex';return ui.ARGON.refresh();});
+ await page.getByRole('button',{name:'Testes de Destreza',exact:true}).click();
+ await page.getByRole('region',{name:'Destreza',exact:true}).waitFor();
+ assert.equal(await page.getByRole('region',{name:'Destreza',exact:true}).getByRole('button',{name:'Atletismo',exact:true}).count(),1);
+ await page.getByRole('button',{name:'Fechar testes e atalhos',exact:true}).click();
+ await page.evaluate(()=>{fixtureActor.isOwner=false;window.testRoll=null;return ui.ARGON.refresh();});
+ await page.getByRole('button',{name:'Testes de Destreza',exact:true}).click();
+ await page.getByRole('region',{name:'Destreza',exact:true}).waitFor();
+ const denied=page.getByRole('button',{name:'Teste de Destreza',exact:true});
+ assert.equal(await denied.getAttribute('aria-disabled'),'true');await denied.press('Enter');
+ assert.equal(await page.evaluate(()=>window.testRoll),null);
+ await page.getByRole('button',{name:'Fechar testes e atalhos',exact:true}).click();
+ await page.evaluate(()=>{fixtureActor.isOwner=true;return ui.ARGON.refresh();});
  await page.evaluate(()=>{window.sheetOpened=false;});
  await page.getByRole('button',{name:'Abrir ficha de Azaleia D. Blossom',exact:true}).focus();
  await page.keyboard.press('Enter');assert.equal(await page.evaluate(()=>window.sheetOpened),true);
@@ -326,6 +385,14 @@ const assert=require('node:assert/strict');
  assert.equal(await page.locator('.argon-oprpg-portrait-photo').isVisible(),false);
  assert.equal(await page.locator('.argon-oprpg-portrait-stats').isVisible(),false);
  await page.evaluate(()=>document.querySelector('#hud').classList.remove('minimize-hud'));
+ await page.getByRole('button',{name:'Testes de Destreza',exact:true}).click();
+ await page.getByRole('region',{name:'Destreza',exact:true}).waitFor();
+ await page.evaluate(()=>{window.staleRoll=document.querySelector('.argon-oprpg-test-rows [role=button]');window.testRoll=null;ui.ARGON._actor={...fixtureActor,id:'npc-other',type:'npc',system:{...fixtureActor.system,abilities:{},skills:{}}};return ui.ARGON.refresh();});
+ assert.equal(await page.locator('.argon-oprpg-attributes').count(),0);
+ assert.equal(await page.locator('.argon-oprpg-drawer').isVisible(),false);
+ await page.evaluate(()=>window.staleRoll.click());
+ assert.equal(await page.evaluate(()=>window.testRoll),null,'a previous actor control must never roll on the new actor');
+ await page.evaluate(()=>{ui.ARGON._actor=fixtureActor;return ui.ARGON.refresh();});
  assert.deepEqual(errors,[]);
  } finally { await browser.close(); }
 })().catch(error=>{console.error(error);process.exit(1);});

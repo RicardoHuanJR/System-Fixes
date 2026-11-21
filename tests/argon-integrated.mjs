@@ -9,7 +9,7 @@ import { convertLength, movementInfo } from '../modules/oprpg-system-fixes/scrip
 import { registerArgon } from '../modules/oprpg-system-fixes/scripts/argon-hud/argon.js';
 import { installEmbeddedArgonHUD, argonHUDStatus, installArgonModuleCheckCompatibility } from '../modules/oprpg-system-fixes/scripts/argon-hud/integration.js';
 import { executePrepared, installBasicActionAutomation, isDodging, useBasicAction, dashMovementInfo, basicEffectActive, applyDodgeToAttack } from '../modules/oprpg-system-fixes/scripts/argon-hud/basic-actions.js';
-import { resourceIndicators } from '../modules/oprpg-system-fixes/scripts/argon-hud/resource-state.js';
+import { actorAbilities, relatedSkills } from '../modules/oprpg-system-fixes/scripts/argon-hud/actor-tests.js';
 import { argonIconPath, argonIconMarkup } from '../modules/oprpg-system-fixes/scripts/argon-hud/icons.js';
 
 function fixture(use = async () => ({})) {
@@ -278,14 +278,15 @@ test('basic actions are idempotent and time expiry only touches their own effect
   await hooks.get('updateActor')(actor);assert.deepEqual(removed,['e']);
 });
 
-test('resource indicators omit missing data, keep zero generated PP and read actual states', () => {
-  assert.deepEqual(resourceIndicators({}),[]);
-  const flags={'oprpg-system':{antevisaoModo:'padrao',akuma:{powerUp:{active:true}}},'oprpg-system-fixes':{presenceActive:true}};
-  const actor={system:{energy:{generated:0},shieldPoints:{value:0,max:12}},getFlag:(scope,key)=>flags[scope]?.[key]};
-  const rows=resourceIndicators(actor);
-  assert.deepEqual(rows.map(r=>r.value),['0','0/12','ativa','ativa','ativo']);
-  actor.system.energy.generated='@formula'; actor.system.shieldPoints={value:null,max:12};
-  assert.equal(resourceIndicators(actor).length,3);
+test('attribute indicators keep prepared values and skill associations respect actor overrides', () => {
+  assert.deepEqual(actorAbilities({}),[]);
+  const config={abilities:{dex:{label:'Destreza',abbreviation:'DES'}},skills:{ste:{ability:'dex'},ath:{ability:'str'},custom:{ability:'dex'}}};
+  const actor={system:{abilities:{dex:{value:0,mod:0},str:{mod:-2},missing:null,wis:{mod:'@formula'}},skills:{ste:{},ath:{ability:'dex'},custom:{ability:'wis'},unrelated:{}}}};
+  assert.deepEqual(actorAbilities(actor,config)[0],{key:'dex',label:'Destreza',short:'DES',value:0,mod:0});
+  assert.equal(actorAbilities(actor,config).find(a=>a.key==='wis').mod,null);
+  assert.deepEqual(relatedSkills(actor,'dex',config),['ste','ath']);
+  assert.deepEqual(relatedSkills(actor,'wis',config),['custom']);
+  assert.deepEqual(relatedSkills(actor,'con',config),[]);
 });
 
 test('Dodge uses defender sight, honors explicit targets and never penalizes a mixed attack', () => {

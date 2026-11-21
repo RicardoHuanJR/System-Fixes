@@ -45,10 +45,7 @@
 .extended-combat-hud.argon-oprpg .portrait-hud .player-details { color:#d2b9ce; }
 .extended-combat-hud.argon-oprpg .portrait-hud .player-buttons { background:#1b141f; border-top:1px solid #6f5b4c; }
 .extended-combat-hud.argon-oprpg .portrait-hud .player-button { display:grid; place-items:center; color:#ddc59b; --icon-accent:#d38db5; }
-.extended-combat-hud.argon-oprpg .portrait-hud .player-button > .argon-oprpg-glyph { width:14px; height:14px; }
 .extended-combat-hud.argon-oprpg .portrait-hud .player-button:hover { background:#493047; }
-.extended-combat-hud.argon-oprpg .argon-oprpg-actor-resources summary { color:#ddc7db; }
-.extended-combat-hud.argon-oprpg .argon-oprpg-actor-resources dl { color:#f3e5d0; background:#211624; border-color:#b29368; }
 .extended-combat-hud.argon-oprpg .movement-hud { color:#dcc8d9; background:#18101d; border:1px solid #7e6852; border-radius:0; }
 .extended-combat-hud.argon-oprpg .ability-menu .collapsible-panel { color:#f2e8d5; background:#110e15; scrollbar-color:#b08ca6 #110e15; }
 .extended-combat-hud.argon-oprpg .ability-menu .collapsible-panel > li { border-color:#493449; }
@@ -58,13 +55,11 @@
 /* Identity first: full-color photo, readable name, separate statistics. */
 .extended-combat-hud.argon-oprpg .portrait-hud { --argon-identity-offset:72px; background-image:none; }
 .extended-combat-hud.argon-oprpg .portrait-hud .argon-oprpg-portrait-photo { position:absolute; left:5px; top:5px; width:60px; height:60px; margin:0; padding:0; border:1px solid #8e775c; border-radius:3px; background:#211624; overflow:hidden; cursor:pointer; }
-.extended-combat-hud.argon-oprpg .portrait-hud .argon-oprpg-portrait-photo img { display:block; width:100%; height:100%; object-fit:cover; object-position:center; opacity:1; filter:none; mix-blend-mode:normal; border:0; border-radius:0; }
+.extended-combat-hud.argon-oprpg .portrait-hud .argon-oprpg-portrait-photo img { display:block; width:100%; height:100%; object-fit:contain; object-position:center; opacity:1; filter:none; mix-blend-mode:normal; border:0; border-radius:0; }
 .extended-combat-hud.argon-oprpg .portrait-hud .portrait-stat-block.player-details,
 .extended-combat-hud.argon-oprpg .portrait-hud .portrait-stat-block.player-details.player-details-bottom { position:absolute; left:var(--argon-identity-offset); right:4px; top:5px; bottom:auto; width:auto; height:60px; padding:0 0 6px; margin:0; gap:0; background:transparent; flex-direction:column; align-items:flex-start; justify-content:flex-start; opacity:1; mask-image:none; -webkit-mask-image:none; }
 .extended-combat-hud.argon-oprpg .portrait-hud .player-name { max-width:100%; width:100%; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; white-space:normal; overflow-wrap:anywhere; text-overflow:ellipsis; font-family:OPRPGArgon,Arial,sans-serif; font-size:13px; font-weight:600; font-style:normal; text-transform:none; line-height:14px; }
 .extended-combat-hud.argon-oprpg .portrait-hud .portrait-stat-block.player-details .player-detail { font-size:11px; line-height:12px; }
-.extended-combat-hud.argon-oprpg .portrait-hud .argon-oprpg-actor-resources { font-size:10px; line-height:12px; min-width:0; }
-.extended-combat-hud.argon-oprpg .portrait-hud .argon-oprpg-actor-resources dl { bottom:calc(100% + 38px); max-width:calc(100vw - var(--argon-identity-offset) - 32px); }
 .extended-combat-hud.argon-oprpg .portrait-hud > .effects-container { position:absolute; right:3px; top:5px; width:16px; max-height:60px; overflow-y:auto; z-index:2; }
 .extended-combat-hud.argon-oprpg .portrait-hud > .effects-container .effect-icon { width:16px; height:16px; }
 .extended-combat-hud.argon-oprpg .portrait-hud:has(> .effects-container:not(:empty)) .portrait-stat-block.player-details { right:22px; }
@@ -82,25 +77,60 @@
   .extended-combat-hud.argon-oprpg .portrait-hud .death-saves:not(.hidden) { width:52px; }
 }
 /* Give character art real space while keeping action controls at their approved size. */
-.extended-combat-hud.argon-oprpg { --argon-portrait-width:236px; --argon-portrait-height:158px; --argon-photo-width:92px; --argon-photo-height:92px; --argon-name-size:14px; --argon-name-line:16px; --argon-stat-size:12px; }
+.extended-combat-hud.argon-oprpg { --argon-portrait-width:236px; --argon-portrait-base-height:166px; --argon-photo-width:92px; --argon-photo-height:92px; --argon-name-size:14px; --argon-name-line:16px; --argon-stat-size:12px; --argon-controls-height:32px; --argon-control-width:34px; --argon-control-icon-size:20px; }
 .extended-combat-hud.argon-oprpg .portrait-hud { width:var(--argon-portrait-width); min-width:var(--argon-portrait-width); flex-basis:var(--argon-portrait-width); height:var(--argon-portrait-height); min-height:var(--argon-portrait-height); --argon-identity-offset:calc(var(--argon-photo-width) + 12px); }
 .extended-combat-hud.argon-oprpg .portrait-hud .argon-oprpg-portrait-photo { width:var(--argon-photo-width); height:var(--argon-photo-height); }
 .extended-combat-hud.argon-oprpg .portrait-hud .portrait-stat-block.player-details,
 .extended-combat-hud.argon-oprpg .portrait-hud .portrait-stat-block.player-details.player-details-bottom { height:var(--argon-photo-height); }
 .extended-combat-hud.argon-oprpg .portrait-hud .player-name { font-size:var(--argon-name-size); line-height:var(--argon-name-line); }
 .extended-combat-hud.argon-oprpg .portrait-hud .portrait-stat-block.player-details .player-detail { font-size:12px; line-height:15px; }
-.extended-combat-hud.argon-oprpg .portrait-hud .argon-oprpg-actor-resources { font-size:11px; line-height:15px; }
 .extended-combat-hud.argon-oprpg .portrait-hud > .effects-container { max-height:var(--argon-photo-height); }
 .extended-combat-hud.argon-oprpg .portrait-hud .argon-oprpg-portrait-stats > .portrait-stat-block { font-size:var(--argon-stat-size); line-height:16px; }
 .extended-combat-hud.argon-oprpg .portrait-hud .death-saves:not(.hidden) { width:var(--argon-photo-width); height:var(--argon-photo-height); }
 .extended-combat-hud.argon-oprpg .ability-menu { bottom:var(--argon-portrait-height); }
+.extended-combat-hud.argon-oprpg .portrait-hud .player-buttons { height:var(--argon-controls-height); }
+.extended-combat-hud.argon-oprpg .portrait-hud .player-button { width:var(--argon-control-width); height:100%; padding:4px; font-size:var(--argon-control-icon-size); }
+.extended-combat-hud.argon-oprpg .portrait-hud .player-button > .argon-oprpg-glyph { width:var(--argon-control-icon-size); height:var(--argon-control-icon-size); }
+.extended-combat-hud.argon-oprpg .portrait-hud .argon-oprpg-portrait-stats { bottom:calc(var(--argon-controls-height) + 2px); }
 @media(min-width:1200px) {
-  .extended-combat-hud.argon-oprpg { --argon-portrait-width:280px; --argon-portrait-height:184px; --argon-photo-width:116px; --argon-photo-height:116px; --argon-name-size:16px; --argon-name-line:18px; --argon-stat-size:13px; }
+  .extended-combat-hud.argon-oprpg { --argon-portrait-width:280px; --argon-portrait-base-height:192px; --argon-photo-width:116px; --argon-photo-height:116px; --argon-name-size:16px; --argon-name-line:18px; --argon-stat-size:13px; --argon-controls-height:36px; --argon-control-width:40px; --argon-control-icon-size:22px; }
 }
 @media(max-width:600px) {
-  .extended-combat-hud.argon-oprpg { --argon-portrait-width:144px; --argon-portrait-height:150px; --argon-photo-width:72px; --argon-photo-height:84px; --argon-name-size:12px; --argon-name-line:14px; --argon-stat-size:11px; }
+  .extended-combat-hud.argon-oprpg { --argon-portrait-width:144px; --argon-portrait-base-height:154px; --argon-photo-width:72px; --argon-photo-height:84px; --argon-name-size:12px; --argon-name-line:14px; --argon-stat-size:11px; --argon-controls-height:32px; --argon-control-width:24px; --argon-control-icon-size:18px; }
 }
 @media(max-height:540px) {
-  .extended-combat-hud.argon-oprpg { --argon-portrait-height:144px; --argon-photo-width:80px; --argon-photo-height:80px; }
+  .extended-combat-hud.argon-oprpg { --argon-portrait-base-height:148px; --argon-photo-width:80px; --argon-photo-height:80px; }
   .extended-combat-hud.argon-oprpg .argon-oprpg-list { max-height:calc(100vh - var(--argon-portrait-height) - 72px); }
 }
+
+.extended-combat-hud.argon-oprpg.minimize-hud .portrait-hud .player-buttons { height:28px; --argon-control-icon-size:18px; }
+
+/* Attribute tests replace the old resource disclosure and permanent drawer header. */
+.extended-combat-hud.argon-oprpg { --argon-portrait-height:var(--argon-portrait-base-height); --argon-attributes-space:30px; }
+.extended-combat-hud.argon-oprpg:has(.argon-oprpg-attributes) { --argon-portrait-height:calc(var(--argon-portrait-base-height) + var(--argon-attributes-space)); }
+.extended-combat-hud.argon-oprpg:has(.argon-oprpg-attributes > :nth-child(7)) { --argon-attributes-space:60px; }
+.extended-combat-hud.argon-oprpg .portrait-hud .argon-oprpg-attributes { position:absolute; left:4px; right:4px; top:calc(var(--argon-photo-height) + 12px); display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:2px; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-attributes button { margin:0; padding:2px 1px; min-width:0; height:28px; border:0; border-radius:0; background:#281d2b; color:#f1e5d4; font-family:inherit; font-size:12px; line-height:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; font-variant-numeric:tabular-nums; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-attributes button:hover { background:#493047; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-attributes button[aria-expanded=true] { background:#793552; color:#fff1e2; }
+.extended-combat-hud.argon-oprpg button:focus-visible { outline:2px solid #e8c66a; outline-offset:-2px; }
+.extended-combat-hud.argon-oprpg .ability-menu.argon-oprpg-drawer { bottom:calc(var(--argon-portrait-height) + 8px); width:min(320px,calc(100vw - 32px)); padding:8px; background:#110e15; color:#f2e8d5; border:1px solid #a28b6c; overflow-y:auto; pointer-events:auto; scrollbar-width:thin; scrollbar-color:#b08ca6 #110e15; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-drawer .argon-oprpg-test-rows { margin:6px 0 0; padding:0; max-height:none; overflow:visible; list-style:none; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-drawer .argon-oprpg-test-rows > li { height:auto; min-height:32px; padding:0; border:0; background:transparent; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-drawer .argon-oprpg-test-rows > li.ability-title { padding:8px 4px 4px; color:#d9bdd5; font-size:11px; text-transform:none; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-test-rows [role=button] { display:flex; align-items:center; gap:8px; min-height:32px; width:100%; padding:5px 8px; color:#f1e5d4; white-space:normal; overflow-wrap:anywhere; cursor:pointer; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-test-rows [role=button]:hover { background:#352034; }
+@media(max-width:600px) {
+  .extended-combat-hud.argon-oprpg { --argon-attributes-space:60px; }
+  .extended-combat-hud.argon-oprpg:has(.argon-oprpg-attributes > :nth-child(7)) { --argon-attributes-space:90px; }
+  .extended-combat-hud.argon-oprpg .portrait-hud .argon-oprpg-attributes { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+
+.extended-combat-hud.argon-oprpg .ability-menu.argon-oprpg-drawer:before { display:none; }
+
+.extended-combat-hud.argon-oprpg .argon-oprpg-attributes button { display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:12px; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-attributes button span { max-width:100%; font-size:11px; line-height:11px; overflow:hidden; text-overflow:ellipsis; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-attributes button strong { font-size:12px; line-height:12px; font-weight:600; }
+.extended-combat-hud.argon-oprpg .ability-menu.argon-oprpg-drawer li,
+.extended-combat-hud.argon-oprpg .ability-menu.argon-oprpg-drawer li:hover { text-shadow:none; }
+.extended-combat-hud.argon-oprpg .argon-oprpg-drawer [aria-disabled=true] { opacity:.55; cursor:not-allowed; }
