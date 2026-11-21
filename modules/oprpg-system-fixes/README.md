@@ -1,3 +1,7 @@
+# OPRPG System Fixes 1.27.26 — ações mais visíveis e atalhos estáveis
+
+Título, busca e fechar compartilham a faixa superior do painel. Atalhos mantêm suas posições ao aparecerem favoritos e Haki, com controles nativos em português. Custo e alcance usam texto maior. Veja [REVISAO-1.27.26.md](REVISAO-1.27.26.md) para medidas, testes e rollback. Ainda sem execução em Foundry real.
+
 # OPRPG System Fixes 1.27.25 — painéis acima dos botões
 
 Cada categoria abre sua lista acima do próprio ícone, ao lado do retrato quando há espaço. Telas estreitas usam a área acima do conjunto. Busca, filtros, fotos e execução permanecem. Veja [REVISAO-1.27.25.md](REVISAO-1.27.25.md) para testes e rollback. Ainda sem execução em Foundry real.

@@ -127,14 +127,15 @@ export function registerArgon(CoreHUD) {
       this.element.id = this.id;
       this.element.setAttribute("role", "region");
       this.element.setAttribute("aria-label", this.title);
-      const header = document.createElement("div"); header.className = "argon-oprpg-list-header";
+      const header = document.createElement("div"); header.className = "argon-oprpg-list-header argon-oprpg-list-tools";
       const title = document.createElement("strong"); title.textContent = this.title;
       const close = document.createElement("button"); close.type = "button";
       close.innerHTML = argonIconMarkup("close"); close.setAttribute("aria-label","Fechar"); close.title = "Fechar";
-      close.onclick = () => this.close(); header.append(title, close);
+      close.onclick = () => this.close();
       const search = document.createElement("input");
-      search.type = "search"; search.placeholder = "Buscar por nome ou atividade…"; search.value = this.state.query;
+      search.type = "search"; search.placeholder = "Buscar atividade…"; search.value = this.state.query;
       search.setAttribute("aria-label", "Buscar atividade neste painel");
+      header.append(title,search,close);
       const filters = document.createElement("div"); filters.className = "argon-oprpg-filters";
       filters.setAttribute("role", "group"); filters.setAttribute("aria-label", "Filtrar atividades");
       const groups = this.filters ? [{key:"all",label:"Todas"}, ...[{key:"basic",label:"Básicas"}, ...GROUPS].filter(group => this._buttons.some(button => button.entry?.group === group.key))] : [];
@@ -223,7 +224,7 @@ export function registerArgon(CoreHUD) {
       }
       search.oninput = () => {this.state.scroll = 0; rows.scrollTop = 0; applyFilters();};
       rows.onscroll = () => {this.state.scroll = rows.scrollTop;};
-      this.element.prepend(header, search, filters, loadoutSection); this.element.append(rows, status);
+      this.element.prepend(header, filters, loadoutSection); this.element.append(rows, status);
       applyFilters(); rows.scrollTop = this.state.scroll;
       if (this.visible && this.state.focus) {
         const focus = this.state.focus; delete this.state.focus;
@@ -548,6 +549,7 @@ export function registerArgon(CoreHUD) {
       for (const button of this._buttons) {
         keyboard(button.element, button.onClick);
         button.element.setAttribute("aria-label", button.label);
+        button.element.dataset.shortcut = button.id;
         const glyph = ({"roll-initiative":"ready","open-sheet":"sheet","toggle-minimize":"minus","oprpg-favorites":"star","oprpg-weapons":"sword",haki:"haki"})[button.id];
         if (glyph) button.element.innerHTML = argonIconMarkup(glyph);
         if (button.id === "open-sheet") {
@@ -578,6 +580,10 @@ export function registerArgon(CoreHUD) {
     async _getButtons() {
       const buttons = await super._getButtons();
       const actor = this.actor;
+      for (const button of buttons) {
+        if (button.id === "roll-initiative") button.label = "Rolar iniciativa";
+        if (button.id === "toggle-minimize") button.label = "Recolher ou expandir HUD";
+      }
       const sheetButton = buttons.find(button => button.id === "open-sheet");
       if (sheetButton) {
         sheetButton.label = "Atalhos da ficha";

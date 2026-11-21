@@ -1,8 +1,8 @@
 {
   "id": "oprpg-system-fixes",
   "title": "OPRPG System Fixes & Compatibility",
-  "description": "Correções OPRPG e HUD Argon Orquídea Negra para Foundry V14: HUD compacto com painéis acima dos botões, atributos clicáveis, foto inteira e ícones próprios com fotos nativas por atividade.",
-  "version": "1.27.25",
+  "description": "Correções OPRPG e HUD Argon Orquídea Negra para Foundry V14: cabeçalho compacto, atalhos estáveis, painéis acima dos botões e atributos clicáveis, foto inteira e ícones próprios com fotos nativas por atividade.",
+  "version": "1.27.26",
   "authors": [
     {
       "name": "Adaptação OPRPG — módulo de compatibilidade local"
@@ -59,5 +59,5 @@
   ],
   "url": "https://github.com/RicardoHuanJR/System-Fixes",
   "manifest": "https://github.com/RicardoHuanJR/System-Fixes/releases/latest/download/oprpg-system-fixes.json",
-  "download": "https://github.com/RicardoHuanJR/System-Fixes/releases/download/v1.27.25/oprpg-system-fixes.zip"
+  "download": "https://github.com/RicardoHuanJR/System-Fixes/releases/download/v1.27.26/oprpg-system-fixes.zip"
 }
